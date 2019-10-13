@@ -2,14 +2,10 @@ const database = require('../../setup/database');
 
 const UserSchema = new database.Schema({
 
-    email: {
-        type: String,
-        required: true,
-        unique: true
-    },
     cpf: {
         type: String,
-        required: false,
+        unique: true,
+        required: true
     },
     name: {
         type: String,
@@ -29,7 +25,8 @@ const UserSchema = new database.Schema({
     },
     phone: {
         type: String,
-        required: false
+        unique: true,
+        required: true
     },
     registerDate: {
         type: Date,
@@ -43,12 +40,23 @@ const UserSchema = new database.Schema({
         neighbourhood: String,
         street: String,
         number: Number,
-        complement: {
-            type: String,
-            required: false
-        }
+        complement: String
     },
     account: {
+        role: {
+            type: String,
+            required: true
+        },
+        email: {
+            type: String,
+            index: true,
+            unique: true,
+            required: true
+        },
+        password: {
+            type: String,
+            required: true
+        },
         authenticationToken: String,
         sessionToken: String,
         verification: {

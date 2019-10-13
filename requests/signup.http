@@ -1,0 +1,32 @@
+### Register user data
+POST http://localhost:8080/api/user/signup
+Content-Type: application/json
+
+{
+	"name": "Jonatha",
+	"surname": "Lima",
+    "cpf": "05616926370",
+    "phone": "11985904599",
+    "account": {
+        "role": "user",
+        "email": "jonathalimax@gmail.com",
+        "password": "321pass"
+    }
+}
+
+### Register user address
+PUT http://localhost:8080/api/user/5da395795bdcb331488df87b/signup/address
+Content-Type: application/json
+
+{
+	"address": {
+		"cep": "05847500",
+        "country": "Brasil",
+        "state": "SP",
+        "city": "São Paulo",
+        "neighbourhood": "Jardim Casablanca",
+        "street": "Filpe Neri Teixeira",
+        "number": "200",
+        "complement": "Apt 102"
+	}
+}
