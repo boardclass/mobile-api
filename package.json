@@ -4,7 +4,8 @@
   "description": "Board API",
   "main": "index.js",
   "scripts": {
-    "start": "nodemon index.js"
+    "start": "nodemon index.js",
+    "doc": "documentation build app/** -f html -o docs"
   },
   "repository": {
     "type": "git",
@@ -18,6 +19,7 @@
     "body-parser": "^1.19.0",
     "express": "^4.17.1",
     "express-validator": "^5.1.2",
+    "jsonwebtoken": "^8.5.1",
     "mongoose": "^5.7.4",
     "request": "^2.88.0",
     "smpp": "^0.4.0"

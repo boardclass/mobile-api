@@ -1,4 +1,4 @@
-const database = require('../../setup/database');
+const database = require('../../setup/database')
 
 const UserSchema = new database.Schema({
 
@@ -39,7 +39,7 @@ const UserSchema = new database.Schema({
         city: String,
         neighbourhood: String,
         street: String,
-        number: Number,
+        number: String,
         complement: String
     },
     account: {
@@ -65,6 +65,6 @@ const UserSchema = new database.Schema({
         }
     }
 
-}, {collection: 'users'});
+}, {collection: 'users'})
 
-database.mongoose.model('User', UserSchema);
+database.mongoose.model('User', UserSchema)

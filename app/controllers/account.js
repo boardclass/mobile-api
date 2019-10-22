@@ -1,16 +1,16 @@
 require('../models/user')
 const mongoose = require('mongoose')
 const UserModel = mongoose.model('User')
-const math = require('../classes/math');
-const date = require('../classes/date');
+const math = require('../classes/math')
+const date = require('../classes/date')
 
 exports.sendSMS = function(req, res) {
 
     let userId = req.body.userId
     let phone = req.body.phone
 
-    let verificationCode = math.getRandomNumber(1000, 9999);
-    let expirationDate = date.addMinutes(new Date(), 3);
+    let verificationCode = math.getRandomNumber(1000, 9999)
+    let expirationDate = date.addMinutes(new Date(), 3)
 
     req.assert('userId', 'O id do usuário deve ser informado').notEmpty()
     req.assert('phone', 'O telefone deve ser informado').notEmpty()
@@ -20,7 +20,7 @@ exports.sendSMS = function(req, res) {
 
     if (error) {
 
-        let message = error[0].msg;
+        let message = error[0].msg
         return res.status(400).json({
             success: false,
             message: message,
@@ -82,7 +82,7 @@ exports.validateSMS = function(req, res) {
 
     if (error) {
 
-        let message = error[0].msg;
+        let message = error[0].msg
         return res.status(400).json({
             success: false,
             message: message,

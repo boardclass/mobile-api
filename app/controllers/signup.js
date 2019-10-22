@@ -6,6 +6,8 @@ const bcrypt = require('bcrypt')
 
 exports.registerUser = async function (req, res) {
 
+    console.log(req.body);
+
     let user = new UserModel(req.body)
 
     req.assert('name', 'O nome deve ser informado').notEmpty()
@@ -18,7 +20,7 @@ exports.registerUser = async function (req, res) {
     req.assert('account.email', 'O email deve ser informado').notEmpty()
     req.assert('account.password', 'A senha deve ser informada').notEmpty()
 
-    let error = req.validationErrors();
+    let error = req.validationErrors()
 
     if (error) {
 
@@ -79,37 +81,37 @@ exports.registerUser = async function (req, res) {
                 message: "Ops, algo ocorreu. Tente novamente mais tarde!",
                 verbose: err,
                 data: {}
-            });
+            })
 
         })
 
-};
+}
 
 exports.registerAddress = function (req, res) {
 
-    let userId = req.params.userId;
-    let address = req.body.address;
+    let userId = req.params.userId
+    let address = req.body.address
 
-    req.assert('address.cep', 'O CEP deve ser informado').notEmpty();
-    req.assert('address.cep', 'O CEP está inválido').len(8);
-    req.assert('address.country', 'O País deve ser informado').notEmpty();
-    req.assert('address.state', 'O Estado ser informado').notEmpty();
-    req.assert('address.city', 'A Cidade deve ser informado').notEmpty();
-    req.assert('address.neighbourhood', 'O Bairro deve ser informado').notEmpty();
-    req.assert('address.street', 'A Rua deve ser informado').notEmpty();
-    req.assert('address.number', 'O Número deve ser informado').notEmpty();
+    req.assert('address.cep', 'O CEP deve ser informado').notEmpty()
+    req.assert('address.cep', 'O CEP está inválido').len(8)
+    req.assert('address.country', 'O País deve ser informado').notEmpty()
+    req.assert('address.state', 'O Estado ser informado').notEmpty()
+    req.assert('address.city', 'A Cidade deve ser informado').notEmpty()
+    req.assert('address.neighbourhood', 'O Bairro deve ser informado').notEmpty()
+    req.assert('address.street', 'A Rua deve ser informado').notEmpty()
+    req.assert('address.number', 'O Número deve ser informado').notEmpty()
 
-    let error = req.validationErrors();
+    let error = req.validationErrors()
 
     if (error) {
 
-        let message = error[0].msg;
+        let message = error[0].msg
         return res.status(400).json({
             success: false,
             message: message,
             verbose: error[0],
             data: {}
-        });
+        })
 
     }
 
@@ -162,4 +164,4 @@ exports.registerAddress = function (req, res) {
 
         })
 
-};
+}

@@ -1,9 +1,12 @@
 require('../models/user')
+
 const mongoose = require('mongoose')
 const UserModel = mongoose.model('User')
 const bcrypt = require('bcrypt')
+const jwt = require('jsonwebtoken')
+const jwtEnv = require('../../setup/jwt')
 
-exports.login = async function(req, res) {
+exports.login = async function (req, res) {
 
     let email = req.body.email
     let password = req.body.password
@@ -15,7 +18,7 @@ exports.login = async function(req, res) {
 
     if (error) {
 
-        let message = error[0].msg;
+        let message = error[0].msg
         return res.status(400).json({
             success: false,
             message: message,
@@ -42,27 +45,33 @@ exports.login = async function(req, res) {
             let hashedPassword = user.account.password
 
             bcrypt.compare(password, hashedPassword)
-            .then(match => {
+                .then(match => {
 
-                if (match) {
+                    const token = jwt.sign({ email }, jwtEnv.secret, {
+                        algorithm: 'HS256',
+                        expiresIn: jwtEnv.expirationSeconds
+                      })
+                      console.log('token:', token)
 
-                    return res.status(200).json({
-                        success: true,
-                        message: "Login realizado com sucesso!",
+                    if (match) {
+
+                        return res.status(200).json({
+                            success: true,
+                            message: "Login realizado com sucesso!",
+                            verbose: "",
+                            data: { token: token }
+                        })
+
+                    }
+
+                    return res.status(400).json({
+                        success: false,
+                        message: "Não foi possível realizar o login, senha incorreta!",
                         verbose: "",
-                        data: {} // TODO: Return tokens (session, auth)
+                        data: {}
                     })
 
-                }
-
-                return res.status(400).json({
-                    success: false,
-                    message: "Não foi possível realizar o login, senha incorreta!",
-                    verbose: "",
-                    data: {}
                 })
-
-            })
 
         }).catch(err => {
 

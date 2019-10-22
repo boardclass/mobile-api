@@ -1,8 +1,10 @@
 ### Login
 POST http://localhost:8080/api/login
 Content-Type: application/json
+x-access-token: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImpvbmF0aGFsaW1heEBnbWFpbC5jb20iLCJpYXQiOjE1NzE0MTU5NTcsImV4cCI6MTU3MTQxNjI1N30.1vyROei8XsVz1yNqloD6G5SPSEJX7Uo_S3lYKaKNcoI
+authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImpvbmF0aGFsaW1heEBnbWFpbC5jb20iLCJpYXQiOjE1NzE0MTU5NTcsImV4cCI6MTU3MTQxNjI1N30.1vyROei8XsVz1yNqloD6G5SPSEJX7Uo_S3lYKaKNcoI
 
 {
-	"email": "jonathalimax@gmail.comm",
+	"email": "jonathalimax@gmail.com",
 	"password": "321pass"
 }
