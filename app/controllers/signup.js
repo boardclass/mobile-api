@@ -6,8 +6,6 @@ const bcrypt = require('bcrypt')
 
 exports.registerUser = async function (req, res) {
 
-    console.log(req.body);
-
     let user = new UserModel(req.body)
 
     req.assert('name', 'O nome deve ser informado').notEmpty()
@@ -46,10 +44,10 @@ exports.registerUser = async function (req, res) {
                     if (err.code === statusCode.duplicated) {
 
                         return res.status(400).json({
-                            success: false,
+                            success: true,
                             message: "Esse email já está sendo utilizado",
                             verbose: err,
-                            data: {}
+                            data: { userId: user.id }
                         })
 
                     }

@@ -12,10 +12,15 @@ module.exports = {
         app.use(bodyParser.json())
         app.use(bodyParser.urlencoded({ extended: true }))
         app.use(validator())
-        
-        require('./routes')(app)
 
-        app.use(unless('/api/login'), middleware.validateToken)
+        const excludedRoutes = [
+            "/api/login",
+            "/api/user/signup"
+        ]
+        
+        app.use(unless(excludedRoutes, middleware.validateToken))
+
+        require('./routes')(app)
 
         let port = process.env.PORT || 8080
 
@@ -27,9 +32,10 @@ module.exports = {
 
 }
 
-var unless = function(path, middleware) {
-    return function(req, res, next) {
-        if (path === req.path) {
+const unless = function (paths, middleware) {
+    return function (req, res, next) {
+
+        if (paths.includes(req.path)) {
             return next()
         } else {
             return middleware(req, res, next)

@@ -3,8 +3,7 @@ require('../models/user')
 const mongoose = require('mongoose')
 const UserModel = mongoose.model('User')
 const bcrypt = require('bcrypt')
-const jwt = require('jsonwebtoken')
-const jwtEnv = require('../../setup/jwt')
+const jwtHandler = require('../classes/jwt')
 
 exports.login = async function (req, res) {
 
@@ -47,11 +46,7 @@ exports.login = async function (req, res) {
             bcrypt.compare(password, hashedPassword)
                 .then(match => {
 
-                    const token = jwt.sign({ email }, jwtEnv.secret, {
-                        algorithm: 'HS256',
-                        expiresIn: jwtEnv.expirationSeconds
-                      })
-                      console.log('token:', token)
+                    const token = jwtHandler.generate(email)
 
                     if (match) {
 
@@ -59,7 +54,7 @@ exports.login = async function (req, res) {
                             success: true,
                             message: "Login realizado com sucesso!",
                             verbose: "",
-                            data: { token: token }
+                            data: { accessToken: token }
                         })
 
                     }
