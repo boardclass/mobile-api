@@ -1,7 +1,9 @@
 const mongoose = require('mongoose')
 const Schema = mongoose.Schema
 
-mongoose.connect('mongodb://localhost/board', {
+var databaseURL = process.env.DATABASE_URL || 'mongodb://localhost/board'
+
+mongoose.connect(databaseURL, {
     useNewUrlParser: true,
     useUnifiedTopology: true
 })

@@ -33,7 +33,7 @@ module.exports = {
         })
         
     },
-    secret: 'worldisfullofdevelopers',
+    secret: proccess.env.SECRET_KEY || 'worldisfullofdevelopers',
     expirationSeconds: 1000
 
 }
