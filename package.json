@@ -4,8 +4,7 @@
   "description": "Board API",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js",
-    "nodemon": "nodemon index.js", 
+    "start": "node index.js", 
     "doc": "documentation build app/** -f html -o docs"
   },
   "repository": {
