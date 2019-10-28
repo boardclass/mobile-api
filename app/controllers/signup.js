@@ -68,14 +68,14 @@ exports.registerUser = async function (req, res) {
                 if (result) {
 
                     res.set('user-id', result.id)
-
+                    
                     return res.status(202).json({
                         success: true,
                         message: "Usuário já cadastrado!",
                         verbose: '',
                         data: {
                             userId: result.id,
-                            hasAddress: !result.address.isEmpty()
+                            hasAddress: result.address.cep != null
                         }
                     })
 
