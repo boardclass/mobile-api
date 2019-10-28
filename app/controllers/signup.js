@@ -1,8 +1,9 @@
 require('../models/user')
+require('../classes/object')
 const mongoose = require('mongoose')
 const UserModel = mongoose.model('User')
-const statusCode = require('../classes/status-code')
 const bcrypt = require('bcrypt')
+const jwt = require('../classes/jwt')
 
 exports.registerUser = async function (req, res) {
 
@@ -22,6 +23,8 @@ exports.registerUser = async function (req, res) {
 
     if (error) {
 
+        console.log('validationErrors')
+
         let message = error[0].msg
         return res.status(400).json({
             success: false,
@@ -32,42 +35,77 @@ exports.registerUser = async function (req, res) {
 
     }
 
-    let hashedPassword = await bcrypt.hash(user.account.password, 10)
+    const token = jwt.generate(user.account.email)
+    res.set('access-token', token)
+
+    let hasAddress = false
+
+    await bcrypt.hash(user.account.password, 10)
         .then(hash => {
 
             user.account.password = hash
 
-            user.save({}, function (err, result) {
+            const query = UserModel.findOne()
+                .or([
+                    { cpf: user.cpf },
+                    { phone: user.phone },
+                    { 'account.email': user.account.email }
+                ])
 
-                if (err) {
+            query.exec(function (error, result) {
 
-                    if (err.code === statusCode.duplicated) {
-
-                        return res.status(400).json({
-                            success: true,
-                            message: "Esse email já está sendo utilizado",
-                            verbose: err,
-                            data: { userId: user.id }
-                        })
-
-                    }
+                if (error) {
 
                     return res.status(500).json({
                         success: false,
                         message: "Ops, algo ocorreu. Tente novamente mais tarde!",
-                        verbose: err,
+                        verbose: error,
                         data: {}
                     })
 
                 }
 
-                return res.status(200).json({
-                    success: true,
-                    message: "Cadastro realizado com sucesso",
-                    verbose: "",
-                    data: {
-                        "userId": result._id
+                if (result) {
+
+                    res.set('user-id', result.id)
+
+                    return res.status(202).json({
+                        success: true,
+                        message: "Usuário já cadastrado!",
+                        verbose: '',
+                        data: {
+                            userId: result.id,
+                            hasAddress: !result.address.isEmpty()
+                        }
+                    })
+
+                }
+
+                user.save({}, function (error, result) {
+
+                    if (error) {
+
+                        return res.status(500).json({
+                            success: false,
+                            message: "Ops, algo ocorreu ao registrar usuário!",
+                            verbose: error,
+                            data: {}
+                        })
+
                     }
+
+                    res.set('user-id', result.id)
+
+                    return res.status(201).json({
+                        success: true,
+                        message: "Cadastro realizado com sucesso",
+                        verbose: "",
+                        data: {
+                            userId: result.id,
+                            hasAddress: hasAddress
+                        }
+                    })
+
                 })
 
             })

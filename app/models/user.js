@@ -49,7 +49,6 @@ const UserSchema = new database.Schema({
         },
         email: {
             type: String,
-            index: true,
             unique: true,
             required: true
         },

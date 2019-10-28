@@ -50,11 +50,13 @@ exports.login = async function (req, res) {
 
                     if (match) {
 
+                        res.setHeader('access-token', token)
+
                         return res.status(200).json({
                             success: true,
                             message: "Login realizado com sucesso!",
                             verbose: "",
-                            data: { accessToken: token }
+                            data: {}
                         })
 
                     }
