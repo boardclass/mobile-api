@@ -8,7 +8,7 @@ module.exports = {
         
         var http = require("http");
         setInterval(function () {
-            http.get("http://board-class.herokuapp.com");
+            http.get("https://board-class.herokuapp.com/")
         }, 300000); // every 5 minutes (300000)
 
     }
