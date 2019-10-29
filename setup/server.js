@@ -2,6 +2,7 @@ const express = require('express')
 const validator = require('express-validator')
 const bodyParser = require('body-parser')
 const middleware = require('./middleware')
+const wakeuper = require('../setup/wakeup-timer')
 
 const app = express()
 
@@ -15,8 +16,7 @@ module.exports = {
 
         const excludedRoutes = [
             '/api/login',
-            '/api/user/signup',
-            '/api/user/address/*'
+            '/api/user/signup'
         ]
         
         app.use(unless(excludedRoutes, middleware.validateToken))
@@ -24,6 +24,13 @@ module.exports = {
         require('./routes')(app)
 
         let port = process.env.PORT || 8080
+
+        console.log(`Ve ai se vai logar ${port}`);
+
+
+        if (port != 8080) {
+            wakeuper.setTimer()
+        }
 
         app.listen(port, () => {
             console.log(`Server started on ${port}`)
