@@ -25,9 +25,6 @@ module.exports = {
 
         let port = process.env.PORT || 8080
 
-        console.log(`Ve ai se vai logar ${port}`);
-
-
         if (port != 8080) {
             wakeuper.setTimer()
         }

@@ -4,7 +4,7 @@ module.exports = {
 
     setTimer: function () {
 
-        console.log('Começando timer');
+        console.log('Timer was started');
         
         var http = require("http");
         setInterval(function () {
