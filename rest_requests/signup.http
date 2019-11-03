@@ -15,9 +15,9 @@ Content-Type: application/json
 }
 
 ### Register user address
-PUT http://localhost:8080/api/user/5db6684358963125ace94cf2/signup/address
+PUT http://localhost:8080/api/user/5dbdf639ca6aa12348e6c43e/signup/address
 Content-Type: application/json
-Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImpvbmF0aGFsaW1heEBnbWFpbC5jb20iLCJpYXQiOjE1NzIyMzUyMTMsImV4cCI6MTU3MjIzNjIxM30.lOyTI63n_3EFoHIoGkJihd8WKnAb3zT010JnEmdlAgM
+Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImpvbmF0aGFsaW1heEBnbWFpbC5jb20iLCJpYXQiOjE1NzI3MzA0NTUsImV4cCI6MTU3MjczMTQ1NX0.ZxxZv34HtpDa6ATcbaD3WVbu2pK1n_nsZOxPF_U5AIw
 
 {
 	"address": {

@@ -167,6 +167,8 @@ exports.registerAddress = function (req, res) {
 
             user.address = address
 
+            console.log(user.address);
+
             user.save()
                 .then(user => {
 
