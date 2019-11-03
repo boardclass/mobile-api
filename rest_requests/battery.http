@@ -1,0 +1,24 @@
+### Register establishment data
+POST http://localhost:8080/api/5dbf07914878501bc82e68bd/battery
+Content-Type: application/json
+Access-Token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImNsYXNzQHN0dWRpby5jb20iLCJpYXQiOjE1NzI4MDA0MDEsImV4cCI6MTU3MjgwMTQwMX0.MJxx2sqarazoHZu412qCjkYQffTwinkbewXOtC74u_0
+
+{
+	"startHour": 9,
+    "finishHour": 10,
+    "amountClient": 5,
+    "session": {
+        "time": 30,
+        "value": 100
+    },
+    "address": {
+		"cep": "05847500",
+        "country": "Brasil",
+        "state": "SP",
+        "city": "São Paulo",
+        "neighbourhood": "Jardim Casablanca",
+        "street": "Filpe Neri Teixeira",
+        "number": "200",
+        "complement": "Apt 102"
+	}
+}

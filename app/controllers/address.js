@@ -4,7 +4,7 @@ module.exports = {
 
     findByCEP: function (req, res) {
 
-        let cep = req.params.cep;
+        let cep = req.params.cep
 
         req.assert('cep', 'O CEP deve ser informado').notEmpty()
         req.assert('cep', 'CEP inválido').len(8)

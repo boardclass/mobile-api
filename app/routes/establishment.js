@@ -6,4 +6,8 @@ module.exports = (app) => {
         controller.signup(req, res)
     })
     
+    app.post('/api/establishment/login', (req, res) => {
+        controller.login(req, res)
+    })
+
 }

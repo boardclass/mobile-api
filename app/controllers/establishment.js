@@ -34,7 +34,6 @@ module.exports = {
         const token = jwt.generate(account.email)
         res.set('access-token', token)
 
-
         await bcrypt.hash(account.password, 10)
             .then(hash => {
 
@@ -114,6 +113,73 @@ module.exports = {
                     data: {}
                 })
 
+            })
+
+    },
+
+    login: function (req, res) {
+
+        let email = req.body.email
+        let password = req.body.password
+    
+        req.assert('email', 'O email deve ser informado')
+        req.assert('password', 'A senha deve ser informado')
+    
+        validator.validateFiels(req, res)
+    
+        EstablishmentModel.findOne({ "account.email": email })
+            .then(establishment => {
+    
+                if (!establishment) {
+    
+                    return res.status(404).json({
+                        success: false,
+                        message: "Este email não está cadastrado!",
+                        verbose: "",
+                        data: {}
+                    })
+    
+                }
+    
+                let hashedPassword = establishment.account.password
+    
+                bcrypt.compare(password, hashedPassword)
+                    .then(match => {
+    
+                        const token = jwt.generate(email)
+    
+                        if (match) {
+    
+                            res.setHeader('access-token', token)
+                            res.setHeader('user-id', establishment._id)
+    
+                            return res.status(200).json({
+                                success: true,
+                                message: "Login realizado com sucesso!",
+                                verbose: "",
+                                data: {}
+                            })
+    
+                        }
+    
+                        return res.status(400).json({
+                            success: false,
+                            message: "Não foi possível realizar o login, senha incorreta!",
+                            verbose: "",
+                            data: {}
+                        })
+    
+                    })
+    
+            }).catch(err => {
+    
+                return res.status(500).json({
+                    success: false,
+                    message: "Ops, algo ocorreu. Tente novamente mais tarde!",
+                    verbose: err,
+                    data: {}
+                })
+    
             })
 
     }

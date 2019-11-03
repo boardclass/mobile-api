@@ -51,6 +51,7 @@ exports.login = async function (req, res) {
                     if (match) {
 
                         res.setHeader('access-token', token)
+                        res.setHeader('user-id', user._id)
 
                         return res.status(200).json({
                             success: true,

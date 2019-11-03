@@ -1,0 +1,33 @@
+### Register establishment data
+POST http://localhost:8080/api/establishment/signup
+Content-Type: application/json
+
+{
+	"name": "Class Studio",
+    "cnpj": "94030974000161",
+    "phone": "23456532",
+    "account": {
+        "role": "admin_establishment",
+        "email": "class@studio.com",
+        "password": "123456"
+    },
+    "address": {
+		"cep": "05847500",
+        "country": "Brasil",
+        "state": "SP",
+        "city": "São Paulo",
+        "neighbourhood": "Jardim Casablanca",
+        "street": "Filpe Neri Teixeira",
+        "number": "200",
+        "complement": "Apt 102"
+	}
+}
+
+### Establishment login
+POST http://localhost:8080/api/establishment/login
+Content-Type: application/json
+
+{
+	"email": "class@studio.com",
+    "password": "123456"
+}

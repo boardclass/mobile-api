@@ -1,12 +1,14 @@
 const database = require('../../setup/database')
-const schedulesScheme = require('./schedules')
+const addressSchema = require('./address')
+const scheduleSessionSchema = require('./schedule-session')
 
 const BatterySchema = new database.Schema({
 
     startHour: Number,
-    finalHour: Number,
-    maxClients: Number,
-    schedules: [schedulesScheme.model]
+    finishHour: Number,
+    amountClient: Number,
+    session: scheduleSessionSchema.model,
+    address: addressSchema.model
 
 }, { collection: 'batteries' })
 

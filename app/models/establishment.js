@@ -2,7 +2,6 @@ const database = require('../../setup/database')
 const addressScheme = require('./address')
 const scheduleScheme = require('./schedule')
 const batteryScheme = require('./battery')
-const scheduleSessionSchema = require('./schedule-session')
 const accountSchema = require('./account')
 
 const EstablishmentSchema = new database.Schema({
@@ -20,7 +19,6 @@ const EstablishmentSchema = new database.Schema({
     attendanceAddress: addressScheme.model,
     schedule: scheduleScheme.model,
     batteries: [batteryScheme.model],
-    session: scheduleSessionSchema.model,
     registerDate: {
         type: Date,
         default: Date.now()
