@@ -12,3 +12,7 @@ const SchedulesSchema = new database.Schema({
     }
 
 }, { collection: 'schedules' })
+
+module.exports = {
+    model: SchedulesSchema
+}

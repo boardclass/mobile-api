@@ -6,3 +6,7 @@ const ScheduleSessionSchema = new database.Schema({
         value: String
 
 }, { collection: 'scheduleSessions' })
+
+module.exports = {
+    model: ScheduleSessionSchema
+}

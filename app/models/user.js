@@ -40,3 +40,7 @@ const UserSchema = new database.Schema({
 }, {collection: 'users'})
 
 database.mongoose.model('User', UserSchema)
+
+module.exports = {
+    model: UserSchema
+}

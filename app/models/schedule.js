@@ -13,3 +13,7 @@ const SceduleSchema = new database.Schema({
     }]  
 
 }, {collection: 'schedules'})
+
+module.exports = {
+    model: SceduleSchema
+}

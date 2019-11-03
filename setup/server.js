@@ -16,7 +16,8 @@ module.exports = {
 
         const excludedRoutes = [
             '/api/login',
-            '/api/user/signup'
+            '/api/user/signup',
+            '/api/establishment/signup'
         ]
         
         app.use(unless(excludedRoutes, middleware.validateToken))

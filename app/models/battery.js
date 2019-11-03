@@ -1,7 +1,6 @@
 const database = require('../../setup/database')
 const schedulesScheme = require('./schedules')
 
-
 const BatterySchema = new database.Schema({
 
     startHour: Number,
@@ -10,3 +9,7 @@ const BatterySchema = new database.Schema({
     schedules: [schedulesScheme.model]
 
 }, { collection: 'batteries' })
+
+module.exports = {
+    model: BatterySchema
+}

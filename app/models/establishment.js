@@ -3,6 +3,7 @@ const addressScheme = require('./address')
 const scheduleScheme = require('./schedule')
 const batteryScheme = require('./battery')
 const scheduleSessionSchema = require('./schedule-session')
+const accountSchema = require('./account')
 
 const EstablishmentSchema = new database.Schema({
 
@@ -11,15 +12,12 @@ const EstablishmentSchema = new database.Schema({
         type: String,
         required: true
     },
-    addresses: {
-        companyAddress: {
-            type: addressScheme.model,
-            required: true
-        },
-        attendanceAddress: {
-            type: addressScheme.model
-        }
+    account: accountSchema.model,
+    address: {
+        type: addressScheme.model,
+        required: true
     },
+    attendanceAddress: addressScheme.model,
     schedule: scheduleScheme.model,
     batteries: [batteryScheme.model],
     session: scheduleSessionSchema.model,

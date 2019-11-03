@@ -8,3 +8,7 @@ const ScheduleStatusSchema = new database.Schema({
     }
 
 }, { collection: 'schduleStatus' })
+
+module.exports = {
+    model: ScheduleStatusSchema
+}
