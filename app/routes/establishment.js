@@ -10,4 +10,12 @@ module.exports = (app) => {
         controller.login(req, res)
     })
 
+    app.post('/api/establishment/address', (req, res) => {
+        controller.registerAttendanceAddress(req, res)
+    })
+
+    app.get('/api/establishments/address', (req, res) => {
+        controller.establishmentsAddress(req, res)
+    })
+
 }

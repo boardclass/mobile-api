@@ -16,7 +16,7 @@ const EstablishmentSchema = new database.Schema({
         type: addressScheme.model,
         required: true
     },
-    attendanceAddress: addressScheme.model,
+    attendanceAddress: [addressScheme.model],
     schedule: scheduleScheme.model,
     batteries: [batteryScheme.model],
     registerDate: {

@@ -30,7 +30,7 @@ module.exports = {
         req.assert('address.number', 'O Número deve ser informado').notEmpty()
 
         validator.validateFiels(req, res)
-    
+
         const token = jwt.generate(account.email)
         res.set('access-token', token)
 
@@ -121,65 +121,157 @@ module.exports = {
 
         let email = req.body.email
         let password = req.body.password
-    
+
         req.assert('email', 'O email deve ser informado')
         req.assert('password', 'A senha deve ser informado')
-    
+
         validator.validateFiels(req, res)
-    
+
         EstablishmentModel.findOne({ "account.email": email })
             .then(establishment => {
-    
+
                 if (!establishment) {
-    
+
                     return res.status(404).json({
                         success: false,
                         message: "Este email não está cadastrado!",
                         verbose: "",
                         data: {}
                     })
-    
+
                 }
-    
+
                 let hashedPassword = establishment.account.password
-    
+
                 bcrypt.compare(password, hashedPassword)
                     .then(match => {
-    
+
                         const token = jwt.generate(email)
-    
+
                         if (match) {
-    
+
                             res.setHeader('access-token', token)
                             res.setHeader('user-id', establishment._id)
-    
+
                             return res.status(200).json({
                                 success: true,
                                 message: "Login realizado com sucesso!",
                                 verbose: "",
                                 data: {}
                             })
-    
+
                         }
-    
+
                         return res.status(400).json({
                             success: false,
                             message: "Não foi possível realizar o login, senha incorreta!",
                             verbose: "",
                             data: {}
                         })
-    
+
                     })
-    
+
             }).catch(err => {
-    
+
                 return res.status(500).json({
                     success: false,
                     message: "Ops, algo ocorreu. Tente novamente mais tarde!",
                     verbose: err,
                     data: {}
                 })
-    
+
+            })
+
+    },
+
+    establishmentsAddress: function (req, res) {
+
+        EstablishmentModel.find()
+            .select('id attendanceAddress')
+            .sort({
+                'address.country': 1,
+                'address.state': 1,
+                'address.city': 1
+            })
+            .then(establishments => {
+
+                return res.status(200).json({
+                    success: true,
+                    message: "Estabelecimentos listado com sucesso!",
+                    verbose: "",
+                    data: { establishments: establishments }
+                })
+
+            }).catch(error => {
+
+                return res.status(500).json({
+                    success: false,
+                    message: "Erro ao listar os estabelecimentos!",
+                    verbose: error,
+                    data: null
+                })
+
+            })
+
+    },
+
+    registerAttendanceAddress: function (req, res) {
+
+        const address = req.body.address
+        const userId = req.headers['user-id']
+
+        req.assert('userId', 'O User-Id deve ser informado')
+        req.assert('address.cep', 'O CEP deve ser informado').notEmpty()
+        req.assert('address.cep', 'O CEP está inválido').len(8)
+        req.assert('address.country', 'O País deve ser informado').notEmpty()
+        req.assert('address.state', 'O Estado ser informado').notEmpty()
+        req.assert('address.city', 'A Cidade deve ser informado').notEmpty()
+        req.assert('address.neighbourhood', 'O Bairro deve ser informado').notEmpty()
+        req.assert('address.street', 'A Rua deve ser informado').notEmpty()
+        req.assert('address.number', 'O Número deve ser informado').notEmpty()
+
+        validator.validateFiels(req, res)
+
+        EstablishmentModel.findById(userId)
+            .then(establishment => {
+
+                if (establishment.attendanceAddress) {
+                    console.log("push");
+                    establishment.attendanceAddress.push(address)
+                } else {
+                    establishment.attendanceAddress = [address]
+                }
+
+                establishment.save()
+                    .then(_ => {
+
+                        return res.status(201).json({
+                            success: true,
+                            message: "Endereço salvo com sucesso!",
+                            verbose: null,
+                            data: null
+                        })
+
+                    }).catch(error => {
+
+                        return res.status(500).json({
+                            success: false,
+                            message: "Ocorreu um erro ao salvar endereço!",
+                            verbose: error,
+                            data: null
+                        })
+
+                    })
+
+            }).catch(error => {
+
+                return res.status(500).json({
+                    success: false,
+                    message: "Ocorreu um erro ao salvar endereço!",
+                    verbose: error,
+                    data: null
+                })
+
             })
 
     }
