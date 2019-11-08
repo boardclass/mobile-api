@@ -1,10 +1,9 @@
-//require('../models/establishment')
+require('../models/establishment')
 const mongoose = require('mongoose')
 const EstablishmentModel = mongoose.model('establishment')
 const validator = require('../classes/validator')
 const bcrypt = require('bcrypt')
 const jwt = require('../classes/jwt')
-const sort = require('../classes/sort')
 
 module.exports = {
 
