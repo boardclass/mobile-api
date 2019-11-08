@@ -1,9 +1,10 @@
-require('../models/establishment')
+//require('../models/establishment')
 const mongoose = require('mongoose')
 const EstablishmentModel = mongoose.model('establishment')
 const validator = require('../classes/validator')
 const bcrypt = require('bcrypt')
 const jwt = require('../classes/jwt')
+const sort = require('../classes/sort')
 
 module.exports = {
 
@@ -188,17 +189,23 @@ module.exports = {
 
         EstablishmentModel.find()
             .select('id attendanceAddress')
-            .sort({
-                'address.country': 1,
-                'address.state': 1,
-                'address.city': 1
-            })
             .then(establishments => {
+
+                if (establishments.length === 0) {
+
+                    return res.status(200).json({
+                        success: true,
+                        message: "Não há estabelecimentos disponíveis no momento!",
+                        verbose: null,
+                        data: { establishments: establishments }
+                    })
+
+                }
 
                 return res.status(200).json({
                     success: true,
                     message: "Estabelecimentos listado com sucesso!",
-                    verbose: "",
+                    verbose: null,
                     data: { establishments: establishments }
                 })
 
@@ -235,8 +242,18 @@ module.exports = {
         EstablishmentModel.findById(userId)
             .then(establishment => {
 
+                if (establishment.attendanceAddress.some(e => e === address)) {
+
+                    return res.status(202).json({
+                        success: false,
+                        message: "Endereço já se encontra cadastradado!",
+                        verbose: null,
+                        data: null
+                    })
+
+                }
+
                 if (establishment.attendanceAddress) {
-                    console.log("push");
                     establishment.attendanceAddress.push(address)
                 } else {
                     establishment.attendanceAddress = [address]
@@ -256,7 +273,7 @@ module.exports = {
 
                         return res.status(500).json({
                             success: false,
-                            message: "Ocorreu um erro ao salvar endereço!",
+                            message: "Ocorreu um erro ao salvar o endereço!",
                             verbose: error,
                             data: null
                         })
@@ -267,7 +284,7 @@ module.exports = {
 
                 return res.status(500).json({
                     success: false,
-                    message: "Ocorreu um erro ao salvar endereço!",
+                    message: "Ocorreu um erro ao salvar o endereço!",
                     verbose: error,
                     data: null
                 })

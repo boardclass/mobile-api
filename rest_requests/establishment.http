@@ -37,19 +37,19 @@ Content-Type: application/json
 ### Register attendence address
 POST http://localhost:8080/api/establishment/address
 Content-Type: application/json
-access-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImNsYXNzQHN0dWRpby5jb20iLCJpYXQiOjE1NzMwMDU2MTEsImV4cCI6MTU3MzAwNjYxMX0.Mu4x9ILiVCtwdgzV4JUvYjmbGmRbeK2OHBTNRLPXXy0
+access-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImNsYXNzQHN0dWRpby5jb20iLCJpYXQiOjE1NzMwMDY4MzMsImV4cCI6MTU3MzAwNzgzM30.bUN0y3NrQan0KbpZuM7Otvbw5SiYjrxUGhXIYJP7ahI
 user-id: 5dbf07914878501bc82e68bd
 
 {
     "address": {
-		"cep": "05847500",
+		"cep": "05684010",
         "country": "Brasil",
         "state": "SP",
         "city": "São Paulo",
-        "neighbourhood": "Jardim Casablanca",
-        "street": "Filpe Neri Teixeira",
-        "number": "200",
-        "complement": "Apt 102"
+        "neighbourhood": "Real Parque",
+        "street": "São Paulo Antigo",
+        "number": "105",
+        "complement": ""
 	}
 }
 
@@ -57,4 +57,4 @@ user-id: 5dbf07914878501bc82e68bd
 ### Get all establishments
 GET http://localhost:8080/api/establishments/address
 Content-Type: application/json
-Access-Token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImNsYXNzQHN0dWRpby5jb20iLCJpYXQiOjE1NzI4MTM4NzksImV4cCI6MTU3MjgxNDg3OX0.6b0w2_IH9L1sBEHRdmgmSmawDPCCuI80cn0izbBvb-c
+access-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImNsYXNzQHN0dWRpby5jb20iLCJpYXQiOjE1NzMyNDcwNDAsImV4cCI6MTU3MzI0ODA0MH0.xjhd96T7lXkuJU4qZoG0Q5cZ0msuZj_-NwgKxkYfdn0
