@@ -1,18 +1,20 @@
 const mongoose = require('mongoose')
 const addressSchema = require('./address')
+const schedulesSchema = require('./schedules')
 const scheduleStatusSchema = require('./schedule-status')
-const batteryScheme = require('./battery')
  
 const ScheduleSchema = new mongoose.Schema({
 
     dates: [{
         date: Date,
-        batteries: [batteryScheme.model],
+        schedules: [schedulesSchema.model],
         address: addressSchema.model,
         status: scheduleStatusSchema.model 
     }]  
 
-}, {collection: 'schedule'})
+}, {collection: 'agendas'})
+
+mongoose.model('schedule', ScheduleSchema)
 
 module.exports = {
     model: ScheduleSchema

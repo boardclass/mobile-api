@@ -12,6 +12,8 @@ const ScheduleSessionSchema = new mongoose.Schema({
 
 }, { collection: 'scheduleSessions' })
 
+mongoose.model('scheduleSession', ScheduleSessionSchema)
+
 module.exports = {
     model: ScheduleSessionSchema
 }

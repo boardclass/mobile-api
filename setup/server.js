@@ -1,9 +1,11 @@
 const express = require('express')
 const validator = require('express-validator')
 const bodyParser = require('body-parser')
-const middleware = require('./middleware')
-const wakeuper = require('../setup/wakeup-timer')
+const handlebars = require('express-handlebars')
+
 const database = require('./database')
+const wakeuper = require('../setup/wakeup-timer')
+const middleware = require('./middleware')
 const excludedRoutes = require('./excludedRoutes')
 
 const app = express()
@@ -15,7 +17,14 @@ module.exports = {
         app.use(bodyParser.json())
         app.use(bodyParser.urlencoded({ extended: true }))
         app.use(validator())
-        app.use(unless(excludedRoutes.excluded, middleware.validateToken))
+
+        app.use(unless(excludedRoutes.excluded,
+            middleware.validateToken))
+
+        app.engine('handlebars',
+            handlebars({ defaultLayout: 'main' }))
+
+        app.set('view engine', 'handlebars')
 
         require('./routes')(app)
 

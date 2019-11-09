@@ -7,7 +7,9 @@ const ScheduleStatusSchema = new mongoose.Schema({
         required: true
     }
 
-}, { collection: 'schduleStatus' })
+}, { collection: 'schdulesStatus' })
+
+mongoose.model('schduleStatus', ScheduleStatusSchema)
 
 module.exports = {
     model: ScheduleStatusSchema

@@ -22,11 +22,13 @@ const BatterySchema = new mongoose.Schema({
     },
     address: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: addressSchema.type,
+        ref: "address",
         required: true
     }
 
 }, { collection: 'batteries' })
+
+mongoose.model('battery', BatterySchema)
 
 module.exports = {
     model: BatterySchema
