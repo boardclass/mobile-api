@@ -1,11 +1,10 @@
-const database = require('../../setup/database')
+const mongoose = require('mongoose')
 const addressScheme = require('./address')
 const scheduleScheme = require('./schedule')
-const batteryScheme = require('./battery')
 const accountSchema = require('./account')
 
-const EstablishmentSchema = new database.Schema({
-
+const EstablishmentSchema = new mongoose.Schema({
+ 
     name: String,
     cnpj: {
         type: String,
@@ -16,9 +15,8 @@ const EstablishmentSchema = new database.Schema({
         type: addressScheme.model,
         required: true
     },
-    attendanceAddress: [addressScheme.model],
+    attendanceAddresses: [addressScheme.model],
     schedule: scheduleScheme.model,
-    batteries: [batteryScheme.model],
     registerDate: {
         type: Date,
         default: Date.now()
@@ -26,4 +24,4 @@ const EstablishmentSchema = new database.Schema({
 
 }, { collection: 'establishments' })
 
-database.mongoose.model('establishment', EstablishmentSchema)
+mongoose.model('establishment', EstablishmentSchema)

@@ -1,11 +1,8 @@
-const database = require('../../setup/database')
+const mongoose = require('mongoose')
 const userSchema = require('./user')
-const batterySchema = require('./battery')
-const scheduleSessionSchema = require('./schedule-session')
 
-const SchedulesSchema = new database.Schema({
+const SchedulesSchema = new mongoose.Schema({
 
-    battery: [batterySchema.model],
     user: userSchema.model,
     reservedVacancies: Number,
     registerDate: {

@@ -187,25 +187,36 @@ module.exports = {
     establishmentsAddress: function (req, res) {
 
         EstablishmentModel.find()
-            .select('id attendanceAddress')
+            .where('attendanceAddress').exists(true)
             .then(establishments => {
 
                 if (establishments.length === 0) {
 
-                    return res.status(200).json({
+                    return res.status(404).json({
                         success: true,
                         message: "Não há estabelecimentos disponíveis no momento!",
                         verbose: null,
-                        data: { establishments: establishments }
+                        data: null
                     })
 
+                }  
+
+
+                let establishmentsResponse = []
+
+                for (establishment in establishments) {
+                    console.log(establishment)
+                    establishmentsResponse.push = {
+                        establishmentId: establishment._id,
+                        attendanceAddress: establishment.attendanceAddress
+                    }
                 }
 
                 return res.status(200).json({
                     success: true,
                     message: "Estabelecimentos listado com sucesso!",
                     verbose: null,
-                    data: { establishments: establishments }
+                    data: { establishments: establishmentsResponse }
                 })
 
             }).catch(error => {

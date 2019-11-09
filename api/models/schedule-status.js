@@ -1,6 +1,6 @@
-const database = require('../../setup/database')
+const mongoose = require('mongoose')
 
-const ScheduleStatusSchema = new database.Schema({
+const ScheduleStatusSchema = new mongoose.Schema({
 
     name: {
         type: String,

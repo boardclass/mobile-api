@@ -3,6 +3,8 @@ const validator = require('express-validator')
 const bodyParser = require('body-parser')
 const middleware = require('./middleware')
 const wakeuper = require('../setup/wakeup-timer')
+const database = require('./database')
+const excludedRoutes = require('./excludedRoutes')
 
 const app = express()
 
@@ -13,17 +15,11 @@ module.exports = {
         app.use(bodyParser.json())
         app.use(bodyParser.urlencoded({ extended: true }))
         app.use(validator())
-
-        const excludedRoutes = [
-            '/api/login',
-            '/api/user/signup',
-            '/api/establishment/signup',
-            '/api/establishment/login'
-        ]
-        
-        app.use(unless(excludedRoutes, middleware.validateToken))
+        app.use(unless(excludedRoutes.excluded, middleware.validateToken))
 
         require('./routes')(app)
+
+        database.setup()
 
         let port = process.env.PORT || 8080
 

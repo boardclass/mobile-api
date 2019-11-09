@@ -19,21 +19,7 @@ exports.registerUser = async function (req, res) {
     req.assert('account.email', 'O email deve ser informado').notEmpty()
     req.assert('account.password', 'A senha deve ser informada').notEmpty()
 
-    let error = req.validationErrors()
-
-    if (error) {
-
-        console.log('validationErrors')
-
-        let message = error[0].msg
-        return res.status(400).json({
-            success: false,
-            message: message,
-            verbose: error[0],
-            data: {}
-        })
-
-    }
+    validator.validateFiels(req, res)
 
     const token = jwt.generate(user.account.email)
     res.set('access-token', token)
@@ -137,19 +123,7 @@ exports.registerAddress = function (req, res) {
     req.assert('address.street', 'A Rua deve ser informado').notEmpty()
     req.assert('address.number', 'O Número deve ser informado').notEmpty()
 
-    let error = req.validationErrors()
-
-    if (error) {
-
-        let message = error[0].msg
-        return res.status(400).json({
-            success: false,
-            message: message,
-            verbose: error[0],
-            data: {}
-        })
-
-    }
+    validator.validateFiels(req, res)
 
     let conditions = { _id: userId }
 

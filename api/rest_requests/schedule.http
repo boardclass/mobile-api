@@ -1,0 +1,4 @@
+### Get schedule by establishment
+GET http://localhost:8080/api/establishment/5dbf07914878501bc82e68bd/schedule
+Content-Type: application/json
+access-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImNsYXNzQHN0dWRpby5jb20iLCJpYXQiOjE1NzMyNjg2MTksImV4cCI6MTU3MzI2OTYxOX0.hsAzi_ZZCjYTava54OwpHFo1by28HnjPVTzJl5pWUx4

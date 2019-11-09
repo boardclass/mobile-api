@@ -13,19 +13,7 @@ exports.login = async function (req, res) {
     req.assert('email', 'O email deve ser informado')
     req.assert('password', 'A senha deve ser informado')
 
-    let error = req.validationErrors()
-
-    if (error) {
-
-        let message = error[0].msg
-        return res.status(400).json({
-            success: false,
-            message: message,
-            verbose: error[0],
-            data: {}
-        })
-
-    }
+    validator.validateFiels(req, res)
 
     UserModel.findOne({ "account.email": email })
         .then(user => {

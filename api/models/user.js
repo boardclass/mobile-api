@@ -1,8 +1,8 @@
-const database = require('../../setup/database')
+const mongoose = require('mongoose')
 const addressSchema = require('./address')
 const accountSchema = require('./account')
 
-const UserSchema = new database.Schema({
+const UserSchema = new mongoose.Schema({
 
     cpf: {
         type: String,
@@ -39,7 +39,7 @@ const UserSchema = new database.Schema({
 
 }, {collection: 'users'})
 
-database.mongoose.model('User', UserSchema)
+mongoose.model('User', UserSchema)
 
 module.exports = {
     model: UserSchema

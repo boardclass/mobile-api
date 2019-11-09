@@ -1,6 +1,6 @@
-const database = require('../../setup/database')
+const mongoose = require('mongoose')
 
-const AccountSchema = new database.Schema({
+const AccountSchema = new mongoose.Schema({
 
     role: {
         type: String,

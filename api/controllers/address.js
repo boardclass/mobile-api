@@ -9,19 +9,7 @@ module.exports = {
         req.assert('cep', 'O CEP deve ser informado').notEmpty()
         req.assert('cep', 'CEP inválido').len(8)
 
-        let error = req.validationErrors()
-
-        if (error) {
-
-            let message = error[0].msg;
-            return res.status(400).json({
-                success: false,
-                message: message,
-                verbose: error[0],
-                data: {}
-            })
-
-        }
+        validator.validateFiels(req, res)
 
         address.findByCEP(cep, function (address) {
 

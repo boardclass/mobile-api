@@ -57,4 +57,4 @@ user-id: 5dbf07914878501bc82e68bd
 ### Get all establishments
 GET http://localhost:8080/api/establishments/address
 Content-Type: application/json
-access-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImNsYXNzQHN0dWRpby5jb20iLCJpYXQiOjE1NzMyNDcwNDAsImV4cCI6MTU3MzI0ODA0MH0.xjhd96T7lXkuJU4qZoG0Q5cZ0msuZj_-NwgKxkYfdn0
+access-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImNsYXNzQHN0dWRpby5jb20iLCJpYXQiOjE1NzMzMDU2ODYsImV4cCI6MTU3MzMwNjY4Nn0.VM7uRCAEUErX7J2sdMcUsZ53wuVIRQrc5DhtzJtm7Us

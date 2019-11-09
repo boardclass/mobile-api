@@ -16,19 +16,7 @@ exports.sendSMS = function(req, res) {
     req.assert('phone', 'O telefone deve ser informado').notEmpty()
     req.assert('phone', 'O número do telefone é inválido').len(11)
 
-    let error = req.validationErrors()
-
-    if (error) {
-
-        let message = error[0].msg
-        return res.status(400).json({
-            success: false,
-            message: message,
-            verbose: error[0],
-            data: {}
-        })
-
-    }
+    validator.validateFiels(req, res)
 
     UserModel.findById(userId)
         .then(user => {
@@ -78,19 +66,7 @@ exports.validateSMS = function(req, res) {
     req.assert('verificationCode', 'O código de verificação deve ser informado').notEmpty()
     req.assert('verificationCode', 'O código de verificação está inválido').len(4)
 
-    let error = req.validationErrors()
-
-    if (error) {
-
-        let message = error[0].msg
-        return res.status(400).json({
-            success: false,
-            message: message,
-            verbose: error[0],
-            data: {}
-        })
-
-    }
+    validator.validateFiels(req, res)
 
     UserModel.findById(userId)
         .then(user => {

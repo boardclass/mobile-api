@@ -1,5 +1,5 @@
 let jwt = require('jsonwebtoken')
-const jwtHandler = require('../app/classes/jwt')
+const jwtHandler = require('../api/classes/jwt')
 
 module.exports = {
 

@@ -1,6 +1,6 @@
-const database = require('../../setup/database')
+const mongoose = require('mongoose')
 
-const AddressSchema = new database.Schema({
+const AddressSchema = new mongoose.Schema({
 
     cep: String,
     country: String,
@@ -13,6 +13,9 @@ const AddressSchema = new database.Schema({
 
 }, { collection: 'addresses' })
 
+mongoose.model('address', AddressSchema)
+
 module.exports = {
+    type: 'address',
     model: AddressSchema
 }
