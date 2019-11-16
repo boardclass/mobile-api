@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
+    "dev": "nodemon index.js",
     "doc": "documentation build app/** -f html -o docs"
   },
   "repository": {
@@ -21,10 +22,13 @@
     "express-validator": "^5.1.2",
     "https": "^1.0.0",
     "jsonwebtoken": "^8.5.1",
+    "mongoose": "^5.7.11",
+    "mysql2": "^2.0.0",
     "request": "^2.88.0",
     "sequelize": "^5.21.2"
   },
   "devDependencies": {
-    "nodemon": "^1.19.4"
+    "nodemon": "^1.19.4",
+    "sequelize-cli": "^5.5.1"
   }
 }
