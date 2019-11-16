@@ -37,8 +37,8 @@ Content-Type: application/json
 ### Register attendence address
 POST http://localhost:8080/api/establishment/address
 Content-Type: application/json
-access-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImNsYXNzQHN0dWRpby5jb20iLCJpYXQiOjE1NzMwMDY4MzMsImV4cCI6MTU3MzAwNzgzM30.bUN0y3NrQan0KbpZuM7Otvbw5SiYjrxUGhXIYJP7ahI
-user-id: 5dbf07914878501bc82e68bd
+Access-Token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImNsYXNzQHN0dWRpby5jb20iLCJpYXQiOjE1NzMwMDY4MzMsImV4cCI6MTU3MzAwNzgzM30.bUN0y3NrQan0KbpZuM7Otvbw5SiYjrxUGhXIYJP7ahI
+User-Id: 5dbf07914878501bc82e68bd
 
 {
     "address": {
@@ -57,4 +57,4 @@ user-id: 5dbf07914878501bc82e68bd
 ### Get all establishments
 GET http://localhost:8080/api/establishments/address
 Content-Type: application/json
-access-token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImNsYXNzQHN0dWRpby5jb20iLCJpYXQiOjE1NzMzMDU2ODYsImV4cCI6MTU3MzMwNjY4Nn0.VM7uRCAEUErX7J2sdMcUsZ53wuVIRQrc5DhtzJtm7Us
+Access-Token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImNsYXNzQHN0dWRpby5jb20iLCJpYXQiOjE1NzMzMDU2ODYsImV4cCI6MTU3MzMwNjY4Nn0.VM7uRCAEUErX7J2sdMcUsZ53wuVIRQrc5DhtzJtm7Us

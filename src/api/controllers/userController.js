@@ -1,4 +1,5 @@
 const User = require('../models/User')
+const Account = require('../models/Account')
 
 const bcrypt = require('bcrypt')
 const validator = require('../classes/validator')
@@ -14,66 +15,73 @@ exports.login = async function (req, res) {
 
     validator.validateFiels(req, res)
 
-    User.findOne({ "account.email": email })
-        .then(user => {
-
-            if (!user) {
-
-                return res.status(404).json({
-                    success: false,
-                    message: "Este email não está cadastrado!",
-                    verbose: "",
-                    data: {}
-                })
-
+    await User.findOne({
+        include: {
+            association: 'account',
+            where: {
+                'email': email
             }
+        }
+    }).then(user => {
 
-            let hashedPassword = user.account.password
+        if (!user) {
 
-            bcrypt.compare(password, hashedPassword)
-                .then(match => {
+            return res.status(404).json({
+                success: true,
+                message: "Este email não está cadastrado em nosso sistema!",
+                verbose: "",
+                data: {}
+            })
 
-                    const token = jwtHandler.generate(email)
+        }
 
-                    if (match) {
+        let hashedPassword = user.account.password
 
-                        res.setHeader('access-token', token)
-                        res.setHeader('user-id', user._id)
+        bcrypt.compare(password, hashedPassword)
+            .then(match => {
 
-                        return res.status(200).json({
-                            success: true,
-                            message: "Login realizado com sucesso!",
-                            verbose: "",
-                            data: {}
-                        })
+                const token = jwtHandler.generate(email)
 
-                    }
+                if (match) {
 
-                    return res.status(400).json({
-                        success: false,
-                        message: "Não foi possível realizar o login, senha incorreta!",
+                    res.setHeader('Access-Token', token)
+                    res.setHeader('User-Id', user.id)
+
+                    return res.status(200).json({
+                        success: true,
+                        message: "Login realizado com sucesso!",
                         verbose: "",
                         data: {}
                     })
 
+                }
+
+                return res.status(404).json({
+                    success: false,
+                    message: "Não foi possível realizar o login, senha incorreta!",
+                    verbose: "",
+                    data: {}
                 })
 
-        }).catch(err => {
-
-            return res.status(500).json({
-                success: false,
-                message: "Ops, algo ocorreu. Tente novamente mais tarde!",
-                verbose: err,
-                data: {}
             })
 
+    }).catch(error => {
+
+        return res.status(500).json({
+            success: false,
+            message: "Não foi possível realizar o login!",
+            verbose: `${error}`,
+            data: {}
         })
+
+    })
 
 }
 
 exports.store = async function (req, res) {
 
-    let body = req.body
+    let user = req.body
+    const account = req.body.account
 
     req.assert('name', 'O nome deve ser informado').notEmpty()
     req.assert('cpf', 'O CPF deve ser informado').notEmpty()
@@ -86,25 +94,29 @@ exports.store = async function (req, res) {
 
     validator.validateFiels(req, res)
 
-    const token = jwtHandler.generate(body.account.email)
-    res.set('access-token', token)
+    const token = jwtHandler.generate(account.email)
+    res.set('Access-Token', token)
 
-    await bcrypt.hash(body.account.password, 10)
+    await bcrypt.hash(account.password, 10)
         .then(hash => {
 
-            body.account.password = hash
+            account.password = hash
 
             User.findOrCreate({
                 where: {
-                    cpf: body.cpf
+                    cpf: user.cpf
                 },
                 defaults: {
-                    name: body.name,
-                    phone: body.phone
+                    name: user.name,
+                    phone: user.phone,
+                    account: account
+                },
+                include: {
+                    association: 'account'
                 }
             }).then((user, created) => {
 
-                res.set('user-id', user[0].id)
+                res.set('User-Id', user[0].id)
 
                 if (!created) {
 
@@ -120,7 +132,7 @@ exports.store = async function (req, res) {
 
                 }
 
-                res.set('user-id', user[0].id)
+                res.set('User-Id', user[0].id)
 
                 return res.status(200).json({
                     success: false,

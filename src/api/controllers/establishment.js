@@ -29,7 +29,7 @@ module.exports = {
         validator.validateFiels(req, res)
 
         const token = jwt.generate(account.email)
-        res.set('access-token', token)
+        res.set('Access-Token', token)
 
         await bcrypt.hash(account.password, 10)
             .then(hash => {
@@ -59,7 +59,7 @@ module.exports = {
 
                     if (result) {
 
-                        res.set('user-id', result.id)
+                        res.set('User-Id', result.id)
 
                         return res.status(202).json({
                             success: true,
@@ -85,7 +85,7 @@ module.exports = {
 
                         }
 
-                        res.set('user-id', result.id)
+                        res.set('User-Id', result.id)
 
                         return res.status(200).json({
                             success: true,
@@ -147,8 +147,8 @@ module.exports = {
 
                         if (match) {
 
-                            res.setHeader('access-token', token)
-                            res.setHeader('user-id', establishment._id)
+                            res.setHeader('Access-Token', token)
+                            res.setHeader('User-Id', establishment._id)
 
                             return res.status(200).json({
                                 success: true,
@@ -232,7 +232,7 @@ module.exports = {
     registerAttendanceAddress: function (req, res) {
 
         const address = req.body.address
-        const userId = req.headers['user-id']
+        const userId = req.headers['User-Id']
 
         req.assert('userId', 'O User-Id deve ser informado')
         req.assert('address.cep', 'O CEP deve ser informado').notEmpty()
