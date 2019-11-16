@@ -44,8 +44,8 @@ exports.login = async function (req, res) {
 
                 if (match) {
 
-                    res.setHeader('Access-Token', token)
-                    res.setHeader('User-Id', user.id)
+                    res.setHeader('access-token', token)
+                    res.setHeader('user-id', user.id)
 
                     return res.status(200).json({
                         success: true,
@@ -95,7 +95,7 @@ exports.store = async function (req, res) {
     validator.validateFiels(req, res)
 
     const token = jwtHandler.generate(account.email)
-    res.set('Access-Token', token)
+    res.set('access-token', token)
 
     await bcrypt.hash(account.password, 10)
         .then(hash => {
@@ -116,7 +116,7 @@ exports.store = async function (req, res) {
                 }
             }).then((user, created) => {
 
-                res.set('User-Id', user[0].id)
+                res.set('user-id', user[0].id)
 
                 if (!created) {
 
@@ -132,7 +132,7 @@ exports.store = async function (req, res) {
 
                 }
 
-                res.set('User-Id', user[0].id)
+                res.set('user-id', user[0].id)
 
                 return res.status(200).json({
                     success: false,

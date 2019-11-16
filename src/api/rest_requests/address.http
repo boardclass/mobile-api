@@ -1,4 +1,0 @@
-### Find address by Id
-GET http://localhost:8080/api/user/address/60190310
-Content-Type: application/json
-Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImpvbmF0aGFsaW1heEBnbWFpbC5jb20iLCJpYXQiOjE1NzE4OTYxODMsImV4cCI6MTU3MTg5NzE4M30.86wkXQ00KEGHOXu1F7is1N3AZ6GUkxHTyjYQWxdCSoQ

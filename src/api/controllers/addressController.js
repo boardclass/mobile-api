@@ -69,7 +69,7 @@ exports.store = async function (req, res) {
             success: true,
             message: "Endereço registrado com sucesso!",
             verbose: null,
-            data: { address }
+            data: address
         })
 
     }).catch(err => {

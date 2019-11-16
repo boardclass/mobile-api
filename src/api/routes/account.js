@@ -1,4 +1,4 @@
-const controller = require('../controllers/account')
+const controller = require('../controllers/accountController')
 
 module.exports = (app) => {
 

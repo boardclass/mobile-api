@@ -1,8 +1,0 @@
-### Login
-POST http://localhost:8080/api/login
-Content-Type: application/json
-
-{
-	"email": "jonathalimax@gmail.com",
-	"password": "321pass"
-}
