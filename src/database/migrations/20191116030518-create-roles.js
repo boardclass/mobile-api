@@ -4,7 +4,7 @@ module.exports = {
   up: (queryInterface, Sequelize) => {
 
     return queryInterface
-      .createTable('accounts', {
+      .createTable('roles', {
 
         id: {
           type: Sequelize.INTEGER,
@@ -12,23 +12,11 @@ module.exports = {
           autoIncrement: true,
           allowNull: false
         },
-        user_id: {
-          type: Sequelize.INTEGER,
-          unique: true,
-          allowNull: false,
-          references: {
-            model: 'users',
-            key: 'id'
-          },
-          onUpdate: 'CASCADE',
-          onDelete: 'CASCADE'
-        },
-        email: {
+        name: {
           type: Sequelize.STRING,
-          unique: true,
           allowNull: false
         },
-        password: {
+        display_name: {
           type: Sequelize.STRING,
           allowNull: false
         },
@@ -47,7 +35,7 @@ module.exports = {
 
   down: (queryInterface, Sequelize) => {
 
-    return queryInterface.dropTable('accounts')
+    return queryInterface.dropTable('roles')
 
   }
 };
