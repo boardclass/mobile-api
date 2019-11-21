@@ -1,4 +1,4 @@
-const Address = require('../models/Address')
+const UserAddress = require('../models/UserAddress')
 
 const validator = require('../classes/validator')
 
@@ -51,7 +51,7 @@ exports.store = async function (req, res) {
 
     validator.validateFiels(req, res)
 
-    await Address.create(
+    await UserAddress.create(
         {
             zipcode,
             country,

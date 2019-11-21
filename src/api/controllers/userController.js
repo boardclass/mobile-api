@@ -1,5 +1,4 @@
 const User = require('../models/User')
-const Account = require('../models/Account')
 
 const bcrypt = require('bcrypt')
 const validator = require('../classes/validator')
@@ -80,7 +79,7 @@ exports.login = async function (req, res) {
 
 exports.store = async function (req, res) {
 
-    let user = req.body
+    const user = req.body
     const account = req.body.account
 
     req.assert('name', 'O nome deve ser informado').notEmpty()
@@ -114,23 +113,7 @@ exports.store = async function (req, res) {
                 include: {
                     association: 'account'
                 }
-            }).then((user, created) => {
-
-                res.set('user-id', user[0].id)
-
-                if (!created) {
-
-                    return res.status(201).json({
-                        success: true,
-                        message: "Usuário já cadastrado em nossa base!",
-                        verbose: null,
-                        data: {
-                            userId: user[0].id,
-                            hasAddress: false
-                        }
-                    })
-
-                }
+            }).then((user, _) => {
 
                 res.set('user-id', user[0].id)
 

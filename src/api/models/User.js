@@ -12,9 +12,10 @@ class User extends Model {
     }
     
     static associate(models) {
-        this.hasOne(models.Account, { foreignKey: 'user_id', as: 'account' })
-        this.hasMany(models.Address, { foreignKey: 'user_id', as: 'addresses' })
-    } 
+        this.hasOne(models.UserAccount, { foreignKey: 'user_id', as: 'account' })
+        this.hasMany(models.UserAddress, { foreignKey: 'user_id', as: 'addresses' })
+        this.hasMany(models.EstablishmentEmployees, { foreignKey: 'user_id', as: 'employees' })
+    }
 }
 
 module.exports = User

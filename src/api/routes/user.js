@@ -1,5 +1,5 @@
 const userController = require('../controllers/userController')
-const addressController = require('../controllers/addressController')
+const userAddressController = require('../controllers/userAddressController')
 
 module.exports = (app) => {
 
@@ -7,8 +7,12 @@ module.exports = (app) => {
         userController.store(req, res)
     })
 
+    app.post('/api/user/login', (req, res) => {
+        userController.login(req, res)
+    })
+
     app.put('/api/user/:user_id/address', (req, res) => {
-        addressController.store(req, res)
+        userAddressController.store(req, res)
     })
     
 }

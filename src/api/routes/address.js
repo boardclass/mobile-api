@@ -1,4 +1,4 @@
-const controller = require('../controllers/addressController')
+const controller = require('../controllers/userAddressController')
 
 module.exports = (app) => {
 

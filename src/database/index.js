@@ -2,8 +2,11 @@ const Sequelize = require('sequelize')
 const { uri, define, dialect } = require('../config/mysql')
 
 const User = require('../api/models/User')
-const Account = require('../api/models/Account')
-const Address = require('../api/models/Address')
+const UserAccount = require('../api/models/UserAccount')
+const UserAddress = require('../api/models/UserAddress')
+const Establishment = require('../api/models/Establishment')
+const EstablishmentAccount = require('../api/models/EstablishmentAccount')
+const EstablishmentEmployees = require('../api/models/EstablishmentEmployees')
 
 const connection = new Sequelize(uri, {
     define: define,
@@ -11,12 +14,18 @@ const connection = new Sequelize(uri, {
 })
 
 User.init(connection)   
-Account.init(connection)
-Address.init(connection)
+UserAccount.init(connection)
+UserAddress.init(connection)
+Establishment.init(connection)
+EstablishmentAccount.init(connection)
+EstablishmentEmployees.init(connection)
 
 User.associate(connection.models)
-Address.associate(connection.models)
-Account.associate(connection.models)
+UserAddress.associate(connection.models)
+UserAccount.associate(connection.models)
+Establishment.associate(connection.models)
+EstablishmentAccount.associate(connection.models)
+EstablishmentEmployees.associate(connection.models)
 
 connection.authenticate()
     .then(() => {
