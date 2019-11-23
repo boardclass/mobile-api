@@ -4,8 +4,6 @@ const jwtHandler = require('../api/classes/jwt')
 module.exports = {
 
   validateToken: function (req, res, next) {
-
-    console.log(req.headers);
     
     let token = req.headers['access-token'] || req.headers['Authorization']
 

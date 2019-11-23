@@ -1,5 +1,4 @@
 const userController = require('../controllers/userController')
-const userAddressController = require('../controllers/userAddressController')
 
 module.exports = (app) => {
 
@@ -12,7 +11,7 @@ module.exports = (app) => {
     })
 
     app.put('/api/user/:user_id/address', (req, res) => {
-        userAddressController.store(req, res)
+        userController.storeAddress(req, res)
     })
     
 }

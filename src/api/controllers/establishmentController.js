@@ -1,5 +1,4 @@
 const Establishment = require('../models/Establishment')
-const EstablishmentAccount = require('../models/EstablishmentAccount')
 
 const bcrypt = require('bcrypt')
 const validator = require('../classes/validator')
@@ -138,6 +137,14 @@ exports.login = async function (req, res) {
 
 }
 
+exports.storeAddress = async function (req, res) { 
+
+    const address = req.body
+
+
+    
+}
+
 exports.storeBranch = async function (req, res) { }
-exports.storeAddress = async function (req, res) { }
+
 exports.storeEmployee = async function (req, res) { }
