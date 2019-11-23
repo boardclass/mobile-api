@@ -113,7 +113,7 @@ exports.store = async function (req, res) {
                 include: {
                     association: 'account'
                 }
-            }).then((user, _) => {
+            }).then(user, _ => {
 
                 res.set('user-id', user[0].id)
 
