@@ -14,66 +14,63 @@ exports.login = async function (req, res) {
 
     validator.validateFiels(req, res)
 
-    await User.findOne({
-        include: {
-            association: 'account',
-            where: {
-                'email': email
+    const token = jwtHandler.generate(email)
+
+    try {
+
+        const user = await User.findOne({
+            include: {
+                association: 'account',
+                where: {
+                    email
+                }
             }
-        }
-    }).then(user => {
+        })
 
         if (!user) {
 
             return res.status(404).json({
                 success: true,
-                message: "Este email não está cadastrado em nosso sistema!",
-                verbose: "",
+                message: "Este email não está cadastrado!",
+                verbose: null,
                 data: {}
             })
 
         }
 
-        let hashedPassword = user.account.password
+        const matchPassword = await bcrypt.compare(password, user.account.password)
 
-        bcrypt.compare(password, hashedPassword)
-            .then(match => {
+        if (!matchPassword) {
 
-                const token = jwtHandler.generate(email)
-
-                if (match) {
-
-                    res.setHeader('access-token', token)
-                    res.setHeader('user-id', user.id)
-
-                    return res.status(200).json({
-                        success: true,
-                        message: "Login realizado com sucesso!",
-                        verbose: "",
-                        data: {}
-                    })
-
-                }
-
-                return res.status(404).json({
-                    success: false,
-                    message: "Não foi possível realizar o login, senha incorreta!",
-                    verbose: "",
-                    data: {}
-                })
-
+            return res.status(404).json({
+                success: true,
+                message: "Não foi possível realizar o login, senha incorreta!",
+                verbose: null,
+                data: {}
             })
 
-    }).catch(error => {
+        }
+
+        res.setHeader('access-token', token)
+        res.setHeader('user-id', user.id)
+
+        return res.status(200).json({
+            success: true,
+            message: "Login realizado com sucesso!",
+            verbose: null,
+            data: {}
+        })
+
+    } catch (error) {
 
         return res.status(500).json({
             success: false,
-            message: "Não foi possível realizar o login!",
+            message: "Ocorreu um erro ao realizar o login!",
             verbose: `${error}`,
             data: {}
         })
 
-    })
+    }
 
 }
 
@@ -94,59 +91,44 @@ exports.store = async function (req, res) {
     validator.validateFiels(req, res)
 
     const token = jwtHandler.generate(account.email)
-    res.set('access-token', token)
+    
+    try {
 
-    await bcrypt.hash(account.password, 10)
-        .then(hash => {
+        account.password = await bcrypt.hash(account.password, 10)
 
-            account.password = hash
-
-            User.findOrCreate({
-                where: {
-                    cpf: user.cpf
-                },
-                defaults: {
-                    name: user.name,
-                    phone: user.phone,
-                    account: account
-                },
-                include: {
-                    association: 'account'
-                }
-            }).then(user, _ => {
-
-                res.set('user-id', user[0].id)
-
-                return res.status(200).json({
-                    success: false,
-                    message: "Usuário cadastrado com sucesso!",
-                    verbose: null,
-                    data: {
-                        userId: user[0].id,
-                        hasAddress: true
-                    }
-                })
-
-            }).catch(error => {
-
-                return res.status(500).json({
-                    success: false,
-                    message: "Ops, algo ocorreu. Tente novamente mais tarde!",
-                    verbose: `${error}`,
-                    data: {}
-                })
-
-            })
-
-        }).catch(error => {
-
-            return res.status(500).json({
-                success: false,
-                message: "Ops, algo ocorreu. Tente novamente mais tarde!",
-                verbose: `${error}`,
-                data: {}
-            })
-
+        const newUser = await User.findOrCreate({
+            where: {
+                cpf: user.cpf
+            },
+            defaults: {
+                name: user.name,
+                phone: user.phone,
+                account: account
+            },
+            include: {
+                association: 'account'
+            }
         })
+
+        res.setHeader('access-token', token)
+        res.setHeader('user-id', newUser[0].id)
+
+        return res.status(200).json({
+            success: true,
+            message: "Usuário cadastrado com sucesso!",
+            verbose: null,
+            data: {}
+        })
+
+    } catch (error) {
+
+        return res.status(500).json({
+            success: false,
+            message: "Ocorreu um erro ao cadastrar o usuário!",
+            verbose: `${error}`,
+            data: {}
+        })
+
+    }
 
 }
