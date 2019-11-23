@@ -31,7 +31,7 @@ exports.login = async function (req, res) {
 
             return res.status(404).json({
                 success: true,
-                message: "Este email não está cadastrado!",
+                message: "Este email não está cadastrado em nossa base!",
                 verbose: null,
                 data: {}
             })

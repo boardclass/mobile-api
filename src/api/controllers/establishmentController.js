@@ -70,7 +70,71 @@ exports.store = async function (req, res) {
 
 exports.login = async function (req, res) {
 
-    
+    let email = req.body.email
+    let password = req.body.password
+
+    req.assert('email', 'O email deve ser informado')
+    req.assert('password', 'A senha deve ser informado')
+
+    validator.validateFiels(req, res)
+
+    const token = jwtHandler.generate(email)
+
+    try {
+        
+        const establishment = await Establishment.findOne({
+            include: {
+                association: 'account',
+                where: {
+                    email
+                }
+            }
+        })
+
+        if (!establishment) {
+
+            return res.status(404).json({
+                success: true,
+                message: "Este email não está cadastrado em nossa base!",
+                verbose: null,
+                data: {}
+            })
+
+        }
+
+        const matchPassword = await bcrypt.compare(password, establishment.account.password)
+
+        if (!matchPassword) {
+
+            return res.status(404).json({
+                success: true,
+                message: "Não foi possível realizar o login, senha incorreta!",
+                verbose: null,
+                data: {}
+            })
+
+        }
+
+        res.setHeader('access-token', token)
+        res.setHeader('user-id', establishment.id)
+
+        return res.status(200).json({
+            success: true,
+            message: "Login realizado com sucesso!",
+            verbose: null,
+            data: {}
+        })
+
+    } catch (error) {
+
+        return res.status(500).json({
+            success: false,
+            message: "Ocorreu um erro ao realizar o login!",
+            verbose: `${error}`,
+            data: {}
+        })
+
+    }
 
 }
 
