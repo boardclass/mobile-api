@@ -13,5 +13,9 @@ module.exports = (app) => {
     app.put('/api/user/:user_id/address', (req, res) => {
         userController.storeAddress(req, res)
     })
+
+    app.post('/api/user/:user_id/role', (req, res) => {
+        userController.storeRole(req, res)
+    })
     
 }

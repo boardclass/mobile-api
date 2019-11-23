@@ -1,5 +1,6 @@
 const User = require('../models/User')
 const UserAddress = require('../models/UserAddress')
+const UsersRoles = require('../models/UsersRoles')
 
 const bcrypt = require('bcrypt')
 const validator = require('../classes/validator')
@@ -183,6 +184,44 @@ exports.storeAddress = async function (req, res) {
         return res.status(500).json({
             success: false,
             message: "Ocorreu um erro ao cadastrar o endereço!",
+            verbose: `${error}`,
+            data: {}
+        })
+
+    }
+
+}
+
+exports.storeRole = async function (req, res) {
+
+    const user_id = req.params.user_id
+    const role_id = req.body.role_id
+
+    req.assert('role_id', 'A permissão deve ser informada!').notEmpty()
+
+    try {
+
+        validator.validateFiels(req, res)
+
+        await UsersRoles.create({
+            user_id: user_id,
+            role_id: role_id
+        })
+
+        return res.status(200).json({
+            success: true,
+            message: "Cadastrado realizado com sucesso!",
+            verbose: null,
+            data: {}
+        })
+
+    } catch (error) {
+
+        console.log(error);
+
+        return res.status(500).json({
+            success: false,
+            message: "Ocorreu um erro ao cadastrar esse usuário!",
             verbose: `${error}`,
             data: {}
         })
