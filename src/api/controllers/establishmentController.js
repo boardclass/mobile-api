@@ -1,10 +1,12 @@
 const Establishment = require('../models/Establishment')
+const EstablishmentAddress = require('../models/EstablishmentAddress')
 
 const bcrypt = require('bcrypt')
 const validator = require('../classes/validator')
 const jwtHandler = require('../classes/jwt')
 const Sequelize = require('sequelize')
 const Op = Sequelize.Op
+const constants = require('../classes/constants')
 
 exports.store = async function (req, res) {
 
@@ -139,10 +141,60 @@ exports.login = async function (req, res) {
 
 exports.storeAddress = async function (req, res) { 
 
-    const address = req.body
+    let establishment_id = req.params.establishment_id
+    let zipcode = req.body.cep
+    let country = req.body.country
+    let state = req.body.state
+    let city = req.body.city
+    let neighbourhood = req.body.neighbourhood
+    let street = req.body.street
+    let number = req.body.number
+    let complement = req.body.complement
 
+    req.assert('cep', 'O CEP deve ser informado').notEmpty()
+    req.assert('cep', 'O CEP está inválido').len(8)
+    req.assert('country', 'O País deve ser informado').notEmpty()
+    req.assert('state', 'O Estado ser informado').notEmpty()
+    req.assert('city', 'A Cidade deve ser informado').notEmpty()
+    req.assert('neighbourhood', 'O Bairro deve ser informado').notEmpty()
+    req.assert('street', 'A Rua deve ser informado').notEmpty()
+    req.assert('number', 'O Número deve ser informado').notEmpty()
 
-    
+    validator.validateFiels(req, res)
+
+    try {
+
+        await EstablishmentAddress.create({
+            zipcode,
+            country,
+            state,
+            city,
+            neighbourhood,
+            street,
+            number,
+            complement,
+            type_id: constants.PHYSICAL_ADDRESS_TYPE,
+            establishment_id,
+        })
+
+        return res.status(200).json({
+            success: true,
+            message: "Endereço cadastrado com sucesso!",
+            verbose: null,
+            data: {}
+        })
+
+    } catch (error) {
+
+        return res.status(500).json({
+            success: false,
+            message: "Ocorreu um erro ao cadastrar o endereço!",
+            verbose: `${error}`,
+            data: {}
+        })
+
+    }
+
 }
 
 exports.storeBranch = async function (req, res) { }

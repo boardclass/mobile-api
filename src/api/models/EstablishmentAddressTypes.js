@@ -1,6 +1,6 @@
 const { Model, DataTypes } = require('sequelize')
 
-class UserAddress extends Model {
+class EstablishmentAddressTypes extends Model {
     static init(sequelize) {
         super.init({
             zipcode: DataTypes.STRING,
@@ -17,8 +17,9 @@ class UserAddress extends Model {
     }
 
     static associate(models) {
-        this.belongsTo(models.User), { foreignKey: 'user_id', as: 'user'}
+        this.belongsTo(models.Establishment), { foreignKey: 'establishment_id', as: 'establishment'}
+        this.hasOne(models.Establishment), { foreignKey: 'establishment_id', as: 'establishment'}
     }
 }
 
-module.exports = UserAddress
+module.exports = EstablishmentAddressTypes

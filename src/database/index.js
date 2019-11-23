@@ -6,6 +6,7 @@ const UserAccount = require('../api/models/UserAccount')
 const UserAddress = require('../api/models/UserAddress')
 const Establishment = require('../api/models/Establishment')
 const EstablishmentAccount = require('../api/models/EstablishmentAccount')
+const EstablishmentAddress = require('../api/models/EstablishmentAddress')
 const EstablishmentEmployees = require('../api/models/EstablishmentEmployees')
 
 const connection = new Sequelize(uri, {
@@ -18,6 +19,7 @@ UserAccount.init(connection)
 UserAddress.init(connection)
 Establishment.init(connection)
 EstablishmentAccount.init(connection)
+EstablishmentAddress.init(connection)
 EstablishmentEmployees.init(connection)
 
 User.associate(connection.models)
@@ -25,6 +27,7 @@ UserAddress.associate(connection.models)
 UserAccount.associate(connection.models)
 Establishment.associate(connection.models)
 EstablishmentAccount.associate(connection.models)
+EstablishmentAddress.associate(connection.models)
 EstablishmentEmployees.associate(connection.models)
 
 connection.authenticate()
