@@ -11,7 +11,6 @@
 // }
 
 module.exports = {
-    dialect: 'mysql',
     uri: process.env.JAWSDB_URL,
     define: {
         timestamps: true,
