@@ -1,0 +1,5 @@
+{
+    "production": {
+        "use_env_variable": "mysql://fbvyfz6yacqlnkpp:gkkzq1rujl691r9z@lolyz0ok3stvj6f0.cbetxkdyhwsb.us-east-1.rds.amazonaws.com:3306/i3y149mpvrr791xu"
+    }
+}
