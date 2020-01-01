@@ -22,4 +22,8 @@ module.exports = (app) => {
         establishmentController.storeEmployee(req, res)
     })
 
+    app.post('/api/establishment/filter', (req, res) => {
+        establishmentController.filter(req, res)
+    })
+
 }
