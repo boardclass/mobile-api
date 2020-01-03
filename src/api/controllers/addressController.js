@@ -1,4 +1,5 @@
 const validator = require('../classes/validator')
+const addressRequest = require('../requests/address')
 
 exports.findByCEP = function (req, res) {
 
@@ -9,7 +10,7 @@ exports.findByCEP = function (req, res) {
 
     validator.validateFiels(req, res)
 
-    address.findByCEP(cep, function (address) {
+    addressRequest.findByCEP(cep, function (address) {
 
         if (address) {
 
