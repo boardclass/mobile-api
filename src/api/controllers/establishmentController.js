@@ -200,3 +200,42 @@ exports.storeAddress = async function (req, res) {
 exports.storeBranch = async function (req, res) { }
 
 exports.storeEmployee = async function (req, res) { }
+
+exports.filter = async function (req, res) {
+    
+    let sportId = req.body.sportId
+    let establishmentId = req.body.establishmentId
+    let address = req.body.address
+    
+    const token = jwtHandler.generate(email)
+
+    try {
+
+        const establishment = await Establishment.find({
+            include: [{
+                association: 'scheduling_sessions', // TODO make connection
+                where: {
+                    [Op.or]: [
+                        { sport_id: sportId },
+                        { 'establishments_addresses.type_id': constants.PHYSICAL_ADDRESS_TYPE },
+                        { 'establishments_addresses.country': address.country },
+                        { 'establishments_addresses.state': address.state },
+                        { 'establishments_addresses.city': address.city },
+                        { 'establishments_addresses.neighbourhood': address.neighbourhood }
+                    ]
+                }
+            }]
+        })
+
+    } catch (error) {
+
+        return res.status(500).json({
+            success: false,
+            message: "Ocorreu um erro ao filtrar!",
+            verbose: `${error}`,
+            data: {}
+        })
+
+    }
+
+}

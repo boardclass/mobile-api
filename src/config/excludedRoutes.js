@@ -4,7 +4,8 @@ module.exports = {
         '/api/user',
         '/api/user/login',
         '/api/establishment',
-        '/api/establishment/login'
+        '/api/establishment/login',
+        '/api/mailer'
     ]
 
 }
