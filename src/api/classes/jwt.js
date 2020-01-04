@@ -6,7 +6,7 @@ module.exports = {
 
         const token = jwt.sign({ email }, this.secret, {
             algorithm: 'HS256',
-            expiresIn: this.expirationSeconds
+            //expiresIn: this.expirationSeconds
         })
 
         return token
