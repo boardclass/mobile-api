@@ -16,8 +16,8 @@ const connection = new Sequelize(uri, {
     dialect: dialect
 })
 
-Role.init(connection)   
-User.init(connection)   
+Role.init(connection)
+User.init(connection)
 UserAccount.init(connection)
 UserAddress.init(connection)
 UsersRoles.init(connection)
