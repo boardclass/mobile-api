@@ -60,7 +60,7 @@ module.exports = {
           type: Sequelize.INTEGER,
           allowNull: false
         },
-        session_time: {
+        session_seconds: {
           type: Sequelize.INTEGER,
           allowNull: false
         },

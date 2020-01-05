@@ -82,7 +82,7 @@ exports.login = async function (req, res) {
     const token = jwtHandler.generate(email)
 
     try {
-        
+
         const establishment = await Establishment.findOne({
             include: {
                 association: 'account',
@@ -139,7 +139,7 @@ exports.login = async function (req, res) {
 
 }
 
-exports.storeAddress = async function (req, res) { 
+exports.storeAddress = async function (req, res) {
 
     let establishment_id = req.params.establishment_id
     let zipcode = req.body.cep
@@ -202,29 +202,52 @@ exports.storeBranch = async function (req, res) { }
 exports.storeEmployee = async function (req, res) { }
 
 exports.filter = async function (req, res) {
-    
+
     let sportId = req.body.sportId
-    let establishmentId = req.body.establishmentId
     let address = req.body.address
-    
-    const token = jwtHandler.generate(email)
 
     try {
 
-        const establishment = await Establishment.find({
-            include: [{
-                association: 'scheduling_sessions', // TODO make connection
-                where: {
-                    [Op.or]: [
-                        { sport_id: sportId },
-                        { 'establishments_addresses.type_id': constants.PHYSICAL_ADDRESS_TYPE },
-                        { 'establishments_addresses.country': address.country },
-                        { 'establishments_addresses.state': address.state },
-                        { 'establishments_addresses.city': address.city },
-                        { 'establishments_addresses.neighbourhood': address.neighbourhood }
-                    ]
-                }
-            }]
+        const establishment = await Establishment.findAll(
+            {
+                include: [{
+                    association: 'batteries',
+                    where: {
+                        'sport_id': sportId
+                    },
+                    include: {
+                        association: 'sports'
+                    },
+                    include: {
+                        association: 'service_address',
+                        where: {
+                            [Op.and]: [
+                                { 'type_id': constants.SERVICE_ADDRESS_TYPE },
+                                { 'country': address.country },
+                                { 'state': address.state },
+                                { 'city': address.city },
+                                { 'neighbourhood': address.neighbourhood }
+                            ]
+                        }
+                    }
+                }],
+            }
+        )
+
+        if (!establishment.length) {
+            return res.status(200).json({
+                success: true,
+                message: "Nenhum estabelecimento foi encontrado!",
+                verbose: null,
+                data: null
+            })
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Estabelecimentos filtrado com sucesso!",
+            verbose: null,
+            data: establishment
         })
 
     } catch (error) {
