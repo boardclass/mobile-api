@@ -34,4 +34,8 @@ module.exports = (app) => {
         establishmentController.getAgenda(req, res)
     })
 
+    app.get('/api/establishment/:establishment_id/batteries/:date', (req, res) => {
+        establishmentController.getBatteries(req, res)
+    })
+
 }

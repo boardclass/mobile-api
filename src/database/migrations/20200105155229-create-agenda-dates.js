@@ -19,8 +19,8 @@ module.exports = {
             model: 'agendas',
             key: 'id'
           },
-          onUpdate: 'CASCADE',
-          onDelete: 'CASCADE'
+          onUpdate: 'RESTRICT',
+          onDelete: 'RESTRICT'
         },
         date: {
           type: Sequelize.DATEONLY,
@@ -33,8 +33,8 @@ module.exports = {
             model: 'agenda_status',
             key: 'id'
           },
-          onUpdate: 'CASCADE',
-          onDelete: 'CASCADE'
+          onUpdate: 'RESTRICT',
+          onDelete: 'RESTRICT'
         },
         created_at: {
           type: Sequelize.DATE,

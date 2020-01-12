@@ -9,7 +9,7 @@ const validator = require('../classes/validator')
 const jwtHandler = require('../classes/jwt')
 const Sequelize = require('sequelize')
 const Op = Sequelize.Op
-const constants = require('../classes/constants')
+const { ADDRESS, SCHEDULE_STATUS } = require('../classes/constants')
 
 exports.store = async function (req, res) {
 
@@ -176,7 +176,7 @@ exports.storeAddress = async function (req, res) {
             street,
             number,
             complement,
-            type_id: constants.PHYSICAL_ADDRESS_TYPE,
+            type_id: ADDRESS.PHYSICAL_ADDRESS_TYPE,
             establishment_id,
         })
 
@@ -221,7 +221,7 @@ exports.filter = async function (req, res) {
         if (sportId) {
             sportFiltering = `= ${sportId}`
         }
-        
+
         mysql.connect(mysql.uri, connection => {
 
             const query = `SELECT DISTINCT e.id, e.name  \
@@ -237,12 +237,17 @@ exports.filter = async function (req, res) {
             AND ea.neighbourhood = "${address.neighbourhood}" `
 
             console.log(query);
-            
+
             connection.query(query, [address.country],
                 function (err, results, fields) {
 
                     if (err) {
-                        throw err
+                        return res.status(500).json({
+                            success: false,
+                            message: "Ocorreu um erro ao filtrar!",
+                            verbose: `${err}`,
+                            data: {}
+                        })
                     }
 
                     return res.status(200).json({
@@ -250,46 +255,13 @@ exports.filter = async function (req, res) {
                         message: "Filtro realizado com sucesso!",
                         verbose: null,
                         data: {
-                            establishments:  results
+                            establishments: results
                         }
                     })
 
                 })
 
         })
-
-        // const establishment = await Establishment.findAll(
-        //     {
-        //         include: [{
-        //             association: 'batteries',
-        //             where: {
-        //                 'sport_id': sportId
-        //             },
-        //             include: {
-        //                 association: 'sports'
-        //             },
-        //             include: {
-        //                 association: 'service_address',
-        //                 where: {
-        //                     [Op.and]: [
-        //                         { 'type_id': constants.SERVICE_ADDRESS_TYPE },
-        //                         { 'country': address.country },
-        //                         { 'state': address.state },
-        //                         { 'city': address.city },
-        //                         { 'neighbourhood': address.neighbourhood }
-        //                     ]
-        //                 }
-        //             }
-        //         }],
-        //     }
-        // )
-
-        // return res.status(200).json({
-        //     success: true,
-        //     message: "Estabelecimentos filtrado com sucesso!",
-        //     verbose: null,
-        //     data: establishment
-        // })
 
     } catch (error) {
 
@@ -314,7 +286,7 @@ exports.getFilters = function (req, res) {
             var addresses = []
 
             connection.query(
-                `SELECT DISTINCT s.id, s.display_name AS sport \
+                `SELECT DISTINCT s.id AS sport_id, s.display_name AS sport \
                 FROM batteries b \
                 INNER JOIN sports s \
                 ON s.id = b.sport_id`,
@@ -336,7 +308,12 @@ exports.getFilters = function (req, res) {
                 function (err, results, fields) {
 
                     if (err) {
-                        throw err
+                        return res.status(500).json({
+                            success: false,
+                            message: "Ocorreu um erro ao obter os filtros!",
+                            verbose: `${err}`,
+                            data: {}
+                        })
                     }
 
                     addresses = results
@@ -377,7 +354,7 @@ exports.getAgenda = async function (req, res) {
         mysql.connect(mysql.uri, connection => {
 
             connection.query(
-                `SELECT ad.id, ad.date, ags.id AS status_id, ags.display_name AS status \
+                `SELECT ad.id AS day_id, ad.date, ags.id AS status_id, ags.display_name AS status \
                 FROM agenda_dates ad \
                 INNER JOIN agendas a \
                 ON ad.agenda_id = a.id
@@ -387,7 +364,12 @@ exports.getAgenda = async function (req, res) {
                 function (err, results, fields) {
 
                     if (err) {
-                        throw err
+                        return res.status(500).json({
+                            success: false,
+                            message: "Ocorreu um erro ao obter a agenda!",
+                            verbose: `${err}`,
+                            data: {}
+                        })
                     }
 
                     return res.status(200).json({
@@ -408,6 +390,72 @@ exports.getAgenda = async function (req, res) {
         return res.status(500).json({
             success: false,
             message: "Ocorreu um erro ao obter a agenda!",
+            verbose: `${error}`,
+            data: {}
+        })
+
+    }
+
+}
+
+exports.getBatteries = async function (req, res) {
+
+    const establishmentId = req.params.establishment_id
+    const date = req.params.date
+
+    try {
+
+        mysql.connect(mysql.uri, connection => {
+
+            connection.query(
+                `SELECT
+                    b.id AS battery_id,
+                    ad.id AS day_id,
+                    b.start_hour,
+                    b.end_hour,
+                    b.session_value AS price,
+                    ABS(COUNT(s.id) - b.people_allowed) AS available_vacancies
+                FROM
+                    batteries b
+                INNER JOIN agendas a ON
+                    a.owner_id = b.establishment_id
+                LEFT JOIN agenda_dates ad ON
+                    ad.agenda_id = a.id AND ad.date = '${date}'
+                LEFT JOIN schedules s ON
+                    s.agenda_id = ad.id
+                    AND s.battery_id = b.id
+                WHERE
+                    a.owner_id = ${establishmentId}
+                GROUP BY b.id`,
+                function (err, results, fields) {
+
+                    if (err) {
+                        return res.status(500).json({
+                            success: false,
+                            message: "Ocorreu um erro ao obter a bateria!",
+                            verbose: `${err}`,
+                            data: {}
+                        })
+                    }
+
+                    return res.status(200).json({
+                        success: true,
+                        message: "Bateria obtida com sucesso!",
+                        verbose: null,
+                        data: {
+                            batteries: results
+                        }
+                    })
+
+                })
+
+        })
+
+    } catch (error) {
+
+        return res.status(500).json({
+            success: false,
+            message: "Ocorreu um erro ao obter a bateria!",
             verbose: `${error}`,
             data: {}
         })

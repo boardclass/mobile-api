@@ -20,8 +20,8 @@ module.exports = {
             model: 'users',
             key: 'id'
           },
-          onUpdate: 'CASCADE',
-          onDelete: 'CASCADE'
+          onUpdate: 'RESTRICT',
+          onDelete: 'RESTRICT'
         },
         zipcode: {
           type: Sequelize.STRING,

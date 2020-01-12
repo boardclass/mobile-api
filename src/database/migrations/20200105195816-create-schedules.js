@@ -19,8 +19,8 @@ module.exports = {
             model: 'batteries',
             key: 'id'
           },
-          onUpdate: 'CASCADE',
-          onDelete: 'CASCADE'
+          onUpdate: 'RESTRICT',
+          onDelete: 'RESTRICT'
         },
         user_id: {
           type: Sequelize.INTEGER,
@@ -29,8 +29,8 @@ module.exports = {
             model: 'users',
             key: 'id'
           },
-          onUpdate: 'CASCADE',
-          onDelete: 'CASCADE'
+          onUpdate: 'RESTRICT',
+          onDelete: 'RESTRICT'
         },
         agenda_id: {
           type: Sequelize.INTEGER,
@@ -39,8 +39,18 @@ module.exports = {
             model: 'agenda_dates',
             key: 'id'
           },
-          onUpdate: 'CASCADE',
-          onDelete: 'CASCADE'
+          onUpdate: 'RESTRICT',
+          onDelete: 'RESTRICT'
+        },
+        status_id: {
+          type: Sequelize.INTEGER,
+          allowNull: false,
+          references: {
+            model: 'schedule_status',
+            key: 'id'
+          },
+          onUpdate: 'RESTRICT',
+          onDelete: 'RESTRICT'
         },
         start_hour: {
           type: Sequelize.INTEGER,

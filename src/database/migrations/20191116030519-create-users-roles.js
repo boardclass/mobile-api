@@ -19,8 +19,8 @@ module.exports = {
             model: 'users',
             key: 'id'
           },
-          onUpdate: 'CASCADE',
-          onDelete: 'CASCADE'
+          onUpdate: 'RESTRICT',
+          onDelete: 'RESTRICT'
         },
         role_id: {
           type: Sequelize.INTEGER,
@@ -29,8 +29,8 @@ module.exports = {
             model: 'roles',
             key: 'id'
           },
-          onUpdate: 'CASCADE',
-          onDelete: 'CASCADE'
+          onUpdate: 'RESTRICT',
+          onDelete: 'RESTRICT'
         },
         created_at: {
           type: Sequelize.DATE,

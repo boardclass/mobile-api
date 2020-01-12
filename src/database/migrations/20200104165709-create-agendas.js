@@ -20,8 +20,8 @@ module.exports = {
             model: 'establishments',
             key: 'id'
           },
-          onUpdate: 'CASCADE',
-          onDelete: 'CASCADE'
+          onUpdate: 'RESTRICT',
+          onDelete: 'RESTRICT'
         },
         created_at: {
           type: Sequelize.DATE,

@@ -19,8 +19,8 @@ module.exports = {
             model: 'establishments',
             key: 'id'
           },
-          onUpdate: 'CASCADE',
-          onDelete: 'CASCADE'
+          onUpdate: 'RESTRICT',
+          onDelete: 'RESTRICT'
         },
         address_id: {
           type: Sequelize.INTEGER,
@@ -29,8 +29,8 @@ module.exports = {
             model: 'establishment_addresses',
             key: 'id'
           },
-          onUpdate: 'CASCADE',
-          onDelete: 'CASCADE'
+          onUpdate: 'RESTRICT',
+          onDelete: 'RESTRICT'
         },
         professor_id: {
           type: Sequelize.INTEGER,
@@ -39,8 +39,8 @@ module.exports = {
             model: 'establishment_employees',
             key: 'id'
           },
-          onUpdate: 'CASCADE',
-          onDelete: 'CASCADE'
+          onUpdate: 'RESTRICT',
+          onDelete: 'RESTRICT'
         },
         sport_id: {
           type: Sequelize.INTEGER,
@@ -49,8 +49,8 @@ module.exports = {
             model: 'sports',
             key: 'id'
           },
-          onUpdate: 'CASCADE',
-          onDelete: 'CASCADE'
+          onUpdate: 'RESTRICT',
+          onDelete: 'RESTRICT'
         },
         start_hour: {
           type: Sequelize.INTEGER,
