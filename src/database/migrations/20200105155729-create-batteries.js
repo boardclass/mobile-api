@@ -68,6 +68,10 @@ module.exports = {
           type: Sequelize.FLOAT,
           allowNull: false
         },
+        people_allowed: {
+          type: Sequelize.INT,
+          allowNull: false
+        },
         created_at: {
           type: Sequelize.DATE,
           allowNull: false

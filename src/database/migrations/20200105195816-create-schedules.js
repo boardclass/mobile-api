@@ -32,6 +32,16 @@ module.exports = {
           onUpdate: 'CASCADE',
           onDelete: 'CASCADE'
         },
+        agenda_id: {
+          type: Sequelize.INTEGER,
+          allowNull: false,
+          references: {
+            model: 'agenda_dates',
+            key: 'id'
+          },
+          onUpdate: 'CASCADE',
+          onDelete: 'CASCADE'
+        },
         start_hour: {
           type: Sequelize.INTEGER,
           allowNull: false

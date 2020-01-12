@@ -3,7 +3,8 @@ const { Model, DataTypes } = require('sequelize')
 class Sports extends Model {
     static init(sequelize) {
         super.init({
-            name: DataTypes.STRING
+            name: DataTypes.STRING,
+            display_name: DataTypes.STRING
         }, {
             sequelize
         })

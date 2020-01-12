@@ -12,6 +12,9 @@ const EstablishmentAddress = require('../api/models/EstablishmentAddress')
 const EstablishmentEmployees = require('../api/models/EstablishmentEmployees')
 const Batteries = require('../api/models/Batteries')
 const Sports = require('../api/models/Sports')
+const Agendas = require('../api/models/Agendas')
+const AgendaStatus = require('../api/models/AgendaStatus')
+const AgendaDates = require('../api/models/AgendaDates')
 
 
 const connection = new Sequelize(uri, {
@@ -30,6 +33,9 @@ EstablishmentAddress.init(connection)
 EstablishmentEmployees.init(connection)
 Batteries.init(connection)
 Sports.init(connection)
+Agendas.init(connection)
+AgendaDates.init(connection)
+AgendaStatus.init(connection)
 
 Role.associate(connection.models)
 User.associate(connection.models)
@@ -42,6 +48,9 @@ EstablishmentAddress.associate(connection.models)
 EstablishmentEmployees.associate(connection.models)
 Batteries.associate(connection.models)
 Sports.associate(connection.models)
+Agendas.associate(connection.models)
+AgendaDates.associate(connection.models)
+AgendaStatus.associate(connection.models)
 
 connection.authenticate()
     .then(() => {

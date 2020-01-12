@@ -6,7 +6,8 @@ class Batteries extends Model {
             start_hour: DataTypes.INTEGER,
             end_hour: DataTypes.INTEGER,
             session_seconds: DataTypes.INTEGER,
-            session_value: DataTypes.FLOAT
+            session_value: DataTypes.FLOAT,
+            people_allowed: DataTypes.INTEGER
         }, {
             sequelize
         })

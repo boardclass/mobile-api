@@ -1,5 +1,8 @@
 const Establishment = require('../models/Establishment')
 const EstablishmentAddress = require('../models/EstablishmentAddress')
+const Agendas = require('../models/Agendas')
+const AgendaDates = require('../models/AgendaDates')
+const mysql = require('../../config/mysql')
 
 const bcrypt = require('bcrypt')
 const validator = require('../classes/validator')
@@ -206,55 +209,205 @@ exports.filter = async function (req, res) {
     let sportId = req.body.sportId
     let address = req.body.address
 
+    req.assert('address.country', 'O país deve ser informado').notEmpty()
+    req.assert('address.state', 'O estado deve ser informado').notEmpty()
+    req.assert('address.city', 'A cidade deve ser informado').notEmpty()
+    req.assert('address.neighbourhood', 'O bairro deve ser informado').notEmpty()
+
     try {
 
-        const establishment = await Establishment.findAll(
-            {
-                include: [{
-                    association: 'batteries',
-                    where: {
-                        'sport_id': sportId
-                    },
-                    include: {
-                        association: 'sports'
-                    },
-                    include: {
-                        association: 'service_address',
-                        where: {
-                            [Op.and]: [
-                                { 'type_id': constants.SERVICE_ADDRESS_TYPE },
-                                { 'country': address.country },
-                                { 'state': address.state },
-                                { 'city': address.city },
-                                { 'neighbourhood': address.neighbourhood }
-                            ]
-                        }
-                    }
-                }],
-            }
-        )
+        let sportFiltering = `IS NOT NULL`
 
-        if (!establishment.length) {
-            return res.status(200).json({
-                success: true,
-                message: "Nenhum estabelecimento foi encontrado!",
-                verbose: null,
-                data: null
-            })
+        if (sportId) {
+            sportFiltering = `= ${sportId}`
         }
+        
+        mysql.connect(mysql.uri, connection => {
 
-        return res.status(200).json({
-            success: true,
-            message: "Estabelecimentos filtrado com sucesso!",
-            verbose: null,
-            data: establishment
+            const query = `SELECT DISTINCT e.id, e.name  \
+            FROM establishments e \
+            INNER JOIN batteries b \
+            ON b.establishment_id = e.id \
+            INNER JOIN establishment_addresses ea \
+            ON ea.id = b.address_id \
+            WHERE b.sport_id ${sportFiltering} \
+            AND ea.country = "${address.country}" \
+            AND ea.state = "${address.state}" \
+            AND ea.city = "${address.city}" \
+            AND ea.neighbourhood = "${address.neighbourhood}" `
+
+            console.log(query);
+            
+            connection.query(query, [address.country],
+                function (err, results, fields) {
+
+                    if (err) {
+                        throw err
+                    }
+
+                    return res.status(200).json({
+                        success: true,
+                        message: "Filtro realizado com sucesso!",
+                        verbose: null,
+                        data: {
+                            establishments:  results
+                        }
+                    })
+
+                })
+
         })
+
+        // const establishment = await Establishment.findAll(
+        //     {
+        //         include: [{
+        //             association: 'batteries',
+        //             where: {
+        //                 'sport_id': sportId
+        //             },
+        //             include: {
+        //                 association: 'sports'
+        //             },
+        //             include: {
+        //                 association: 'service_address',
+        //                 where: {
+        //                     [Op.and]: [
+        //                         { 'type_id': constants.SERVICE_ADDRESS_TYPE },
+        //                         { 'country': address.country },
+        //                         { 'state': address.state },
+        //                         { 'city': address.city },
+        //                         { 'neighbourhood': address.neighbourhood }
+        //                     ]
+        //                 }
+        //             }
+        //         }],
+        //     }
+        // )
+
+        // return res.status(200).json({
+        //     success: true,
+        //     message: "Estabelecimentos filtrado com sucesso!",
+        //     verbose: null,
+        //     data: establishment
+        // })
 
     } catch (error) {
 
         return res.status(500).json({
             success: false,
             message: "Ocorreu um erro ao filtrar!",
+            verbose: `${error}`,
+            data: {}
+        })
+
+    }
+
+}
+
+exports.getFilters = function (req, res) {
+
+    try {
+
+        mysql.connect(mysql.uri, connection => {
+
+            var sports = []
+            var addresses = []
+
+            connection.query(
+                `SELECT DISTINCT s.id, s.display_name AS sport \
+                FROM batteries b \
+                INNER JOIN sports s \
+                ON s.id = b.sport_id`,
+                function (err, results, fields) {
+
+                    if (err) {
+                        throw err
+                    }
+
+                    sports = results
+
+                })
+
+            connection.query(
+                `SELECT DISTINCT ea.id, ea.country, ea.state, ea.city, ea.neighbourhood \
+                FROM establishment_addresses ea \
+                INNER JOIN batteries b \
+                ON b.address_id = ea.id`,
+                function (err, results, fields) {
+
+                    if (err) {
+                        throw err
+                    }
+
+                    addresses = results
+
+                    return res.status(200).json({
+                        success: true,
+                        message: "Filtros obtido com sucesso!",
+                        verbose: null,
+                        data: {
+                            sports,
+                            addresses
+                        }
+                    })
+
+                })
+
+        })
+
+    } catch (error) {
+
+        return res.status(500).json({
+            success: false,
+            message: "Ocorreu um erro ao obter os filtros!",
+            verbose: `${error}`,
+            data: {}
+        })
+
+    }
+
+}
+
+exports.getAgenda = async function (req, res) {
+
+    const establishmentId = req.params.establishment_id
+
+    try {
+
+        mysql.connect(mysql.uri, connection => {
+
+            connection.query(
+                `SELECT ad.id, ad.date, ags.id AS status_id, ags.display_name AS status \
+                FROM agenda_dates ad \
+                INNER JOIN agendas a \
+                ON ad.agenda_id = a.id
+                AND a.owner_id = ${establishmentId} \
+                INNER JOIN agenda_status ags \
+                ON ad.status_id = ags.id`,
+                function (err, results, fields) {
+
+                    if (err) {
+                        throw err
+                    }
+
+                    return res.status(200).json({
+                        success: true,
+                        message: "Agenda obtida com sucesso!",
+                        verbose: null,
+                        data: {
+                            dates: results
+                        }
+                    })
+
+                })
+
+        })
+
+    } catch (error) {
+
+        return res.status(500).json({
+            success: false,
+            message: "Ocorreu um erro ao obter a agenda!",
             verbose: `${error}`,
             data: {}
         })

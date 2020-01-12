@@ -84,10 +84,13 @@ exports.store = async function (req, res) {
     req.assert('name', 'O nome deve ser informado').notEmpty()
     req.assert('cpf', 'O CPF deve ser informado').notEmpty()
     req.assert('cpf', 'O CPF está com formato inválido').len(11)
+    req.assert('cpf', 'O CPF está deve conter apenas números').isNumeric()
     req.assert('phone', 'O telefone deve ser informado').notEmpty()
     req.assert('phone', 'O telefone está com formato inválido').len(13)
+    req.assert('phone', 'O telefone deve conter apenas números').isNumeric()
     req.assert('account.roleId', 'A permissão do usuário deve ser informada').notEmpty()
     req.assert('account.email', 'O email deve ser informado').notEmpty()
+    req.assert('account.email', 'O email está em formato inválido').isEmail()
     req.assert('account.password', 'A senha deve ser informada').notEmpty()
 
     validator.validateFiels(req, res)
@@ -107,9 +110,10 @@ exports.store = async function (req, res) {
                 phone: user.phone,
                 account: account
             },
-            include: {
-                association: 'account'
-            }
+            include: [
+                { association: 'account' },
+                { association: 'addresses' }
+            ]
         })
 
         res.setHeader('access-token', token)
@@ -119,7 +123,7 @@ exports.store = async function (req, res) {
             success: true,
             message: "Usuário cadastrado com sucesso!",
             verbose: null,
-            data: {}
+            data: { }
         })
 
     } catch (error) {

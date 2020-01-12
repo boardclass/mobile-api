@@ -20,7 +20,7 @@ module.exports = {
         display_name: {
           type: Sequelize.STRING,
           unique: true,
-          allowNull: false
+          allowNull: true
         },
         reason: {
           type: Sequelize.STRING,
