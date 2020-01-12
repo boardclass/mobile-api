@@ -1,7 +1,5 @@
 const Establishment = require('../models/Establishment')
 const EstablishmentAddress = require('../models/EstablishmentAddress')
-const Agendas = require('../models/Agendas')
-const AgendaDates = require('../models/AgendaDates')
 const mysql = require('../../config/mysql')
 
 const bcrypt = require('bcrypt')
@@ -354,7 +352,7 @@ exports.getAgenda = async function (req, res) {
         mysql.connect(mysql.uri, connection => {
 
             connection.query(
-                `SELECT ad.id AS day_id, ad.date, ags.id AS status_id, ags.display_name AS status \
+                `SELECT a.id AS agenda_id, ad.date, ags.id AS status_id, ags.display_name AS status \
                 FROM agenda_dates ad \
                 INNER JOIN agendas a \
                 ON ad.agenda_id = a.id
@@ -424,6 +422,7 @@ exports.getBatteries = async function (req, res) {
                 LEFT JOIN schedules s ON
                     s.agenda_id = ad.id
                     AND s.battery_id = b.id
+                    AND s.status_id NOT IN (${SCHEDULE_STATUS.CANCELED})
                 WHERE
                     a.owner_id = ${establishmentId}
                 GROUP BY b.id`,

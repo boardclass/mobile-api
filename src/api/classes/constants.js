@@ -8,7 +8,9 @@ module.exports = {
         SCHEDULED: 1,
         CANCELED: 2,
         PAID: 3
+    },
+    AGENDA_STATUS: {
+        AVAILABLE: 1
     }
-    
 
 }
