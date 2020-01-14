@@ -37,8 +37,6 @@ exports.store = async function (req, res) {
                             VALUES 
                                 (${agendaId}, '${date}', ${AGENDA_STATUS.AVAILABLE}, NOW(), NOW())`
 
-                        console.log(query);
-
                         connection.query(
                             query,
                             function (err, results, fields) {
@@ -51,8 +49,7 @@ exports.store = async function (req, res) {
                                         data: {}
                                     })
                                 }
-
-                                console.log(`insertId ${results.insertId}`);
+                                
                                 agendaDayId = results.insertId
 
                             })

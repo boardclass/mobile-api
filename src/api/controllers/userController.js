@@ -16,8 +16,6 @@ exports.login = async function (req, res) {
 
     validator.validateFiels(req, res)
 
-    const token = jwtHandler.generate(email)
-
     try {
 
         const user = await User.findOne({
@@ -53,8 +51,9 @@ exports.login = async function (req, res) {
 
         }
 
+        const token = jwtHandler.generate(user.id)
+
         res.setHeader('access-token', token)
-        res.setHeader('user-id', user.id)
 
         return res.status(200).json({
             success: true,
@@ -220,8 +219,6 @@ exports.storeRole = async function (req, res) {
         })
 
     } catch (error) {
-
-        console.log(error);
 
         return res.status(500).json({
             success: false,

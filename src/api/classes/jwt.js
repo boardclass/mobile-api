@@ -2,9 +2,9 @@ const jwt = require('jsonwebtoken')
 
 module.exports = {
 
-    generate: function (email) {
+    generate: function (userId) {
 
-        const token = jwt.sign({ email }, this.secret, {
+        const token = jwt.sign({ userId }, this.secret, {
             algorithm: 'HS256',
             //expiresIn: this.expirationSeconds
         })

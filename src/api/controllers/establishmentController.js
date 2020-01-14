@@ -234,8 +234,6 @@ exports.filter = async function (req, res) {
             AND ea.city = "${address.city}" \
             AND ea.neighbourhood = "${address.neighbourhood}" `
 
-            console.log(query);
-
             connection.query(query, [address.country],
                 function (err, results, fields) {
 
@@ -275,7 +273,7 @@ exports.filter = async function (req, res) {
 }
 
 exports.getFilters = function (req, res) {
-
+    
     try {
 
         mysql.connect(mysql.uri, connection => {
@@ -352,7 +350,7 @@ exports.getAgenda = async function (req, res) {
         mysql.connect(mysql.uri, connection => {
 
             connection.query(
-                `SELECT a.id AS agenda_id, ad.date, ags.id AS status_id, ags.display_name AS status \
+                `SELECT a.id AS agenda_id, DATE_FORMAT(ad.date,'%Y-%m-%d') as date, ags.id AS status_id, ags.display_name AS status \
                 FROM agenda_dates ad \
                 INNER JOIN agendas a \
                 ON ad.agenda_id = a.id
