@@ -7,6 +7,7 @@ exports.store = async function (req, res) {
     const batteryId = req.body.batteryId
     const userId = req.decoded.userId
     const date = req.body.date
+    const vacancies = req.body.vacancies
 
     try {
 
@@ -85,35 +86,46 @@ exports.store = async function (req, res) {
                                 })
                             }
 
-                            if (results[0].available_vacancies != 0) {
+                            var insertedIds = []
+                            let available_vacancies = results[0].available_vacancies
 
-                                connection.query(
-                                    `INSERT INTO 
-                                        schedules
-                                    (battery_id, user_id, agenda_id, status_id, created_at, updated_at)
-                                    VALUES
-                                    (${batteryId}, ${userId}, ${agendaDayId}, ${SCHEDULE_STATUS.SCHEDULED}, NOW(), NOW())`,
-                                    function (err, results, fields) {
+                            if (available_vacancies != 0 && available_vacancies >= vacancies) {
 
-                                        if (err) {
-                                            return res.status(500).json({
-                                                success: false,
-                                                message: "Ocorreu um erro no agendamento!",
-                                                verbose: `${err}`,
-                                                data: {}
-                                            })
-                                        }
+                                for (i = 0; i < vacancies; i++) {
 
-                                        return res.status(200).json({
-                                            success: true,
-                                            message: "Agendado com sucesso!",
-                                            verbose: null,
-                                            data: {
-                                                schedule_id: results.insertId
+                                    connection.query(
+                                        `INSERT INTO 
+                                            schedules
+                                        (battery_id, user_id, agenda_id, status_id, created_at, updated_at)
+                                        VALUES
+                                        (${batteryId}, ${userId}, ${agendaDayId}, ${SCHEDULE_STATUS.SCHEDULED}, NOW(), NOW())`,
+                                        function (err, results, fields) {
+
+                                            if (err) {
+                                                return res.status(500).json({
+                                                    success: false,
+                                                    message: "Ocorreu um erro no agendamento!",
+                                                    verbose: `${err}`,
+                                                    data: {}
+                                                })
                                             }
+
+                                            insertedIds.push(results.insertId)
+
+                                            if (insertedIds.length == vacancies) {
+                                                return res.status(200).json({
+                                                    success: true,
+                                                    message: "Agendado com sucesso!",
+                                                    verbose: null,
+                                                    data: {
+                                                        schedules_id: insertedIds
+                                                    }
+                                                })
+                                            }
+
                                         })
 
-                                    })
+                                }
 
                             } else {
 
