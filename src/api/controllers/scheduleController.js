@@ -150,16 +150,7 @@ exports.store = async function (req, res) {
 
                                         }
 
-                                        console.log(`Loop: ${index}`);
-                                        console.log(`shouldFinish: ${index + 1 == batteries.length}`);
-                                        console.log(`shouldFinish 2: ${index == batteries.length}`);
-                                        console.log(`shouldFinish 3: ${index == batteries.length - 1}`);
-                                        console.log(`===`);
-                                        console.log(`===`);
-                                        console.log(`===`);
-                                        
-
-                                        if (index + 1 == batteries.length) {
+                                        if (index == batteries.length - 1) {
 
                                             connection.commit(function (err) {
                                                 if (err) {
