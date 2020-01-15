@@ -257,6 +257,8 @@ exports.filter = async function (req, res) {
 
                 })
 
+            connection.end()
+
         })
 
     } catch (error) {
@@ -273,7 +275,7 @@ exports.filter = async function (req, res) {
 }
 
 exports.getFilters = function (req, res) {
-    
+
     try {
 
         mysql.connect(mysql.uri, connection => {
@@ -326,6 +328,8 @@ exports.getFilters = function (req, res) {
 
                 })
 
+            connection.end()
+
         })
 
     } catch (error) {
@@ -350,13 +354,14 @@ exports.getAgenda = async function (req, res) {
         mysql.connect(mysql.uri, connection => {
 
             connection.query(
-                `SELECT a.id AS agenda_id, DATE_FORMAT(ad.date,'%Y-%m-%d') as date, ags.id AS status_id, ags.display_name AS status \
-                FROM agenda_dates ad \
-                INNER JOIN agendas a \
-                ON ad.agenda_id = a.id
-                AND a.owner_id = ${establishmentId} \
-                INNER JOIN agenda_status ags \
-                ON ad.status_id = ags.id`,
+                `SELECT a.id AS agenda_id, DATE_FORMAT(ad.date,'%Y-%m-%d') as date, 
+                    ags.id AS status_id, ags.display_name AS status 
+                FROM agenda_dates ad 
+                INNER JOIN agendas a 
+                    ON ad.agenda_id = a.id
+                    AND a.owner_id = ${establishmentId} 
+                INNER JOIN agenda_status ags 
+                    ON ad.status_id = ags.id`,
                 function (err, results, fields) {
 
                     if (err) {
@@ -378,6 +383,8 @@ exports.getAgenda = async function (req, res) {
                     })
 
                 })
+
+            connection.end()
 
         })
 
@@ -445,7 +452,8 @@ exports.getBatteries = async function (req, res) {
                     })
 
                 })
-
+                
+            connection.end()
         })
 
     } catch (error) {

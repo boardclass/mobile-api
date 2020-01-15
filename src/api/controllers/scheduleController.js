@@ -49,7 +49,7 @@ exports.store = async function (req, res) {
                                         data: {}
                                     })
                                 }
-                                
+
                                 agendaDayId = results.insertId
 
                             })
@@ -88,6 +88,7 @@ exports.store = async function (req, res) {
 
                 })
 
+            connection.end()
         })
 
     } catch (error) {
