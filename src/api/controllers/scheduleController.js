@@ -129,6 +129,9 @@ exports.store = async function (req, res) {
 
                                                         })
 
+                                                        console.log("SCHEDULE ROLLBACK: CLOSING CONNECTION");
+                                                        connection.end()
+
                                                     }
 
                                                     insertedIds.push(results.insertId)
@@ -153,6 +156,9 @@ exports.store = async function (req, res) {
 
                                                     })
                                                 }
+
+                                                console.log("SCHEDULE: CLOSING CONNECTION");
+                                                connection.end()
                                             })
 
                                             return res.status(200).json({
@@ -183,10 +189,6 @@ exports.store = async function (req, res) {
                     }
 
                 })
-
-            console.log("SCHEDULE: CLOSING CONNECTION");
-
-            connection.end()
 
         })
 
