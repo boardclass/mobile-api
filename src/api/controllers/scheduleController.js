@@ -110,10 +110,20 @@ exports.store = async function (req, res) {
 
                                             connection.query(
                                                 `INSERT INTO 
-                                            schedules
-                                        (battery_id, user_id, agenda_id, status_id, created_at, updated_at)
-                                        VALUES
-                                        (${batteries[index].id}, ${userId}, ${agendaDayId}, ${SCHEDULE_STATUS.SCHEDULED}, NOW(), NOW())`,
+                                                schedules
+                                                    (battery_id, 
+                                                    user_id, 
+                                                    agenda_id, 
+                                                    status_id, 
+                                                    created_at, 
+                                                    updated_at)
+                                                VALUES
+                                                    (${batteries[index].id}, 
+                                                    ${userId}, 
+                                                    ${agendaDayId}, 
+                                                    ${SCHEDULE_STATUS.SCHEDULED}, 
+                                                    NOW(), 
+                                                    NOW())`,
                                                 function (err, results, fields) {
 
                                                     if (err) {
@@ -139,6 +149,15 @@ exports.store = async function (req, res) {
                                                 })
 
                                         }
+
+                                        console.log(`Loop: ${index}`);
+                                        console.log(`shouldFinish: ${index + 1 == batteries.length}`);
+                                        console.log(`shouldFinish 2: ${index == batteries.length}`);
+                                        console.log(`shouldFinish 3: ${index == batteries.length - 1}`);
+                                        console.log(`===`);
+                                        console.log(`===`);
+                                        console.log(`===`);
+                                        
 
                                         if (index + 1 == batteries.length) {
 
