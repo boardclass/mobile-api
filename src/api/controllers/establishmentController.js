@@ -378,6 +378,7 @@ exports.getAgenda = async function (req, res) {
                         message: "Agenda obtida com sucesso!",
                         verbose: null,
                         data: {
+                            agenda: results[0].id,
                             dates: results
                         }
                     })
