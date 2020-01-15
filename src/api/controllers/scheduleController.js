@@ -104,7 +104,7 @@ exports.store = async function (req, res) {
 
                                     }
 
-                                    if (available_vacancies != 0 && available_vacancies >= vacancies) {
+                                    if (available_vacancies != 0 && available_vacancies >= batteries[index].selectedVacancies) {
 
                                         for (i = 0; i < batteries[index].selectedVacancies; i++) {
 
