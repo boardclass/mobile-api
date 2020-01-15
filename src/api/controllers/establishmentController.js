@@ -380,7 +380,7 @@ exports.getAgenda = async function (req, res) {
                         data: {
                             agenda: {
                                 id: results[0].id,
-                                results
+                                dates: results
                             }
                         }
                     })
