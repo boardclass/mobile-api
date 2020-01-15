@@ -284,7 +284,7 @@ exports.getFilters = function (req, res) {
             var addresses = []
 
             connection.query(
-                `SELECT DISTINCT s.id AS sport_id, s.display_name AS sport \
+                `SELECT DISTINCT s.id, s.display_name AS name \
                 FROM batteries b \
                 INNER JOIN sports s \
                 ON s.id = b.sport_id`,
@@ -354,7 +354,7 @@ exports.getAgenda = async function (req, res) {
         mysql.connect(mysql.uri, connection => {
 
             connection.query(
-                `SELECT a.id AS agenda_id, DATE_FORMAT(ad.date,'%Y-%m-%d') as date, 
+                `SELECT a.id, DATE_FORMAT(ad.date,'%Y-%m-%d') as date, 
                     ags.id AS status_id, ags.display_name AS status 
                 FROM agenda_dates ad 
                 INNER JOIN agendas a 
@@ -412,8 +412,7 @@ exports.getBatteries = async function (req, res) {
 
             connection.query(
                 `SELECT
-                    b.id AS battery_id,
-                    ad.id AS day_id,
+                    b.id,
                     b.start_hour,
                     b.end_hour,
                     b.session_value AS price,
@@ -452,7 +451,7 @@ exports.getBatteries = async function (req, res) {
                     })
 
                 })
-                
+
             connection.end()
         })
 

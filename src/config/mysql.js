@@ -15,6 +15,7 @@ module.exports = {
 
         var connection = mysql.createConnection(uri)
 
+        connection.connect()
         callback(connection)
 
     }
