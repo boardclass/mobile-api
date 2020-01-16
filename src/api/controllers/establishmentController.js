@@ -410,9 +410,6 @@ exports.getBatteries = async function (req, res) {
     const sportId = req.body.sportId
     const establishmentId = req.params.establishment_id
 
-    console.log('body', req.body);
-    console.log('date', date);
-
     try {
 
         mysql.connect(mysql.uri, connection => {
