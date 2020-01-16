@@ -410,7 +410,7 @@ exports.getBatteries = async function (req, res) {
     const sportId = req.body.sportId
     const establishmentId = req.params.establishment_id
 
-    console.log(sportId);
+    console.log('sportId', sportId);
 
     try {
 
