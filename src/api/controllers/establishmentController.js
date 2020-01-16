@@ -406,9 +406,9 @@ exports.getAgenda = async function (req, res) {
 
 exports.getBatteries = async function (req, res) {
 
-    const establishmentId = req.params.establishment_id
+    const date = req.body.date
     const sportId = req.body.sportId
-    const date = req.params.date
+    const establishmentId = req.params.establishment_id
 
     try {
 
