@@ -410,6 +410,8 @@ exports.getBatteries = async function (req, res) {
     const sportId = req.body.sportId
     const establishmentId = req.params.establishment_id
 
+    console.log(sportId);
+
     try {
 
         mysql.connect(mysql.uri, connection => {
@@ -433,7 +435,7 @@ exports.getBatteries = async function (req, res) {
                     AND s.status_id NOT IN (${SCHEDULE_STATUS.CANCELED})
                 WHERE
                     a.owner_id = ${establishmentId}
-                    b.sport_id = ${sportId}
+                    AND b.sport_id = ${sportId}
                 GROUP BY b.id`,
                 function (err, results, fields) {
 
