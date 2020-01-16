@@ -54,6 +54,8 @@ exports.login = async function (req, res) {
 
         }
 
+        console.log('userid', user.id);
+
         const token = jwtHandler.generate(user.id)
 
         res.setHeader('access-token', token)
@@ -243,7 +245,7 @@ exports.agenda = async function (req, res) {
         mysql.connect(mysql.uri, connection => {
 
             connection.query(`
-                SELECT s.id, ad.date, 
+                SELECT s.id, DATE_FORMAT(ad.date,'%Y-%m-%d') as date, 
                     sp.id AS sport_id, sp.display_name AS sport, 
                     e.id AS establishment_id, e.name AS establishment
                 FROM schedules s
@@ -265,17 +267,15 @@ exports.agenda = async function (req, res) {
                     if (err) {
                         return res.status(500).json({
                             success: false,
-                            message: "Ocorreu um erro ao obter a agenda!",
+                            message: "Ocorreu um erro no agendamento!",
                             verbose: `${err}`,
                             data: {}
                         })
                     }
 
-                    console.log(results);
-
                     var schedules = []
 
-                    for (let index in results) { 
+                    for (let index in results) {
 
                         let result = results[index]
 
@@ -288,8 +288,8 @@ exports.agenda = async function (req, res) {
                                 name: result.sport
                             },
                             establishment: {
-                                id: establishment_id,
-                                name: establishment
+                                id: result.establishment_id,
+                                name: result.establishment
                             }
 
                         }
@@ -297,6 +297,8 @@ exports.agenda = async function (req, res) {
                         schedules.push(schedule)
 
                     }
+
+                    connection.close()
 
                     return res.status(200).json({
                         success: true,
@@ -307,10 +309,7 @@ exports.agenda = async function (req, res) {
                         }
                     })
 
-
                 })
-
-                connection.close()
 
         })
 
