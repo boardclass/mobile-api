@@ -62,23 +62,23 @@ exports.store = async function (req, res) {
 
                         connection.beginTransaction(function (err) {
 
-                            connection.query(`
-                        SELECT
-                            ABS(COUNT(s.id) - b.people_allowed) AS available_vacancies,
-                            ad.status_id AS schedule_status_id
-                        FROM
-                            batteries b
-                        INNER JOIN agendas a ON
-                            a.owner_id = b.establishment_id
-                        LEFT JOIN agenda_dates ad ON
-                            ad.agenda_id = a.id AND ad.date = '${date}'
-                        LEFT JOIN schedules s ON
-                            s.agenda_id = ad.id
-                            AND s.battery_id = b.id
-                            AND s.status_id NOT IN (${SCHEDULE_STATUS.CANCELED})
-                        WHERE
-                            b.id = ${batteries[index].id}
-                        GROUP BY b.id`,
+                            connection.query(
+                                `SELECT
+                                    ABS(COUNT(s.id) - b.people_allowed) AS available_vacancies,
+                                    ad.status_id AS schedule_status_id
+                                FROM
+                                    batteries b
+                                INNER JOIN agendas a ON
+                                    a.owner_id = b.establishment_id
+                                LEFT JOIN agenda_dates ad ON
+                                    ad.agenda_id = a.id AND ad.date = '${date}'
+                                LEFT JOIN schedules s ON
+                                    s.agenda_id = ad.id
+                                    AND s.battery_id = b.id
+                                    AND s.status_id NOT IN (${SCHEDULE_STATUS.CANCELED})
+                                WHERE
+                                    b.id = ${batteries[index].id}
+                                GROUP BY b.id`,
                                 function (err, results, fields) {
 
                                     if (err) {
@@ -139,7 +139,6 @@ exports.store = async function (req, res) {
 
                                                         })
 
-                                                        console.log("SCHEDULE ROLLBACK: CLOSING CONNECTION");
                                                         connection.end()
 
                                                     }
@@ -167,7 +166,6 @@ exports.store = async function (req, res) {
                                                     })
                                                 }
 
-                                                console.log("SCHEDULE: CLOSING CONNECTION");
                                                 connection.end()
                                             })
 

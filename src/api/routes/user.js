@@ -17,5 +17,9 @@ module.exports = (app) => {
     app.post('/api/user/:user_id/role', (req, res) => {
         userController.storeRole(req, res)
     })
+
+    app.get('/api/user/agenda', (req, res) => {
+        userController.agenda(req, res)
+    })
     
 }
