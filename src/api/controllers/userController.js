@@ -271,7 +271,9 @@ exports.agenda = async function (req, res) {
                         })
                     }
 
-                    const schedules = []
+                    console.log(results);
+
+                    var schedules = []
 
                     for (let index in results) { 
 
