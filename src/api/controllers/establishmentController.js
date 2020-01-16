@@ -407,6 +407,7 @@ exports.getAgenda = async function (req, res) {
 exports.getBatteries = async function (req, res) {
 
     const establishmentId = req.params.establishment_id
+    const sportId = req.body.sport_id
     const date = req.params.date
 
     try {
@@ -432,6 +433,7 @@ exports.getBatteries = async function (req, res) {
                     AND s.status_id NOT IN (${SCHEDULE_STATUS.CANCELED})
                 WHERE
                     a.owner_id = ${establishmentId}
+                    b.sport_id = ${sportId}
                 GROUP BY b.id`,
                 function (err, results, fields) {
 
