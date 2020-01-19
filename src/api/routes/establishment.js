@@ -22,14 +22,6 @@ module.exports = (app) => {
         establishmentController.storeEmployee(req, res)
     })
 
-    app.post('/api/establishment/filter', (req, res) => {
-        establishmentController.filter(req, res)
-    })
-
-    app.get('/api/establishment/filter', (req, res) => {
-        establishmentController.getFilters(req, res)
-    })
-
     app.get('/api/establishment/:establishment_id/agenda', (req, res) => {
         establishmentController.getAgenda(req, res)
     })

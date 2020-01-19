@@ -202,151 +202,6 @@ exports.storeBranch = async function (req, res) { }
 
 exports.storeEmployee = async function (req, res) { }
 
-
-
-exports.filter = async function (req, res) {
-
-    let sportId = req.body.sportId
-    let address = req.body.address
-
-    req.assert('address.country', 'O país deve ser informado').notEmpty()
-    req.assert('address.state', 'O estado deve ser informado').notEmpty()
-    req.assert('address.city', 'A cidade deve ser informado').notEmpty()
-    req.assert('address.neighbourhood', 'O bairro deve ser informado').notEmpty()
-
-    try {
-
-        let sportFiltering = `IS NOT NULL`
-
-        if (sportId) {
-            sportFiltering = `= ${sportId}`
-        }
-
-        mysql.connect(mysql.uri, connection => {
-
-            const query = `SELECT DISTINCT e.id, e.name  \
-            FROM establishments e \
-            INNER JOIN batteries b \
-            ON b.establishment_id = e.id \
-            INNER JOIN establishment_addresses ea \
-            ON ea.id = b.address_id \
-            WHERE b.sport_id ${sportFiltering} \
-            AND ea.country = "${address.country}" \
-            AND ea.state = "${address.state}" \
-            AND ea.city = "${address.city}" \
-            AND ea.neighbourhood = "${address.neighbourhood}" `
-
-            connection.query(query, [address.country],
-                function (err, results, fields) {
-
-                    if (err) {
-                        return res.status(500).json({
-                            success: false,
-                            message: "Ocorreu um erro ao filtrar!",
-                            verbose: `${err}`,
-                            data: {}
-                        })
-                    }
-
-                    return res.status(200).json({
-                        success: true,
-                        message: "Filtro realizado com sucesso!",
-                        verbose: null,
-                        data: {
-                            establishments: results
-                        }
-                    })
-
-                })
-
-            connection.end()
-
-        })
-
-    } catch (error) {
-
-        return res.status(500).json({
-            success: false,
-            message: "Ocorreu um erro ao filtrar!",
-            verbose: `${error}`,
-            data: {}
-        })
-
-    }
-
-}
-
-exports.getFilters = function (req, res) {
-
-    try {
-
-        mysql.connect(mysql.uri, connection => {
-
-            var sports = []
-            var addresses = []
-
-            connection.query(
-                `SELECT DISTINCT s.id, s.display_name AS name \
-                FROM batteries b \
-                INNER JOIN sports s \
-                ON s.id = b.sport_id`,
-                function (err, results, fields) {
-
-                    if (err) {
-                        throw err
-                    }
-
-                    sports = results
-
-                })
-
-            connection.query(
-                `SELECT DISTINCT ea.id, ea.country, ea.state, ea.city, ea.neighbourhood \
-                FROM establishment_addresses ea \
-                INNER JOIN batteries b \
-                ON b.address_id = ea.id`,
-                function (err, results, fields) {
-
-                    if (err) {
-                        return res.status(500).json({
-                            success: false,
-                            message: "Ocorreu um erro ao obter os filtros!",
-                            verbose: `${err}`,
-                            data: {}
-                        })
-                    }
-
-                    addresses = results
-
-                    return res.status(200).json({
-                        success: true,
-                        message: "Filtros obtido com sucesso!",
-                        verbose: null,
-                        data: {
-                            sports,
-                            addresses
-                        }
-                    })
-
-                })
-
-            connection.end()
-
-        })
-
-    } catch (error) {
-
-        return res.status(500).json({
-            success: false,
-            message: "Ocorreu um erro ao obter os filtros!",
-            verbose: `${error}`,
-            data: {}
-        })
-
-    }
-
-}
-
 exports.getAgenda = async function (req, res) {
 
     const establishmentId = req.params.establishment_id
@@ -355,39 +210,43 @@ exports.getAgenda = async function (req, res) {
 
         mysql.connect(mysql.uri, connection => {
 
-            connection.query(
-                `SELECT a.id, DATE_FORMAT(ad.date,'%Y-%m-%d') as date, 
-                    ags.id AS status_id, ags.display_name AS status 
-                FROM agenda_dates ad 
-                INNER JOIN agendas a 
-                    ON ad.agenda_id = a.id
-                    AND a.owner_id = ${establishmentId} 
-                INNER JOIN agenda_status ags 
-                    ON ad.status_id = ags.id`,
-                function (err, results, fields) {
+            const query = `
+                SELECT
+                DATE_FORMAT(ess.date, "%Y-%m-%d") AS date,
+                    es.short_name AS status
+                FROM
+                    establishments_status ess
+                INNER JOIN establishment_status es ON
+                    es.id = ess.status_id
+                WHERE
+                    ess.establishment_id = ? 
+                    AND ess.date >= NOW()
+                ORDER BY
+                    ess.date`
 
-                    if (err) {
-                        return res.status(500).json({
-                            success: false,
-                            message: "Ocorreu um erro ao obter a agenda!",
-                            verbose: `${err}`,
-                            data: {}
-                        })
-                    }
+            connection.query(query, establishmentId, function (err, results, fields) {
 
-                    return res.status(200).json({
-                        success: true,
-                        message: "Agenda obtida com sucesso!",
-                        verbose: null,
-                        data: {
-                            agenda: {
-                                id: results[0].id,
-                                dates: results
-                            }
-                        }
+                if (err) {
+                    return res.status(500).json({
+                        success: false,
+                        message: "Ocorreu um erro ao obter a agenda!",
+                        verbose: `${err}`,
+                        data: {}
                     })
+                }
 
+                return res.status(200).json({
+                    success: true,
+                    message: "Agenda obtida com sucesso!",
+                    verbose: null,
+                    data: {
+                        agenda: {
+                            results
+                        }
+                    }
                 })
+
+            })
 
             connection.end()
 
