@@ -261,7 +261,7 @@ exports.agenda = async function (req, res) {
                     ON sp.id = b.sport_id
                 WHERE s.user_id = ${userId}
                     AND s.status_id NOT IN (${SCHEDULE_STATUS.CANCELED})
-                ORDER BY ad.date DESC`,
+                ORDER BY ad.date DESC, s.id DESC`,
                 function (err, results, fields) {
 
                     if (err) {
