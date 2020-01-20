@@ -220,7 +220,7 @@ exports.getAgenda = async function (req, res) {
                     es.id = ess.status_id
                 WHERE
                     ess.establishment_id = ? 
-                    AND ess.date >= NOW()
+                    AND ess.date >= DATE_FORMAT(NOW(), "%Y-%m-%d")
                 ORDER BY
                     ess.date`
 
