@@ -7,7 +7,6 @@ exports.store = async function (req, res) {
     const userId = req.decoded.userId
     const batteries = req.body.batteries
 
-    console.log(date)
     try {
 
         mysql.connect(mysql.uri, connection => {
@@ -76,9 +75,6 @@ exports.store = async function (req, res) {
                                     SCHEDULE_STATUS.SCHEDULED,
                                     date
                                 ]
-
-                                console.log(query);
-                                console.log(filters);
 
                                 connection.query(query, filters, function (err, results, fields) {
 
