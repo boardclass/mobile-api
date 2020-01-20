@@ -275,8 +275,8 @@ exports.getBatteries = async function (req, res) {
 
         mysql.connect(mysql.uri, connection => {
 
-            connection.query(
-                `SELECT
+            const query = `
+                SELECT
                     b.id,
                     b.start_hour,
                     b.end_hour,
@@ -284,39 +284,45 @@ exports.getBatteries = async function (req, res) {
                     ABS(COUNT(s.id) - b.people_allowed) AS available_vacancies
                 FROM
                     batteries b
-                INNER JOIN agendas a ON
-                    a.owner_id = b.establishment_id
-                LEFT JOIN agenda_dates ad ON
-                    ad.agenda_id = a.id AND ad.date = '${date}'
                 LEFT JOIN schedules s ON
-                    s.agenda_id = ad.id
-                    AND s.battery_id = b.id
-                    AND s.status_id NOT IN (${SCHEDULE_STATUS.CANCELED})
+                    s.battery_id = b.id 
+                    AND s.date = ?
+                    AND s.status_id NOT IN(?)
                 WHERE
-                    a.owner_id = ${establishmentId}
-                    AND b.sport_id = ${sportId}
-                GROUP BY b.id`,
-                function (err, results, fields) {
+                    b.establishment_id = ?
+                    AND b.sport_id = ?
+                GROUP BY
+                    b.start_hour,
+                    b.id`
 
-                    if (err) {
-                        return res.status(500).json({
-                            success: false,
-                            message: "Ocorreu um erro ao obter a bateria!",
-                            verbose: `${err}`,
-                            data: {}
-                        })
-                    }
+            const data = [
+                date,
+                SCHEDULE_STATUS.CANCELED,
+                establishmentId,
+                sportId
+            ]
+            
+            connection.query(query, data, function (err, results, fields) {
 
-                    return res.status(200).json({
-                        success: true,
-                        message: "Bateria obtida com sucesso!",
-                        verbose: null,
-                        data: {
-                            batteries: results
-                        }
+                if (err) {
+                    return res.status(500).json({
+                        success: false,
+                        message: "Ocorreu um erro ao obter a bateria!",
+                        verbose: `${err}`,
+                        data: {}
                     })
+                }
 
+                return res.status(200).json({
+                    success: true,
+                    message: "Bateria obtida com sucesso!",
+                    verbose: null,
+                    data: {
+                        batteries: results
+                    }
                 })
+
+            })
 
             connection.end()
         })
