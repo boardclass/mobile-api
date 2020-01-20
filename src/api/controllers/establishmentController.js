@@ -213,6 +213,7 @@ exports.getAgenda = async function (req, res) {
             const query = `
                 SELECT
                 DATE_FORMAT(ess.date, "%Y-%m-%d") AS date,
+                    es.id AS status_id,
                     es.short_name AS status
                 FROM
                     establishments_status ess
