@@ -45,8 +45,7 @@ exports.store = async function (req, res) {
                                 data: {}
                             })
                         }
-
-                        var insertedIds = []
+                        
                         let available_vacancies = results[0].available_vacancies
 
                         //  TODO: Handle canceled batteries
@@ -88,8 +87,6 @@ exports.store = async function (req, res) {
                                             connection.end()
 
                                         }
-
-                                        insertedIds.push(results.insertId)
 
                                     })
 
