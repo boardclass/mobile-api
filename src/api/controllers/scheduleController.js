@@ -7,6 +7,7 @@ exports.store = async function (req, res) {
     const userId = req.decoded.userId
     const batteries = req.body.batteries
 
+    console.log(date)
     try {
 
         mysql.connect(mysql.uri, connection => {
@@ -53,9 +54,8 @@ exports.store = async function (req, res) {
 
                             for (i = 0; i < batteries[index].selectedVacancies; i++) {
 
-                                connection.query(
-                                    `INSERT INTO 
-                                    schedules
+                                const query = `
+                                    INSERT INTO schedules
                                         (battery_id, 
                                         user_id, 
                                         status_id, 
@@ -63,32 +63,43 @@ exports.store = async function (req, res) {
                                         created_at, 
                                         updated_at)
                                     VALUES
-                                        (${batteries[index].id}, 
-                                        ${userId}, 
-                                        ${SCHEDULE_STATUS.SCHEDULED}, 
-                                        ${date},
+                                        (?, 
+                                        ?, 
+                                        ?, 
+                                        ?,
                                         NOW(), 
-                                        NOW())`,
-                                    function (err, results, fields) {
+                                        NOW())`
 
-                                        if (err) {
+                                const filters = [
+                                    batteries[index].id,
+                                    userId,
+                                    SCHEDULE_STATUS,
+                                    date
+                                ]
 
-                                            connection.rollback(function () {
+                                console.log(query);
+                                console.log(filters);
 
-                                                return res.status(500).json({
-                                                    success: false,
-                                                    message: "Ocorreu um erro no agendamento!",
-                                                    verbose: `${err}`,
-                                                    data: {}
-                                                })
+                                connection.query(query, filters, function (err, results, fields) {
 
+                                    if (err) {
+
+                                        connection.rollback(function () {
+
+                                            return res.status(500).json({
+                                                success: false,
+                                                message: "Ocorreu um erro no agendamento!",
+                                                verbose: `${err}`,
+                                                data: {}
                                             })
 
-                                            connection.end()
+                                        })
 
-                                        }
+                                        connection.end()
 
-                                    })
+                                    }
+
+                                })
 
                             }
 
@@ -111,7 +122,7 @@ exports.store = async function (req, res) {
                                         connection.end()
 
                                     }
-                                    
+
                                 })
 
                                 return res.status(200).json({
