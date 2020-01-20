@@ -244,24 +244,29 @@ exports.agenda = async function (req, res) {
 
         mysql.connect(mysql.uri, connection => {
 
-            connection.query(`
-                SELECT s.id, DATE_FORMAT(ad.date,'%Y-%m-%d') as date, 
+            const query = `
+                SELECT 
+                    s.id, 
+                    DATE_FORMAT(s.date,'%Y-%m-%d') as date, 
                     sp.id AS sport_id, sp.display_name AS sport, 
                     e.id AS establishment_id, e.name AS establishment
                 FROM schedules s
-                INNER JOIN agenda_dates ad
-                    ON ad.id = s.agenda_id
-                INNER JOIN agendas a
-                    ON a.id = ad.agenda_id
-                INNER JOIN establishments e
-                    ON e.id = a.owner_id
                 INNER JOIN batteries b
                     ON b.id = s.battery_id
+                INNER JOIN establishments e
+                    ON e.id = b.establishment_id
                 INNER JOIN sports sp
                     ON sp.id = b.sport_id
-                WHERE s.user_id = ${userId}
-                    AND s.status_id NOT IN (${SCHEDULE_STATUS.CANCELED})
-                ORDER BY ad.date DESC, s.id DESC`,
+                WHERE s.user_id = ?
+                    AND s.status_id NOT IN (?)
+                ORDER BY s.date DESC, s.id DESC`
+
+            const filters = [
+                userId,
+                SCHEDULE_STATUS.CANCELED
+            ]
+
+            connection.query(query, filters,
                 function (err, results, fields) {
 
                     if (err) {

@@ -21,7 +21,8 @@ exports.store = async function (req, res) {
                         FROM
                             batteries b
                         LEFT JOIN schedules s ON
-                            s.battery_id = s.id
+                            s.battery_id = b.id
+                            AND s.date = ?
                             AND s.status_id NOT IN (?)
                         WHERE
                             b.id = ?
@@ -29,6 +30,7 @@ exports.store = async function (req, res) {
                             b.id`
 
                     const filters = [
+                        date,
                         SCHEDULE_STATUS.CANCELED,
                         batteries[index].id
                     ]
@@ -58,12 +60,14 @@ exports.store = async function (req, res) {
                                         (battery_id, 
                                         user_id, 
                                         status_id, 
+                                        date,
                                         created_at, 
                                         updated_at)
                                     VALUES
                                         (${batteries[index].id}, 
                                         ${userId}, 
                                         ${SCHEDULE_STATUS.SCHEDULED}, 
+                                        ${date}
                                         NOW(), 
                                         NOW())`,
                                     function (err, results, fields) {
@@ -113,11 +117,9 @@ exports.store = async function (req, res) {
 
                                 return res.status(200).json({
                                     success: true,
-                                    message: "Agendado com sucesso!",
+                                    message: "Agendamento realizado com sucesso!",
                                     verbose: null,
-                                    data: {
-                                        schedules_id: insertedIds
-                                    }
+                                    data: {}
                                 })
                             }
 
