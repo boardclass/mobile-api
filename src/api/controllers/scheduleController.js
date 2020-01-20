@@ -66,7 +66,7 @@ exports.store = async function (req, res) {
                                         (${batteries[index].id}, 
                                         ${userId}, 
                                         ${SCHEDULE_STATUS.SCHEDULED}, 
-                                        ${date}
+                                        ${date},
                                         NOW(), 
                                         NOW())`,
                                     function (err, results, fields) {
@@ -74,8 +74,6 @@ exports.store = async function (req, res) {
                                         if (err) {
 
                                             connection.rollback(function () {
-
-                                                connection.end()
 
                                                 return res.status(500).json({
                                                     success: false,
@@ -85,6 +83,8 @@ exports.store = async function (req, res) {
                                                 })
 
                                             })
+
+                                            connection.end()
 
                                         }
 
@@ -99,8 +99,6 @@ exports.store = async function (req, res) {
 
                                         connection.rollback(function () {
 
-                                            connection.end()
-
                                             return res.status(500).json({
                                                 success: false,
                                                 message: "Ocorreu um erro no agendamento!",
@@ -109,6 +107,9 @@ exports.store = async function (req, res) {
                                             })
 
                                         })
+
+                                        connection.end()
+
                                     }
                                     
                                 })
