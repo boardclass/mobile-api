@@ -3,200 +3,142 @@ const { SCHEDULE_STATUS, AGENDA_STATUS } = require('../classes/constants')
 
 exports.store = async function (req, res) {
 
-    const agendaId = req.body.agendaId
-    const userId = req.decoded.userId
     const date = req.body.date
+    const userId = req.decoded.userId
     const batteries = req.body.batteries
 
     try {
 
         mysql.connect(mysql.uri, connection => {
 
-            var agendaDayId = null
+            for (let index in batteries) {
 
-            connection.query(
-                `SELECT id AS agenda_day_id
-                FROM agenda_dates 
-                WHERE date = '${date}'`,
-                function (err, results, fields) {
+                connection.beginTransaction(function (err) {
 
-                    if (err) {
-                        return res.status(500).json({
-                            success: false,
-                            message: "Ocorreu um erro no agendamento!",
-                            verbose: `${err}`,
-                            data: {}
-                        })
-                    }
+                    const query = `
+                        SELECT
+                            ABS(COUNT(s.id) - b.people_allowed) AS available_vacancies
+                        FROM
+                            batteries b
+                        LEFT JOIN schedules s ON
+                            s.battery_id = s.id
+                            AND s.status_id NOT IN (?)
+                        WHERE
+                            b.id = ?
+                        GROUP BY 
+                            b.id`
 
-                    if (!results.length) {
+                    const filters = [
+                        SCHEDULE_STATUS.CANCELED,
+                        batteries[index].id
+                    ]
 
-                        const query = `
-                            INSERT INTO agenda_dates 
-                                (agenda_id, date, status_id, created_at, updated_at)
-                            VALUES 
-                                (${agendaId}, '${date}', ${AGENDA_STATUS.AVAILABLE}, NOW(), NOW())`
+                    connection.query(query, filters, function (err, results, fields) {
 
-                        connection.query(
-                            query,
-                            function (err, results, fields) {
-
-                                if (err) {
-                                    return res.status(500).json({
-                                        success: false,
-                                        message: "Ocorreu um erro no agendamento!",
-                                        verbose: `${err}`,
-                                        data: {}
-                                    })
-                                }
-
-                                agendaDayId = results.insertId
-
+                        if (err) {
+                            return res.status(500).json({
+                                success: false,
+                                message: "Ocorreu um erro no agendamento!",
+                                verbose: `${err}`,
+                                data: {}
                             })
+                        }
 
-                    } else {
-                        agendaDayId = results[0].agenda_day_id
-                    }
+                        var insertedIds = []
+                        let available_vacancies = results[0].available_vacancies
 
-                    for (let index in batteries) {
+                        //  TODO: Handle canceled batteries
+                        if (available_vacancies != 0 && available_vacancies >= batteries[index].selectedVacancies) {
 
-                        connection.beginTransaction(function (err) {
+                            for (i = 0; i < batteries[index].selectedVacancies; i++) {
 
-                            connection.query(
-                                `SELECT
-                                    ABS(COUNT(s.id) - b.people_allowed) AS available_vacancies,
-                                    ad.status_id AS schedule_status_id
-                                FROM
-                                    batteries b
-                                INNER JOIN agendas a ON
-                                    a.owner_id = b.establishment_id
-                                LEFT JOIN agenda_dates ad ON
-                                    ad.agenda_id = a.id AND ad.date = '${date}'
-                                LEFT JOIN schedules s ON
-                                    s.agenda_id = ad.id
-                                    AND s.battery_id = b.id
-                                    AND s.status_id NOT IN (${SCHEDULE_STATUS.CANCELED})
-                                WHERE
-                                    b.id = ${batteries[index].id}
-                                GROUP BY b.id`,
-                                function (err, results, fields) {
+                                connection.query(
+                                    `INSERT INTO 
+                                    schedules
+                                        (battery_id, 
+                                        user_id, 
+                                        status_id, 
+                                        created_at, 
+                                        updated_at)
+                                    VALUES
+                                        (${batteries[index].id}, 
+                                        ${userId}, 
+                                        ${SCHEDULE_STATUS.SCHEDULED}, 
+                                        NOW(), 
+                                        NOW())`,
+                                    function (err, results, fields) {
 
-                                    if (err) {
-                                        return res.status(500).json({
-                                            success: false,
-                                            message: "Ocorreu um erro no agendamento!",
-                                            verbose: `${err}`,
-                                            data: {}
-                                        })
-                                    }
+                                        if (err) {
 
-                                    var insertedIds = []
-                                    let available_vacancies = results[0].available_vacancies
+                                            connection.rollback(function () {
 
-                                    if (results[0].schedule_status_id == SCHEDULE_STATUS.CANCELED) {
-
-                                        return res.status(404).json({
-                                            success: false,
-                                            message: `Não foi possível marcar o agendamento no dia ${date}!`,
-                                            verbose: null,
-                                            data: {}
-                                        })
-
-                                    }
-
-                                    if (available_vacancies != 0 && available_vacancies >= batteries[index].selectedVacancies) {
-
-                                        for (i = 0; i < batteries[index].selectedVacancies; i++) {
-
-                                            connection.query(
-                                                `INSERT INTO 
-                                                schedules
-                                                    (battery_id, 
-                                                    user_id, 
-                                                    agenda_id, 
-                                                    status_id, 
-                                                    created_at, 
-                                                    updated_at)
-                                                VALUES
-                                                    (${batteries[index].id}, 
-                                                    ${userId}, 
-                                                    ${agendaDayId}, 
-                                                    ${SCHEDULE_STATUS.SCHEDULED}, 
-                                                    NOW(), 
-                                                    NOW())`,
-                                                function (err, results, fields) {
-
-                                                    if (err) {
-
-                                                        connection.rollback(function () {
-
-                                                            return res.status(500).json({
-                                                                success: false,
-                                                                message: "Ocorreu um erro no agendamento!",
-                                                                verbose: `${err}`,
-                                                                data: {}
-                                                            })
-
-                                                        })
-
-                                                        connection.end()
-
-                                                    }
-
-                                                    insertedIds.push(results.insertId)
-
+                                                return res.status(500).json({
+                                                    success: false,
+                                                    message: "Ocorreu um erro no agendamento!",
+                                                    verbose: `${err}`,
+                                                    data: {}
                                                 })
 
-                                        }
-
-                                        if (index == batteries.length - 1) {
-
-                                            connection.commit(function (err) {
-                                                if (err) {
-
-                                                    connection.rollback(function () {
-
-                                                        return res.status(500).json({
-                                                            success: false,
-                                                            message: "Ocorreu um erro no agendamento!",
-                                                            verbose: `${err}`,
-                                                            data: {}
-                                                        })
-
-                                                    })
-                                                }
-
-                                                connection.end()
                                             })
 
-                                            return res.status(200).json({
-                                                success: true,
-                                                message: "Agendado com sucesso!",
-                                                verbose: null,
-                                                data: {
-                                                    schedules_id: insertedIds
-                                                }
-                                            })
+                                            connection.end()
+
                                         }
 
-                                    } else {
+                                        insertedIds.push(results.insertId)
 
-                                        return res.status(404).json({
-                                            success: false,
-                                            message: "Não foi possível realizar o agendamento, tente novamente!",
-                                            verbose: null,
-                                            data: {}
+                                    })
+
+                            }
+
+                            if (index == batteries.length - 1) {
+
+                                connection.commit(function (err) {
+                                    if (err) {
+
+                                        connection.rollback(function () {
+
+                                            return res.status(500).json({
+                                                success: false,
+                                                message: "Ocorreu um erro no agendamento!",
+                                                verbose: `${err}`,
+                                                data: {}
+                                            })
+
                                         })
-
                                     }
 
+                                    connection.end()
                                 })
 
-                        })
+                                return res.status(200).json({
+                                    success: true,
+                                    message: "Agendado com sucesso!",
+                                    verbose: null,
+                                    data: {
+                                        schedules_id: insertedIds
+                                    }
+                                })
+                            }
 
-                    }
+                        } else {
+
+                            return res.status(404).json({
+                                success: false,
+                                message: "Não foi possível realizar o agendamento, tente novamente!",
+                                verbose: null,
+                                data: {}
+                            })
+
+                        }
+
+                    })
 
                 })
+
+            }
+
+
 
         })
 
