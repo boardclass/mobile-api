@@ -263,7 +263,7 @@ exports.agenda = async function (req, res) {
 
             const filters = [
                 userId,
-                SCHEDULE_STATUS.SCHEDULED
+                SCHEDULE_STATUS.CANCELED
             ]
 
             connection.query(query, filters,

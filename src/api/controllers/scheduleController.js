@@ -73,7 +73,7 @@ exports.store = async function (req, res) {
                                 const filters = [
                                     batteries[index].id,
                                     userId,
-                                    SCHEDULE_STATUS.CANCELED,
+                                    SCHEDULE_STATUS.SCHEDULED,
                                     date
                                 ]
 
