@@ -89,7 +89,7 @@ exports.addresses = async function (req, res) {
                     message: "Consulta realizada com sucesso!",
                     verbose: null,
                     data: {
-                        adresses: results
+                        addresses: results
                     }
                 })
 
@@ -170,7 +170,7 @@ exports.establishments = async function (req, res) {
                     message: "Filtro realizado com sucesso!",
                     verbose: null,
                     data: {
-                        adresses: results
+                        establishments: results
                     }
                 })
 
