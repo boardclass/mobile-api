@@ -45,7 +45,7 @@ exports.store = async function (req, res) {
                                 data: {}
                             })
                         }
-                        
+
                         let available_vacancies = results[0].available_vacancies
 
                         //  TODO: Handle canceled batteries
@@ -75,6 +75,8 @@ exports.store = async function (req, res) {
 
                                             connection.rollback(function () {
 
+                                                connection.end()
+
                                                 return res.status(500).json({
                                                     success: false,
                                                     message: "Ocorreu um erro no agendamento!",
@@ -83,8 +85,6 @@ exports.store = async function (req, res) {
                                                 })
 
                                             })
-
-                                            connection.end()
 
                                         }
 
@@ -99,6 +99,8 @@ exports.store = async function (req, res) {
 
                                         connection.rollback(function () {
 
+                                            connection.end()
+
                                             return res.status(500).json({
                                                 success: false,
                                                 message: "Ocorreu um erro no agendamento!",
@@ -108,8 +110,7 @@ exports.store = async function (req, res) {
 
                                         })
                                     }
-
-                                    connection.end()
+                                    
                                 })
 
                                 return res.status(200).json({
