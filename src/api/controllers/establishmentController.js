@@ -242,7 +242,7 @@ exports.getAgenda = async function (req, res) {
                     verbose: null,
                     data: {
                         agenda: {
-                            results
+                            dates: results
                         }
                     }
                 })
