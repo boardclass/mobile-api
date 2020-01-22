@@ -1,4 +1,5 @@
 const mysql = require('../../config/mysql')
+const logger = require('../classes/logger')
 
 exports.sports = async function (req, res) {
 
@@ -40,11 +41,15 @@ exports.sports = async function (req, res) {
 
     } catch (error) {
 
-        return res.status(500).json({
-            success: false,
-            message: "Ocorreu um erro ao obter os esportes!",
-            verbose: `${error}`,
-            data: {}
+        logger.register(error, req, _ => {
+
+            return res.status(500).json({
+                success: false,
+                message: "Ocorreu um erro ao obter os esportes!",
+                verbose: `${error}`,
+                data: {}
+            })
+
         })
 
     }
@@ -76,12 +81,18 @@ exports.addresses = async function (req, res) {
             connection.query(query, [sportId], function (err, results, fields) {
 
                 if (err) {
-                    return res.status(500).json({
-                        success: false,
-                        message: "Ocorreu um erro ao obter o endereço!",
-                        verbose: `${err}`,
-                        data: {}
+
+                    logger.register(error, req, _ => {
+
+                        return res.status(500).json({
+                            success: false,
+                            message: "Ocorreu um erro ao obter o endereço!",
+                            verbose: `${err}`,
+                            data: {}
+                        })
+
                     })
+
                 }
 
                 return res.status(200).json({
@@ -101,11 +112,15 @@ exports.addresses = async function (req, res) {
 
     } catch (error) {
 
-        return res.status(500).json({
-            success: false,
-            message: "Ocorreu um erro ao obter o endereço!",
-            verbose: `${error}`,
-            data: {}
+        logger.register(error, req, _ => {
+
+            return res.status(500).json({
+                success: false,
+                message: "Ocorreu um erro ao obter o endereço!",
+                verbose: `${error}`,
+                data: {}
+            })
+
         })
 
     }
@@ -146,23 +161,29 @@ exports.establishments = async function (req, res) {
                 ORDER BY 
                     e.name`
 
-                    const fiters = [
-                        sportId,
-                        address.country,
-                        address.state,
-                        address.city,
-                        address.neighbourhood
-                    ]
+            const fiters = [
+                sportId,
+                address.country,
+                address.state,
+                address.city,
+                address.neighbourhood
+            ]
 
             connection.query(query, fiters, function (err, results, fields) {
 
                 if (err) {
-                    return res.status(500).json({
-                        success: false,
-                        message: "Ocorreu um erro ao filtrar o estabelecimento!",
-                        verbose: `${err}`,
-                        data: {}
+
+                    logger.register(error, req, _ => {
+
+                        return res.status(500).json({
+                            success: false,
+                            message: "Ocorreu um erro ao filtrar o estabelecimento!",
+                            verbose: `${err}`,
+                            data: {}
+                        })
+
                     })
+
                 }
 
                 return res.status(200).json({
@@ -182,11 +203,15 @@ exports.establishments = async function (req, res) {
 
     } catch (error) {
 
-        return res.status(500).json({
-            success: false,
-            message: "Ocorreu um erro ao filtrar o estabelecimento!",
-            verbose: `${error}`,
-            data: {}
+        logger.register(error, req, _ => {
+
+            return res.status(500).json({
+                success: false,
+                message: "Ocorreu um erro ao filtrar o estabelecimento!",
+                verbose: `${error}`,
+                data: {}
+            })
+
         })
 
     }

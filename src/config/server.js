@@ -6,6 +6,7 @@ const bodyParser = require('body-parser')
 const wakeuper = require('./wakeup-timer')
 const middleware = require('./middleware')
 const excludedRoutes = require('./excludedRoutes')
+const mongodb = require('../config/mongodb')
 
 const app = express()
 
@@ -27,6 +28,8 @@ module.exports = {
         if (port != 8080) {
             wakeuper.setTimer()
         }
+
+        mongodb.setup()
 
         app.listen(port, () => {
             console.log(`Server started on ${port}`)

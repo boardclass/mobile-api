@@ -1,7 +1,8 @@
 const math = require('../classes/math')
 const date = require('../classes/date')
+const logger = require('../classes/logger')
 
-exports.sendSMS = function(req, res) {
+exports.sendSMS = function (req, res) {
 
     let userId = req.body.userId
     let phone = req.body.phone
@@ -22,7 +23,7 @@ exports.sendSMS = function(req, res) {
             user.account.verification.expiration = expirationDate
 
             user.save()
-                .then( _ => {
+                .then(_ => {
 
                     return res.status(200).json({
                         success: true,
@@ -32,29 +33,37 @@ exports.sendSMS = function(req, res) {
 
                 }).catch(err => {
 
-                    return res.status(500).json({
-                        success: false,
-                        message: "Ops, algo ocorreu. Tente novamente mais tarde!",
-                        verbose: err,
-                        data: {}
+                    logger.register(error, req, _ => {
+
+                        return res.status(500).json({
+                            success: false,
+                            message: "Ops, algo ocorreu. Tente novamente mais tarde!",
+                            verbose: err,
+                            data: {}
+                        })
+
                     })
 
                 })
 
         }).catch(err => {
 
-            return res.status(500).json({
-                success: false,
-                message: "Ops, algo ocorreu. Tente novamente mais tarde!",
-                verbose: err,
-                data: {}
+            logger.register(error, req, _ => {
+
+                return res.status(500).json({
+                    success: false,
+                    message: "Ops, algo ocorreu. Tente novamente mais tarde!",
+                    verbose: err,
+                    data: {}
+                })
+
             })
 
         })
 
 }
 
-exports.validateSMS = function(req, res) {
+exports.validateSMS = function (req, res) {
 
     let userId = req.body.userId
     let verificationCode = req.body.verificationCode
@@ -77,7 +86,7 @@ exports.validateSMS = function(req, res) {
                 })
 
             }
-            
+
             if (verificationCode === user.account.verification.code) {
 
                 return res.status(200).json({
@@ -96,12 +105,16 @@ exports.validateSMS = function(req, res) {
             })
 
         }).catch(err => {
-            
-            return res.status(500).json({
-                success: false,
-                message: "Ops, algo ocorreu. Tente novamente mais tarde!",
-                verbose: err,
-                data: {}
+
+            logger.register(error, req, _ => {
+
+                return res.status(500).json({
+                    success: false,
+                    message: "Ops, algo ocorreu. Tente novamente mais tarde!",
+                    verbose: err,
+                    data: {}
+                })
+
             })
 
         })

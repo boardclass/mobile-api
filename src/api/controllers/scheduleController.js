@@ -1,4 +1,5 @@
 const mysql = require('../../config/mysql')
+const logger = require('../classes/logger')
 const { SCHEDULE_STATUS, AGENDA_STATUS } = require('../classes/constants')
 
 exports.store = async function (req, res) {
@@ -38,12 +39,18 @@ exports.store = async function (req, res) {
                     connection.query(query, filters, function (err, results, fields) {
 
                         if (err) {
-                            return res.status(500).json({
-                                success: false,
-                                message: "Ocorreu um erro no agendamento!",
-                                verbose: `${err}`,
-                                data: {}
+
+                            logger.register(error, req, _ => {
+
+                                return res.status(500).json({
+                                    success: false,
+                                    message: "Ocorreu um erro no agendamento!",
+                                    verbose: `${err}`,
+                                    data: {}
+                                })
+
                             })
+
                         }
 
                         let available_vacancies = results[0].available_vacancies
@@ -82,11 +89,15 @@ exports.store = async function (req, res) {
 
                                         connection.rollback(function () {
 
-                                            return res.status(500).json({
-                                                success: false,
-                                                message: "Ocorreu um erro no agendamento!",
-                                                verbose: `${err}`,
-                                                data: {}
+                                            logger.register(error, req, _ => {
+
+                                                return res.status(500).json({
+                                                    success: false,
+                                                    message: "Ocorreu um erro no agendamento!",
+                                                    verbose: `${err}`,
+                                                    data: {}
+                                                })
+
                                             })
 
                                         })
@@ -106,11 +117,15 @@ exports.store = async function (req, res) {
 
                                         connection.rollback(function () {
 
-                                            return res.status(500).json({
-                                                success: false,
-                                                message: "Ocorreu um erro no agendamento!",
-                                                verbose: `${err}`,
-                                                data: {}
+                                            logger.register(error, req, _ => {
+
+                                                return res.status(500).json({
+                                                    success: false,
+                                                    message: "Ocorreu um erro no agendamento!",
+                                                    verbose: `${err}`,
+                                                    data: {}
+                                                })
+
                                             })
 
                                         })
@@ -152,11 +167,15 @@ exports.store = async function (req, res) {
 
     } catch (error) {
 
-        return res.status(500).json({
-            success: false,
-            message: "Ocorreu um erro no agendamento!",
-            verbose: `${error}`,
-            data: {}
+        logger.register(error, req, _ => {
+
+            return res.status(500).json({
+                success: false,
+                message: "Ocorreu um erro no agendamento!",
+                verbose: `${error}`,
+                data: {}
+            })
+
         })
 
     }

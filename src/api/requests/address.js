@@ -1,13 +1,14 @@
 const request = require('request')
+const logger = require('../classes/logger')
 
 exports.findByCEP = function (cep, callback) {
 
     let link = `http://viacep.com.br/ws/${cep}/json/`;
 
-    request(link, function(error, response, body) {
+    request(link, function (error, response, body) {
 
         if (error) {
-           
+
             return res.status(500).json({
                 success: false,
                 message: 'Ops, algo ocorreu. Tente novamente mais tarde!',
@@ -20,7 +21,7 @@ exports.findByCEP = function (cep, callback) {
         if (body) {
 
             let json = JSON.parse(body);
-            
+
             let address = {
                 cep: json.cep,
                 street: json.logradouro,
@@ -34,11 +35,15 @@ exports.findByCEP = function (cep, callback) {
             return
         }
 
-        return res.status(500).json({
-            success: false,
-            message: 'Ops, algo ocorreu. Tente novamente mais tarde!',
-            verbose: 'The response from service has no body',
-            data: {}
+        logger.register(error, req, _ => {
+
+            return res.status(500).json({
+                success: false,
+                message: 'Ops, algo ocorreu. Tente novamente mais tarde!',
+                verbose: 'The response from service has no body',
+                data: {}
+            })
+
         })
 
     });

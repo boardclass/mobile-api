@@ -17,6 +17,7 @@ module.exports = {
 
         mongoose.set('useCreateIndex', true)
 
-    }
+    },
+    mongoose: mongoose
 
 }

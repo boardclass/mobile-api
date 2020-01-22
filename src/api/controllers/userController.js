@@ -6,6 +6,7 @@ const bcrypt = require('bcrypt')
 const validator = require('../classes/validator')
 const jwtHandler = require('../classes/jwt')
 const mysql = require('../../config/mysql')
+const logger = require('../classes/logger')
 
 const { SCHEDULE_STATUS } = require('../classes/constants')
 
@@ -69,11 +70,15 @@ exports.login = async function (req, res) {
 
     } catch (error) {
 
-        return res.status(500).json({
-            success: false,
-            message: "Ocorreu um erro ao realizar o login!",
-            verbose: `${error}`,
-            data: {}
+        logger.register(error, req, _ => {
+
+            return res.status(500).json({
+                success: false,
+                message: "Ocorreu um erro ao realizar o login!",
+                verbose: `${error}`,
+                data: {}
+            })
+
         })
 
     }
@@ -132,11 +137,15 @@ exports.store = async function (req, res) {
 
     } catch (error) {
 
-        return res.status(500).json({
-            success: false,
-            message: "Ocorreu um erro ao cadastrar o usuário!",
-            verbose: `${error}`,
-            data: {}
+        logger.register(error, req, _ => {
+
+            return res.status(500).json({
+                success: false,
+                message: "Ocorreu um erro ao cadastrar o usuário!",
+                verbose: `${error}`,
+                data: {}
+            })
+
         })
 
     }
@@ -189,11 +198,15 @@ exports.storeAddress = async function (req, res) {
 
     } catch (error) {
 
-        return res.status(500).json({
-            success: false,
-            message: "Ocorreu um erro ao cadastrar o endereço!",
-            verbose: `${error}`,
-            data: {}
+        logger.register(error, req, _ => {
+
+            return res.status(500).json({
+                success: false,
+                message: "Ocorreu um erro ao cadastrar o endereço!",
+                verbose: `${error}`,
+                data: {}
+            })
+
         })
 
     }
@@ -225,11 +238,15 @@ exports.storeRole = async function (req, res) {
 
     } catch (error) {
 
-        return res.status(500).json({
-            success: false,
-            message: "Ocorreu um erro ao cadastrar esse usuário!",
-            verbose: `${error}`,
-            data: {}
+        logger.register(error, req, _ => {
+
+            return res.status(500).json({
+                success: false,
+                message: "Ocorreu um erro ao cadastrar esse usuário!",
+                verbose: `${error}`,
+                data: {}
+            })
+
         })
 
     }
@@ -320,11 +337,15 @@ exports.agenda = async function (req, res) {
 
     } catch (error) {
 
-        return res.status(500).json({
-            success: false,
-            message: "Ocorreu um erro ao obter a agenda!",
-            verbose: `${error}`,
-            data: {}
+        logger.register(error, req, _ => {
+
+            return res.status(500).json({
+                success: false,
+                message: "Ocorreu um erro ao obter a agenda!",
+                verbose: `${error}`,
+                data: {}
+            })
+
         })
 
     }

@@ -5,6 +5,7 @@ const mysql = require('../../config/mysql')
 const bcrypt = require('bcrypt')
 const validator = require('../classes/validator')
 const jwtHandler = require('../classes/jwt')
+const logger = require('../classes/logger')
 const Sequelize = require('sequelize')
 const Op = Sequelize.Op
 const { ADDRESS, SCHEDULE_STATUS } = require('../classes/constants')
@@ -59,11 +60,15 @@ exports.store = async function (req, res) {
 
     } catch (error) {
 
-        return res.status(500).json({
-            success: false,
-            message: "Ocorreu um erro ao cadastrar o estabelecimento!",
-            verbose: `${error}`,
-            data: {}
+        logger.register(error, req, _ => {
+
+            return res.status(500).json({
+                success: false,
+                message: "Ocorreu um erro ao cadastrar o estabelecimento!",
+                verbose: `${error}`,
+                data: {}
+            })
+
         })
 
     }
@@ -129,11 +134,15 @@ exports.login = async function (req, res) {
 
     } catch (error) {
 
-        return res.status(500).json({
-            success: false,
-            message: "Ocorreu um erro ao realizar o login!",
-            verbose: `${error}`,
-            data: {}
+        logger.register(error, req, _ => {
+
+            return res.status(500).json({
+                success: false,
+                message: "Ocorreu um erro ao realizar o login!",
+                verbose: `${error}`,
+                data: {}
+            })
+
         })
 
     }
@@ -187,11 +196,15 @@ exports.storeAddress = async function (req, res) {
 
     } catch (error) {
 
-        return res.status(500).json({
-            success: false,
-            message: "Ocorreu um erro ao cadastrar o endereço!",
-            verbose: `${error}`,
-            data: {}
+        logger.register(error, req, _ => {
+
+            return res.status(500).json({
+                success: false,
+                message: "Ocorreu um erro ao cadastrar o endereço!",
+                verbose: `${error}`,
+                data: {}
+            })
+
         })
 
     }
@@ -228,12 +241,17 @@ exports.getAgenda = async function (req, res) {
             connection.query(query, establishmentId, function (err, results, fields) {
 
                 if (err) {
-                    return res.status(500).json({
-                        success: false,
-                        message: "Ocorreu um erro ao obter a agenda!",
-                        verbose: `${err}`,
-                        data: {}
+
+                    logger.register(error, req, _ => {
+
+                        return res.status(500).json({
+                            success: false,
+                            message: "Ocorreu um erro ao obter a agenda!",
+                            verbose: `${err}`,
+                            data: {}
+                        })
                     })
+
                 }
 
                 return res.status(200).json({
@@ -255,11 +273,15 @@ exports.getAgenda = async function (req, res) {
 
     } catch (error) {
 
-        return res.status(500).json({
-            success: false,
-            message: "Ocorreu um erro ao obter a agenda!",
-            verbose: `${error}`,
-            data: {}
+        logger.register(error, req, _ => {
+
+            return res.status(500).json({
+                success: false,
+                message: "Ocorreu um erro ao obter a agenda!",
+                verbose: `${error}`,
+                data: {}
+            })
+
         })
 
     }
@@ -302,16 +324,22 @@ exports.getBatteries = async function (req, res) {
                 establishmentId,
                 sportId
             ]
-            
+
             connection.query(query, data, function (err, results, fields) {
 
                 if (err) {
-                    return res.status(500).json({
-                        success: false,
-                        message: "Ocorreu um erro ao obter a bateria!",
-                        verbose: `${err}`,
-                        data: {}
+
+                    logger.register(error, req, _ => {
+                        
+                        return res.status(500).json({
+                            success: false,
+                            message: "Ocorreu um erro ao obter a bateria!",
+                            verbose: `${err}`,
+                            data: {}
+                        })
+
                     })
+
                 }
 
                 return res.status(200).json({
@@ -330,11 +358,15 @@ exports.getBatteries = async function (req, res) {
 
     } catch (error) {
 
-        return res.status(500).json({
-            success: false,
-            message: "Ocorreu um erro ao obter a bateria!",
-            verbose: `${error}`,
-            data: {}
+        logger.register(error, req, _ => {
+
+            return res.status(500).json({
+                success: false,
+                message: "Ocorreu um erro ao obter a bateria!",
+                verbose: `${error}`,
+                data: {}
+            })
+
         })
 
     }
