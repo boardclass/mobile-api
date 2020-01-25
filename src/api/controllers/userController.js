@@ -55,8 +55,6 @@ exports.login = async function (req, res) {
 
         }
 
-        console.log('userid', user.id);
-
         const token = jwtHandler.generate(user.id)
 
         res.setHeader('access-token', token)
@@ -104,8 +102,6 @@ exports.store = async function (req, res) {
 
     validator.validateFiels(req, res)
 
-    const token = jwtHandler.generate(account.email)
-
     try {
 
         account.password = await bcrypt.hash(account.password, 10)
@@ -124,6 +120,8 @@ exports.store = async function (req, res) {
                 { association: 'addresses' }
             ]
         })
+
+        const token = jwtHandler.generate(newUser[0].id)
 
         res.setHeader('access-token', token)
         res.setHeader('user-id', newUser[0].id)
