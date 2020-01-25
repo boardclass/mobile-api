@@ -266,7 +266,11 @@ exports.agenda = async function (req, res) {
                     s.id, 
                     DATE_FORMAT(s.date,'%Y-%m-%d') as date, 
                     sp.id AS sport_id, sp.display_name AS sport, 
-                    e.id AS establishment_id, e.name AS establishment
+                    e.id AS establishment_id, e.name AS establishment,
+                    b.id AS battery_id,
+                    b.start_hour,
+                    b.end_hour,
+                    b.session_value AS price
                 FROM schedules s
                 INNER JOIN batteries b
                     ON b.id = s.battery_id
@@ -287,36 +291,56 @@ exports.agenda = async function (req, res) {
                 function (err, results, fields) {
 
                     if (err) {
-                        return res.status(500).json({
-                            success: false,
-                            message: "Ocorreu um erro no agendamento!",
-                            verbose: `${err}`,
-                            data: {}
+
+                        logger.register(err, req, _ => {
+                            return res.status(500).json({
+                                success: false,
+                                message: "Ocorreu um erro no agendamento!",
+                                verbose: `${err}`,
+                                data: {}
+                            })
+
                         })
+
                     }
 
-                    var schedules = []
+                    const agenda = []
 
-                    for (let index in results) {
+                    for (row of results) {
 
-                        let result = results[index]
+                        let filtered = agenda.findIndex(value => {
+                            return value.date === row.date && value.sport.id === row.sport_id
+                        })
 
-                        const schedule = {
+                        if (filtered >= 0) {
 
-                            id: result.id,
-                            date: result.date,
-                            sport: {
-                                id: result.sport_id,
-                                name: result.sport
-                            },
-                            establishment: {
-                                id: result.establishment_id,
-                                name: result.establishment
-                            }
+                            agenda[filtered].batteries.push({
+                                id: row.battery_id,
+                                startHour: row.start_hour,
+                                endHour: row.end_hour
+                            })
+
+                        } else {
+
+                            agenda.push({
+                                id: row.id,
+                                date: row.date,
+                                sport: {
+                                    id: row.sport_id,
+                                    name: row.sport
+                                },
+                                establishment: {
+                                    id: row.establishment_id,
+                                    name: row.establishment
+                                },
+                                batteries: [{
+                                    id: row.battery_id,
+                                    startHour: row.start_hour,
+                                    endHour: row.end_hour,
+                                }]
+                            })
 
                         }
-
-                        schedules.push(schedule)
 
                     }
 
@@ -327,7 +351,7 @@ exports.agenda = async function (req, res) {
                         message: "Agenda obtida com sucesso!",
                         verbose: null,
                         data: {
-                            schedules: schedules
+                            schedules: agenda
                         }
                     })
 
