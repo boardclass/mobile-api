@@ -177,24 +177,46 @@ exports.storeAddress = async function (req, res) {
 
     try {
 
-        await UserAddress.create({
-            zipcode,
-            country,
-            state,
-            city,
-            neighbourhood,
-            street,
-            number,
-            complement,
-            user_id,
-        })
+        await UserAddress.findOne({ where: { user_id } })
+            .then(function (obj) {
 
-        return res.status(200).json({
-            success: true,
-            message: "Endereço cadastrado com sucesso!",
-            verbose: null,
-            data: {}
-        })
+                if (obj) {
+
+                    UserAddress.update({
+                        zipcode,
+                        country,
+                        state,
+                        city,
+                        neighbourhood,
+                        street,
+                        number,
+                        complement
+                    }, { where: { 'user_id': user_id } })
+
+                } else {
+
+                    UserAddress.create({
+                        zipcode,
+                        country,
+                        state,
+                        city,
+                        neighbourhood,
+                        street,
+                        number,
+                        complement,
+                        user_id,
+                    })
+
+                }
+
+                return res.status(200).json({
+                    success: true,
+                    message: "Endereço cadastrado com sucesso!",
+                    verbose: null,
+                    data: {}
+                })
+
+            })
 
     } catch (error) {
 
@@ -280,7 +302,7 @@ exports.agenda = async function (req, res) {
                     ON sp.id = b.sport_id
                 WHERE s.user_id = ?
                     AND s.status_id NOT IN (?)
-                ORDER BY s.date DESC, id DESC`
+                ORDER BY s.date`
 
             const filters = [
                 userId,
