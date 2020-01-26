@@ -329,7 +329,7 @@ exports.agenda = async function (req, res) {
                     for (row of results) {
 
                         let filtered = agenda.findIndex(value => {
-                            return value.date === row.date && value.sport.id === row.sport_id
+                            return value.date === row.date
                         })
 
                         if (filtered >= 0) {
