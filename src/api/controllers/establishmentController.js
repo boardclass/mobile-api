@@ -325,14 +325,6 @@ exports.getBatteries = async function (req, res) {
                 sportId
             ]
 
-            const batteries = results.map(row => {
-                return {
-                    id: row.id,
-                    startHour: row.start_hour,
-                    endHour: row.end_hour
-                }
-            })
-
             connection.query(query, data, function (err, results, fields) {
 
                 if (err) {
@@ -350,12 +342,20 @@ exports.getBatteries = async function (req, res) {
 
                 }
 
+                const batteries = results.map(row => {
+                    return {
+                        id: row.id,
+                        startHour: row.start_hour,
+                        endHour: row.end_hour
+                    }
+                })
+
                 return res.status(200).json({
                     success: true,
                     message: "Bateria obtida com sucesso!",
                     verbose: null,
                     data: {
-                        batteries: results
+                        batteries
                     }
                 })
 
