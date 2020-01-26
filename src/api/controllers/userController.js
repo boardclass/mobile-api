@@ -338,7 +338,11 @@ exports.agenda = async function (req, res) {
                                 id: row.battery_id,
                                 startHour: row.start_hour,
                                 endHour: row.end_hour,
-                                price: row.price
+                                price: row.price,
+                                sport: {
+                                    id: row.sport_id,
+                                    name: row.sport
+                                }
                             })
 
                         } else {
@@ -346,10 +350,6 @@ exports.agenda = async function (req, res) {
                             agenda.push({
                                 id: row.id,
                                 date: row.date,
-                                sport: {
-                                    id: row.sport_id,
-                                    name: row.sport
-                                },
                                 establishment: {
                                     id: row.establishment_id,
                                     name: row.establishment
@@ -358,7 +358,11 @@ exports.agenda = async function (req, res) {
                                     id: row.battery_id,
                                     startHour: row.start_hour,
                                     endHour: row.end_hour,
-                                    price: row.price
+                                    price: row.price,
+                                    sport: {
+                                        id: row.sport_id,
+                                        name: row.sport
+                                    }
                                 }]
                             })
 
