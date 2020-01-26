@@ -301,10 +301,10 @@ exports.getBatteries = async function (req, res) {
             const query = `
                 SELECT
                     b.id,
-                    b.start_hour,
-                    b.end_hour,
+                    b.start_hour AS startHour,
+                    b.end_hour AS endHour,
                     b.session_value AS price,
-                    ABS(COUNT(s.id) - b.people_allowed) AS available_vacancies
+                    ABS(COUNT(s.id) - b.people_allowed) AS availableVacancies
                 FROM
                     batteries b
                 LEFT JOIN schedules s ON
@@ -324,6 +324,14 @@ exports.getBatteries = async function (req, res) {
                 establishmentId,
                 sportId
             ]
+
+            const batteries = results.map(row => {
+                return {
+                    id: row.id,
+                    startHour: row.start_hour,
+                    endHour: row.end_hour
+                }
+            })
 
             connection.query(query, data, function (err, results, fields) {
 
