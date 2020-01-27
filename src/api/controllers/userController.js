@@ -285,8 +285,10 @@ exports.agenda = async function (req, res) {
                 SELECT 
                     s.id, 
                     DATE_FORMAT(s.date,'%Y-%m-%d') as date, 
-                    sp.id AS sport_id, sp.display_name AS sport, 
-                    e.id AS establishment_id, e.name AS establishment,
+                    sp.id AS sport_id, 
+                    sp.display_name AS sport, 
+                    e.id AS establishment_id, 
+                    e.name AS establishment,
                     b.id AS battery_id,
                     b.start_hour,
                     b.end_hour,
@@ -300,7 +302,7 @@ exports.agenda = async function (req, res) {
                     ON sp.id = b.sport_id
                 WHERE s.user_id = ?
                     AND s.status_id NOT IN (?)
-                ORDER BY date DESC`
+                ORDER BY date DESC, sport, start_hour`
 
             const filters = [
                 userId,
