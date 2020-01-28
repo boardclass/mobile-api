@@ -5,7 +5,11 @@ module.exports = {
         '/api/user/login',
         '/api/establishment',
         '/api/establishment/login',
-        '/api/mailer'
+        '/api/mailer',
+        '/api/user/password/reset',
+        '/api/user/password/validate',
+        '/api/establishment/password/reset',
+        '/api/establishment/password/validate'
     ]
 
 }

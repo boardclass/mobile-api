@@ -2,7 +2,7 @@ const Log = require('../models/Log');
 
 module.exports = {
 
-    register: function (err, req, next) {
+    register: async function (err, req, next) {
 
         let log = new Log({
             endpoint: req. url,
@@ -10,7 +10,7 @@ module.exports = {
             stack: err.stack
         })
 
-        log.save()
+        await log.save()
             .then(function () {
                 next()
             }, function (err) {
