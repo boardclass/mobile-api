@@ -6,6 +6,7 @@ const date = require('../classes/date')
 const logger = require('../classes/logger')
 const mailer = require('../classes/mailer')
 const mysql = require('../../config/mysql')
+const jwtHandler = require('../classes/jwt')
 
 exports.sendSMS = function (req, res) {
 
@@ -126,11 +127,11 @@ exports.validateSMS = function (req, res) {
 
 }
 
-exports.resetUserPassword = function (req, res) {
-
-    let verificationCode = math.getRandomNumber(1000, 9999)
+exports.tokenUserPassword = function (req, res) {
 
     const email = req.body.email
+
+    let verificationCode = math.getRandomNumber(1000, 9999)
 
     req.assert('email', 'O email deve ser informado!').notEmpty()
     req.assert('email', 'O email está em formato inválido').isEmail()
@@ -223,7 +224,7 @@ exports.resetUserPassword = function (req, res) {
 
                                 return res.status(200).json({
                                     success: true,
-                                    message: "Email enviado com sucesso!",
+                                    message: "Token enviado com sucesso!",
                                     verbose: null,
                                     data: {}
                                 })
@@ -259,19 +260,15 @@ exports.validateUserPassword = async function (req, res) {
 
     const code = req.body.code
     const email = req.body.email
-    const password = req.body.password
 
     req.assert('code', 'O código deve ser informado!').notEmpty()
     req.assert('code', 'O código está em formato inválido!').len(4)
     req.assert('email', 'O email deve ser informado!').notEmpty()
     req.assert('email', 'O email está em formato inválido').isEmail()
-    req.assert('password', 'A senha deve ser informada!').notEmpty()
 
     validator.validateFiels(req, res)
 
     try {
-
-        const cryptedPassword = await bcrypt.hash(password, 10)
 
         mysql.connect(mysql.uri, connection => {
 
@@ -310,32 +307,12 @@ exports.validateUserPassword = async function (req, res) {
 
                     }
 
-                    const userId = results[0].user_id
-
-                    connection.query(`UPDATE user_accounts SET password = '${cryptedPassword}' WHERE user_id = ?`, [userId],
-                        function (err, results, fields) {
-
-                            if (err) {
-
-                                return res.status(500).json({
-                                    success: false,
-                                    message: "Ocorreu um erro na recuperação de senha!",
-                                    verbose: `${err}`,
-                                    data: {}
-                                })
-
-                            }
-
-                            return res.status(200).json({
-                                success: true,
-                                message: "Senha alterada com sucesso!",
-                                verbose: null,
-                                data: {}
-                            })
-
-                        })
-
-                    connection.close()
+                    return res.status(200).json({
+                        success: true,
+                        message: "Código validado com sucesso!",
+                        verbose: null,
+                        data: { userId: results[0].user_id }
+                    })
 
                 })
 
@@ -348,6 +325,70 @@ exports.validateUserPassword = async function (req, res) {
             return res.status(500).json({
                 success: false,
                 message: "Ocorreu um erro na recuperação de senha!",
+                verbose: `${error}`,
+                data: {}
+            })
+
+        })
+
+    }
+
+}
+
+exports.resetUserPassword = async function (req, res) {
+
+    const userId = req.body.userId
+    const password = req.body.password
+
+    req.assert('password', 'A senha deve ser informada!').notEmpty()
+
+    validator.validateFiels(req, res)
+
+    try {
+
+        const cryptedPassword = await bcrypt.hash(password, 10)
+
+        mysql.connect(mysql.uri, connection => {
+
+            connection.query(`UPDATE user_accounts SET password = '${cryptedPassword}' WHERE user_id = ?`, [userId],
+                function (err, results, fields) {
+
+                    if (err) {
+
+                        console.log(err);
+
+                        return res.status(500).json({
+                            success: false,
+                            message: "Ocorreu um erro na recuperação de senha!",
+                            verbose: `${err}`,
+                            data: {}
+                        })
+
+                    }
+
+                    const token = jwtHandler.generate(userId)
+                    res.setHeader('access-token', token)
+
+                    connection.close()
+
+                    return res.status(200).json({
+                        success: true,
+                        message: "Senha alterada com sucesso!",
+                        verbose: null,
+                        data: {}
+                    })
+
+                })
+
+        })
+
+    } catch (error) {
+
+        logger.register(error, req, _ => {
+
+            return res.status(500).json({
+                success: false,
+                message: "Ocorreu um erro na alterar a senha!",
                 verbose: `${error}`,
                 data: {}
             })

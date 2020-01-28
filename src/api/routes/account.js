@@ -10,6 +10,10 @@ module.exports = (app) => {
     //     controller.validateSMS(req, res)
     // })
 
+    app.post('/api/user/password/token', (req, res) => {
+        controller.tokenUserPassword(req, res)
+    })
+
     app.post('/api/user/password/reset', (req, res) => {
         controller.resetUserPassword(req, res)
     })

@@ -10,6 +10,8 @@ module.exports = {
             stack: err.stack
         })
 
+        console.log(log);
+
         await log.save()
             .then(function () {
                 next()
