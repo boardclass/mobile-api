@@ -10,8 +10,8 @@ exports.transporter = function() {
         port: 587,
         secure: false,
         auth: {
-            user: "lifestyleboardapp@gmail.com",
-            pass: "12Boardapp!@#$"
+            user: process.env.USER_EMAIL,
+            pass: process.env.USER_EMAIL_PASSWORD
         }
     })
     
