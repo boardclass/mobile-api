@@ -5,6 +5,8 @@ module.exports = {
 
     send: async function(data, callback) {
 
+        console.log(data);
+
         transporter().sendMail({
             from: 'Boardclass APP <lifestyleboardapp@gmail.com>',
             to: data.destination,
