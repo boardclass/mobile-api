@@ -12,7 +12,6 @@ module.exports = {
         }).then(message => {
             callback(message)
         }).catch(err => {
-            console.log(err);
             callback(null)
         })
 
