@@ -13,9 +13,8 @@ module.exports = {
         }).then(message => {
             callback(message)
         }).catch(err => {
-            logger.register(err, req, res, _ => {
-                callback(null)
-            })
+            console.log(err);
+            callback(null)
         })
 
     }
