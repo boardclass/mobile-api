@@ -205,8 +205,6 @@ exports.tokenUserPassword = function (req, res) {
                                 message: `Seu código de recuperação é: ${verificationCode}`
                             }
 
-                            console.log(data);
-
                             mailer.send(data, callback => {
 
                                 if (callback == null) {
