@@ -305,11 +305,14 @@ exports.validateUserPassword = async function (req, res) {
 
                     }
 
+                    const token = jwtHandler.generate(results[0].user_id)
+                    res.setHeader('access-token', token)
+
                     return res.status(200).json({
                         success: true,
                         message: "Código validado com sucesso!",
                         verbose: null,
-                        data: { userId: results[0].user_id }
+                        data: {}
                     })
 
                 })
@@ -335,7 +338,7 @@ exports.validateUserPassword = async function (req, res) {
 
 exports.resetUserPassword = async function (req, res) {
 
-    const userId = req.body.userId
+    const userId = req.decoded.userId
     const password = req.body.password
 
     req.assert('password', 'A senha deve ser informada!').notEmpty()
@@ -397,10 +400,6 @@ exports.resetUserPassword = async function (req, res) {
 
 }
 
-exports.resetEstablishmentPassword = function (req, res) {
+exports.resetEstablishmentPassword = function (req, res) {}
 
-}
-
-exports.validateEstablishmentPassword = function (req, res) {
-
-}
+exports.validateEstablishmentPassword = function (req, res) {}
