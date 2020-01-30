@@ -209,15 +209,11 @@ exports.tokenUserPassword = function (req, res) {
 
                                 if (callback == null) {
 
-                                    logger.register(error, req, _ => {
-
-                                        return res.status(500).json({
-                                            success: false,
-                                            message: "Falha ao enviar email!",
-                                            verbose: null,
-                                            data: {}
-                                        })
-
+                                    return res.status(500).json({
+                                        success: false,
+                                        message: "Falha ao enviar email!",
+                                        verbose: null,
+                                        data: {}
                                     })
 
                                 }
