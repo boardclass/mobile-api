@@ -1,4 +1,5 @@
 const { transporter } = require('../../config/nodemailer')
+const logger = require('../classes/logger')
 
 module.exports = {
 
@@ -12,7 +13,9 @@ module.exports = {
         }).then(message => {
             callback(message)
         }).catch(err => {
-            callback(null)
+            logger.register(err, req, res, _ => {
+                callback(null)
+            })
         })
 
     }
