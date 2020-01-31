@@ -6,6 +6,8 @@ module.exports = {
     
         if (error) {
             
+            console.log(error);
+
             let message = error[0].msg
             return res.status(400).json({
                 success: false,
