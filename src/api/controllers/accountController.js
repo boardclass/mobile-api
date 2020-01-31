@@ -136,9 +136,9 @@ exports.tokenUserPassword = function (req, res) {
     req.assert('email', 'O email deve ser informado!').notEmpty()
     req.assert('email', 'O email está em formato inválido').isEmail()
 
-    try {
+    validator.validateFiels(req, res)
 
-        validator.validateFiels(req, res)
+    try {
 
         mysql.connect(mysql.uri, connection => {
 
@@ -248,6 +248,8 @@ exports.tokenUserPassword = function (req, res) {
 
     } catch (error) {
 
+        console.log(error);
+        
         logger.register(error, req, _ => {
 
             return res.status(500).json({
