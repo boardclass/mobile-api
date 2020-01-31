@@ -5,8 +5,6 @@ module.exports = {
         let error = req.validationErrors()
     
         if (error) {
-    
-            console.log(error);
             
             let message = error[0].msg
             return res.status(400).json({
@@ -18,6 +16,23 @@ module.exports = {
     
         }
         
+    },
+
+    validateFields: function(req, object) {
+
+        let error = req.validationErrors()
+    
+        if (error) {
+            
+            object = {
+                success: false,
+                message: error[0].msg,
+                verbose: error[0],
+                data: {}
+            }
+    
+        }
+
     }
 
 }
