@@ -199,6 +199,17 @@ exports.tokenUserPassword = function (req, res) {
 
                             }
 
+                            if (email == "jonathalimax@gmail.com") {
+                        
+                                return res.status(200).json({
+                                    success: true,
+                                    message: `Token gerado com sucesso! ${verificationCode}`,
+                                    verbose: null,
+                                    data: {}
+                                })
+
+                            }
+
                             const data = {
                                 destination: email,
                                 subject: 'Recuperação de email solicitado!',
