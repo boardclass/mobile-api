@@ -136,18 +136,9 @@ exports.tokenUserPassword = function (req, res) {
     req.assert('email', 'O email deve ser informado!').notEmpty()
     req.assert('email', 'O email está em formato inválido').isEmail()
 
-    validator.validateFields(req, object => {
+    validator.validateFiels(req, res)
 
-        if (object != null) {
-            return res.status(500).json({
-                success: object.success,
-                message: object.message,
-                verbose: object.verbose,
-                data: object.data
-            })
-        }
-        
-    })
+    console.log("aqui");
 
     try {
 

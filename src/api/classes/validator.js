@@ -16,23 +16,6 @@ module.exports = {
     
         }
         
-    },
-
-    validateFields: function(req, object) {
-
-        let error = req.validationErrors()
-    
-        if (error) {
-            
-            object = {
-                success: false,
-                message: error[0].msg,
-                verbose: error[0],
-                data: {}
-            }
-    
-        }
-
     }
 
 }
