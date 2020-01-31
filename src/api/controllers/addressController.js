@@ -8,7 +8,9 @@ exports.findByCEP = function (req, res) {
     req.assert('cep', 'O CEP deve ser informado').notEmpty()
     req.assert('cep', 'CEP inválido').len(8)
 
-    validator.validateFiels(req, res)
+    if (validator.validateFields(req, res) != null) {
+        return
+    }
 
     addressRequest.findByCEP(cep, function (address) {
 
