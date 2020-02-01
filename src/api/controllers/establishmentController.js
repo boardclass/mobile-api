@@ -18,7 +18,9 @@ exports.store = async function (req, res) {
     req.assert('account.email', 'O email deve ser informado').notEmpty()
     req.assert('account.password', 'A senha deve ser informada').notEmpty()
 
-    validator.validateFiels(req, res)
+    if (validator.validateFields(req, res) != null) {
+        return
+    }
 
     if (establishment.cnpj === undefined)
         establishment.cnpj = null
@@ -83,7 +85,9 @@ exports.login = async function (req, res) {
     req.assert('email', 'O email deve ser informado')
     req.assert('password', 'A senha deve ser informado')
 
-    validator.validateFiels(req, res)
+    if (validator.validateFields(req, res) != null) {
+        return
+    }
 
     const token = jwtHandler.generate(email)
 
@@ -170,7 +174,9 @@ exports.storeAddress = async function (req, res) {
     req.assert('street', 'A Rua deve ser informado').notEmpty()
     req.assert('number', 'O Número deve ser informado').notEmpty()
 
-    validator.validateFiels(req, res)
+    if (validator.validateFields(req, res) != null) {
+        return
+    }
 
     try {
 

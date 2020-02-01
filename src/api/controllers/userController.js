@@ -18,7 +18,9 @@ exports.login = async function (req, res) {
     req.assert('email', 'O email deve ser informado')
     req.assert('password', 'A senha deve ser informado')
 
-    validator.validateFiels(req, res)
+    if (validator.validateFields(req, res) != null) {
+        return
+    }
 
     try {
 
@@ -100,7 +102,9 @@ exports.store = async function (req, res) {
     req.assert('account.email', 'O email está em formato inválido').isEmail()
     req.assert('account.password', 'A senha deve ser informada').notEmpty()
 
-    validator.validateFiels(req, res)
+    if (validator.validateFields(req, res) != null) {
+        return
+    }
 
     try {
 
@@ -171,7 +175,9 @@ exports.storeAddress = async function (req, res) {
     req.assert('street', 'A Rua deve ser informado').notEmpty()
     req.assert('number', 'O Número deve ser informado').notEmpty()
 
-    validator.validateFiels(req, res)
+    if (validator.validateFields(req, res) != null) {
+        return
+    }
 
     try {
 
@@ -242,7 +248,9 @@ exports.storeRole = async function (req, res) {
 
     try {
 
-        validator.validateFiels(req, res)
+        if (validator.validateFields(req, res) != null) {
+            return
+        }
 
         await UsersRoles.create({
             user_id: user_id,
