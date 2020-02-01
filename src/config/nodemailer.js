@@ -6,7 +6,7 @@ exports.transporter = function() {
     console.log(process.env.USER_EMAIL_PASSWORD);
 
     return nodemailer.createTransport({
-        host: 'smtp.gmail.com',
+        host: 'smtp.zoho.com',
         port: 587,
         secure: false,
         auth: {
