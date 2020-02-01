@@ -6,7 +6,7 @@ exports.transporter = function() {
     console.log(process.env.USER_EMAIL_PASSWORD);
     
     return nodemailer.createTransport({
-        host: 'smtp.zoho.com',
+        host: 'smtp.office365.com',
         port: 587,
         secure: false,
         auth: {
