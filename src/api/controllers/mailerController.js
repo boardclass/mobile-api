@@ -1,7 +1,7 @@
 const mailer = require('../classes/mailer')
 const logger = require('../classes/logger')
-
-exports.send = async function (req, res) {
+ 
+exports.send = function (req, res) {
 
     const data = {
         destination: req.body.destination,
@@ -9,19 +9,15 @@ exports.send = async function (req, res) {
         message: req.body.message
     }
 
-    await mailer.send(data, callback => {
+    mailer.send(data, callback => {
 
         if (callback == null) {
 
-            logger.register(error, req, _ => {
-
-                return res.status(500).json({
-                    success: false,
-                    message: "Falha ao enviar email!",
-                    verbose: null,
-                    data: {}
-                })
-
+            return res.status(500).json({
+                success: false,
+                message: "Falha ao enviar email!",
+                verbose: null,
+                data: {}
             })
 
         }

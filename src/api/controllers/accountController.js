@@ -205,16 +205,16 @@ exports.tokenUserPassword = function (req, res) {
 
                             }
 
-                            if (email == "jonathalimax@gmail.com") {
-                        
-                                return res.status(200).json({
-                                    success: true,
-                                    message: `Token gerado com sucesso! ${verificationCode}`,
-                                    verbose: null,
-                                    data: {}
-                                })
+                            // if (email == "jonathalimax@gmail.com") {
 
-                            }
+                            //     return res.status(200).json({
+                            //         success: true,
+                            //         message: `Token gerado com sucesso! ${verificationCode}`,
+                            //         verbose: null,
+                            //         data: {}
+                            //     })
+
+                            // }
 
                             const data = {
                                 destination: email,
@@ -235,6 +235,12 @@ exports.tokenUserPassword = function (req, res) {
 
                                 }
 
+                                console.log("willcloseconnection");
+
+                                connection.close()
+            
+                                console.log("didcloseconnection");
+
                                 return res.status(200).json({
                                     success: true,
                                     message: "Token enviado com sucesso!",
@@ -246,14 +252,12 @@ exports.tokenUserPassword = function (req, res) {
 
                         })
 
-                    connection.close()
-
                 })
 
         })
 
     } catch (error) {
-        
+
         logger.register(error, req, _ => {
 
             return res.status(500).json({
@@ -419,6 +423,6 @@ exports.resetUserPassword = async function (req, res) {
 
 }
 
-exports.resetEstablishmentPassword = function (req, res) {}
+exports.resetEstablishmentPassword = function (req, res) { }
 
-exports.validateEstablishmentPassword = function (req, res) {}
+exports.validateEstablishmentPassword = function (req, res) { }
