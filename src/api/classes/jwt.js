@@ -2,9 +2,14 @@ const jwt = require('jsonwebtoken')
 
 module.exports = {
 
-    generate: function (userId) {
+    generate: function (userId, establishmentId) {
 
-        const token = jwt.sign({ userId }, this.secret, {
+        const data = {
+            userId: userId,
+            establishmentId: establishmentId
+        }
+
+        const token = jwt.sign({ data }, this.secret, {
             algorithm: 'HS256',
             //expiresIn: this.expirationSeconds
         })

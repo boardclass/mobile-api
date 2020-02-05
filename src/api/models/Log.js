@@ -2,6 +2,10 @@ const { mongoose } = require('../../config/mongodb')
 
 const LogSchema = new mongoose.Schema({
 
+    date: {
+        type: Date,
+        default: Date.now
+    },
     endpoint: {
         type: String,
         required: true
@@ -13,10 +17,6 @@ const LogSchema = new mongoose.Schema({
     stack: {
         type: String,
         required: true
-    },
-    date: {
-        type: Date,
-        default: Date.now
     }
 
 }, { collection: 'logs' });

@@ -54,7 +54,7 @@ AgendaStatus.associate(connection.models)
 
 connection.authenticate()
     .then(() => {
-        console.log(`Database connection has been established successfully on ${uri}`);
+        console.log(`Sequelize connection has been established successfully on ${uri}`);
     })
     .catch(err => {
         console.error(`Unable to connect to the database: on ${uri}`, err);

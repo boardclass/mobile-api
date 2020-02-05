@@ -5,8 +5,9 @@ const math = require('../classes/math')
 const date = require('../classes/date')
 const logger = require('../classes/logger')
 const mailer = require('../classes/mailer')
-const mysql = require('../../config/mysql')
 const jwtHandler = require('../classes/jwt')
+
+const { connection } = require('../../config/database')
 
 exports.sendSMS = function (req, res) {
 
@@ -146,115 +147,100 @@ exports.tokenUserPassword = function (req, res) {
 
     try {
 
-        mysql.connect(mysql.uri, connection => {
-
-            const query = `
+        const query = `
                 SELECT u.id 
                 FROM users u 
                 INNER JOIN user_accounts ac 
                     ON ac.user_id = u.id 
                 WHERE ac.email = ?`
 
-            connection.query(query, email,
-                function (err, results, fields) {
+        connection.query(query, email,
+            function (err, results, fields) {
 
-                    if (err) {
+                if (err) {
 
-                        logger.register(err, req, _ => {
-                            return res.status(500).json({
-                                success: false,
-                                message: "Ocorreu um erro na recuperação de senha!",
-                                verbose: `${err}`,
-                                data: {}
-                            })
-
-                        })
-
-                    }
-
-                    if (results.length == 0) {
-
-                        return res.status(404).json({
-                            success: true,
-                            message: "Este email não consta em nossa base de dados!",
-                            verbose: null,
+                    logger.register(err, req, _ => {
+                        return res.status(500).json({
+                            success: false,
+                            message: "Ocorreu um erro na recuperação de senha!",
+                            verbose: `${err}`,
                             data: {}
                         })
 
-                    }
+                    })
 
-                    const userId = results[0].id
+                }
 
-                    connection.query(`UPDATE user_accounts 
+                if (results.length == 0) {
+
+                    return res.status(404).json({
+                        success: true,
+                        message: "Este email não consta em nossa base de dados!",
+                        verbose: null,
+                        data: {}
+                    })
+
+                }
+
+                const userId = results[0].id
+
+                connection.query(`UPDATE user_accounts 
                                     SET verification_code = ?, 
                                     code_expiration = DATE_ADD(NOW(), INTERVAL 5 MINUTE)
                                     WHERE user_id = ?`, [verificationCode, userId],
-                        function (err, results, fields) {
+                    function (err, results, fields) {
 
-                            if (err) {
+                        if (err) {
 
-                                logger.register(err, req, _ => {
-                                    return res.status(500).json({
-                                        success: false,
-                                        message: "Ocorreu um erro na recuperação de senha!",
-                                        verbose: `${err}`,
-                                        data: {}
-                                    })
-
-                                })
-
-                            }
-
-                            // if (email == "jonathalimax@gmail.com") {
-
-                            //     return res.status(200).json({
-                            //         success: true,
-                            //         message: `Token gerado com sucesso! ${verificationCode}`,
-                            //         verbose: null,
-                            //         data: {}
-                            //     })
-
-                            // }
-
-                            const data = {
-                                destination: email,
-                                subject: 'Recuperação de email solicitado!',
-                                message: `Seu código de recuperação é: ${verificationCode}`
-                            }
-
-                            mailer.send(data, callback => {
-
-                                if (callback == null) {
-
-                                    return res.status(500).json({
-                                        success: false,
-                                        message: "Falha ao enviar email!",
-                                        verbose: null,
-                                        data: {}
-                                    })
-
-                                }
-
-                                console.log("willcloseconnection");
-
-                                connection.close()
-            
-                                console.log("didcloseconnection");
-
-                                return res.status(200).json({
-                                    success: true,
-                                    message: "Token enviado com sucesso!",
-                                    verbose: null,
+                            logger.register(err, req, _ => {
+                                return res.status(500).json({
+                                    success: false,
+                                    message: "Ocorreu um erro na recuperação de senha!",
+                                    verbose: `${err}`,
                                     data: {}
                                 })
 
                             })
 
+                        }
+
+                        const data = {
+                            destination: email,
+                            subject: 'Recuperação de email solicitado!',
+                            message: `Seu código de recuperação é: ${verificationCode}`
+                        }
+
+                        mailer.send(data, callback => {
+
+                            if (callback == null) {
+
+                                return res.status(500).json({
+                                    success: false,
+                                    message: "Falha ao enviar email!",
+                                    verbose: null,
+                                    data: {}
+                                })
+
+                            }
+
+                            console.log("willcloseconnection");
+
+                            connection.close()
+
+                            console.log("didcloseconnection");
+
+                            return res.status(200).json({
+                                success: true,
+                                message: "Token enviado com sucesso!",
+                                verbose: null,
+                                data: {}
+                            })
+
                         })
 
-                })
+                    })
 
-        })
+            })
 
     } catch (error) {
 

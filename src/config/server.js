@@ -1,4 +1,5 @@
 require('../database')
+require('../config/database')
 
 const express = require('express')
 const validator = require('express-validator')

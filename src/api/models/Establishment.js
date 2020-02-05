@@ -4,7 +4,9 @@ class Establishment extends Model {
     static init(sequelize) {
         super.init({
             name: DataTypes.STRING,
-            cnpj: DataTypes.STRING
+            cnpj: DataTypes.STRING,
+            cpf: DataTypes.STRING,
+            professor: DataTypes.STRING
         }, {
             sequelize
         })

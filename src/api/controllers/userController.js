@@ -5,9 +5,9 @@ const UsersRoles = require('../models/UsersRoles')
 const bcrypt = require('bcrypt')
 const validator = require('../classes/validator')
 const jwtHandler = require('../classes/jwt')
-const mysql = require('../../config/mysql')
 const logger = require('../classes/logger')
 
+const { connection } = require('../../config/database')
 const { SCHEDULE_STATUS } = require('../classes/constants')
 
 exports.login = async function (req, res) {
@@ -287,9 +287,7 @@ exports.agenda = async function (req, res) {
 
     try {
 
-        mysql.connect(mysql.uri, connection => {
-
-            const query = `
+        const query = `
                 SELECT 
                     s.id, 
                     DATE_FORMAT(s.date,'%Y-%m-%d') as date, 
@@ -312,39 +310,59 @@ exports.agenda = async function (req, res) {
                     AND s.status_id NOT IN (?)
                 ORDER BY date DESC, sport, start_hour`
 
-            const filters = [
-                userId,
-                SCHEDULE_STATUS.CANCELED
-            ]
+        const filters = [
+            userId,
+            SCHEDULE_STATUS.CANCELED
+        ]
 
-            connection.query(query, filters,
-                function (err, results, fields) {
+        connection.query(query, filters,
+            function (err, results, fields) {
 
-                    if (err) {
+                if (err) {
 
-                        logger.register(err, req, _ => {
-                            return res.status(500).json({
-                                success: false,
-                                message: "Ocorreu um erro no agendamento!",
-                                verbose: `${err}`,
-                                data: {}
-                            })
-
+                    logger.register(err, req, _ => {
+                        return res.status(500).json({
+                            success: false,
+                            message: "Ocorreu um erro no agendamento!",
+                            verbose: `${err}`,
+                            data: {}
                         })
 
-                    }
+                    })
 
-                    const agenda = []
+                }
 
-                    for (row of results) {
+                const agenda = []
 
-                        let filtered = agenda.findIndex(value => {
-                            return value.date === row.date
+                for (row of results) {
+
+                    let filtered = agenda.findIndex(value => {
+                        return value.date === row.date
+                    })
+
+                    if (filtered >= 0) {
+
+                        agenda[filtered].batteries.push({
+                            id: row.battery_id,
+                            startHour: row.start_hour,
+                            endHour: row.end_hour,
+                            price: row.price,
+                            sport: {
+                                id: row.sport_id,
+                                name: row.sport
+                            }
                         })
 
-                        if (filtered >= 0) {
+                    } else {
 
-                            agenda[filtered].batteries.push({
+                        agenda.push({
+                            id: row.id,
+                            date: row.date,
+                            establishment: {
+                                id: row.establishment_id,
+                                name: row.establishment
+                            },
+                            batteries: [{
                                 id: row.battery_id,
                                 startHour: row.start_hour,
                                 endHour: row.end_hour,
@@ -353,47 +371,25 @@ exports.agenda = async function (req, res) {
                                     id: row.sport_id,
                                     name: row.sport
                                 }
-                            })
-
-                        } else {
-
-                            agenda.push({
-                                id: row.id,
-                                date: row.date,
-                                establishment: {
-                                    id: row.establishment_id,
-                                    name: row.establishment
-                                },
-                                batteries: [{
-                                    id: row.battery_id,
-                                    startHour: row.start_hour,
-                                    endHour: row.end_hour,
-                                    price: row.price,
-                                    sport: {
-                                        id: row.sport_id,
-                                        name: row.sport
-                                    }
-                                }]
-                            })
-
-                        }
+                            }]
+                        })
 
                     }
 
-                    connection.close()
+                }
 
-                    return res.status(200).json({
-                        success: true,
-                        message: "Agenda obtida com sucesso!",
-                        verbose: null,
-                        data: {
-                            schedules: agenda
-                        }
-                    })
+                connection.close()
 
+                return res.status(200).json({
+                    success: true,
+                    message: "Agenda obtida com sucesso!",
+                    verbose: null,
+                    data: {
+                        schedules: agenda
+                    }
                 })
 
-        })
+            })
 
     } catch (error) {
 

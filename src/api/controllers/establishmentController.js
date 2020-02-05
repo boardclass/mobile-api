@@ -2,6 +2,7 @@ const Establishment = require('../models/Establishment')
 const EstablishmentAddress = require('../models/EstablishmentAddress')
 const mysql = require('../../config/mysql')
 
+const { handleError } = require('../classes/error-handler')
 const bcrypt = require('bcrypt')
 const validator = require('../classes/validator')
 const jwtHandler = require('../classes/jwt')
@@ -10,23 +11,33 @@ const Sequelize = require('sequelize')
 const Op = Sequelize.Op
 const { ADDRESS, SCHEDULE_STATUS } = require('../classes/constants')
 
+const { connection } = require('../../config/database')
+
 exports.store = async function (req, res) {
 
-    const establishment = req.body
+    const establishment = {
+        name: req.body.name,
+        cnpj: req.body.cnpj,
+        cpf: req.body.cpf,
+        professor: req.body.professor,
+        account: req.body.account
+    }
 
     req.assert('name', 'O nome deve ser informado').notEmpty()
+    req.assert('cpf', 'O cpf do usuário deve ser informado').notEmpty()
+    req.assert('cpf', 'O cpf está em formato inválido').len(11)
+    req.assert('professor', 'O nome do professor deve ser informado').notEmpty()
     req.assert('account.email', 'O email deve ser informado').notEmpty()
+    req.assert('account.email', 'O email está em formato inválid').isEmail()
     req.assert('account.password', 'A senha deve ser informada').notEmpty()
 
     if (validator.validateFields(req, res) != null) {
         return
     }
 
-    if (establishment.cnpj === undefined)
-        establishment.cnpj = null
-
-    const token = jwtHandler.generate(establishment.account.email)
-    res.setHeader('access-token', token)
+    if (establishment.cnpj === undefined) {
+        cnpj = null
+    }
 
     try {
 
@@ -34,45 +45,114 @@ exports.store = async function (req, res) {
 
         establishment.account.password = hashedPassword
 
-        const newEstablishment = await Establishment.findOrCreate({
-            where: {
-                [Op.or]: [
-                    { cnpj: establishment.cnpj },
-                    { name: establishment.name }
-                ]
-            },
-            defaults: {
-                name: establishment.name,
-                cnpj: establishment.cnpj,
-                account: establishment.account
-            },
-            include: {
-                association: 'account'
-            }
-        })
+        var query = `
+            SELECT
+                * 
+            FROM establishments e 
+            INNER JOIN establishment_accounts ec 
+                ON ec.establishment_id = e.id
+            WHERE 
+                e.name = ? OR 
+                e.cpf = ? OR 
+                ec.email = ?`
 
-        res.set('establishment-id', newEstablishment[0].id)
+        var queryValues = [
+            establishment.name,
+            establishment.cpf,
+            establishment.account.email]
 
-        return res.status(200).json({
-            success: true,
-            message: "Estabelecimento cadastrado com sucesso!",
-            verbose: null,
-            data: {}
-        })
 
-    } catch (error) {
+        connection.beginTransaction(function (err) {
 
-        logger.register(error, req, _ => {
+            if (err)
+                return handleError(req, res, 500, "Ocorreu um erro ao cadastrar o estabelecimento!", err)
 
-            return res.status(500).json({
-                success: false,
-                message: "Ocorreu um erro ao cadastrar o estabelecimento!",
-                verbose: `${error}`,
-                data: {}
+            connection.query(query, queryValues, function (err, results, fields) {
+
+                if (err)
+                    return handleError(req, res, 500, "Ocorreu um erro ao cadastrar o estabelecimento!", err)
+
+                if (results.length !== 0) {
+
+                    return res.status(400).json({
+                        success: true,
+                        message: "Este estabelecimento já está cadastrado!",
+                        verbose: null,
+                        data: {}
+                    })
+
+                } else {
+
+                    query = `
+                        INSERT INTO establishments 
+                            (parent_id, name, cnpj, cpf, professor, created_at, updated_at)
+                        VALUES 
+                            (null, ?, ?, ?, ?, NOW(), NOW())`
+
+                    queryValues = [
+                        establishment.name,
+                        establishment.cnpj,
+                        establishment.cpf,
+                        establishment.professor
+                    ]
+
+                    connection.query(query, queryValues, function (err, results, fields) {
+
+                        if (err)
+                            return connection.rollback(function () {
+                                handleError(req, res, 500, "Ocorreu um erro ao cadastrar o estabelecimento!", err)
+                            })
+
+                        query = `
+                            INSERT INTO establishment_accounts
+                                (establishment_id, email, password, created_at, updated_at)
+                            VALUES 
+                                (?, ?, ?, NOW(), NOW())`
+
+                        queryValues = [
+                            results.insertId,
+                            establishment.account.email,
+                            establishment.account.password
+                        ]
+
+                        const newEstablishmentId = results.insertId
+
+                        connection.query(query, queryValues, function (err, results, fields) {
+
+                            if (err)
+                                return connection.rollback(function () {
+                                    handleError(req, res, 500, "Ocorreu um erro ao cadastrar o estabelecimento!", err)
+                                })
+
+                            connection.commit(function (err) {
+                                if (err)
+                                    return connection.rollback(function () {
+                                        handleError(req, res, 500, "Ocorreu um erro ao cadastrar o estabelecimento!", err)
+                                    })
+                            })
+
+                            res.setHeader('access-token', jwtHandler.generate(newEstablishmentId))
+                            res.setHeader('establishment-id', newEstablishmentId)
+
+                            return res.status(200).json({
+                                success: true,
+                                message: "Estabelecimento cadastrado com sucesso!",
+                                verbose: null,
+                                data: {}
+                            })
+
+                        })
+
+                    })
+
+                }
+
             })
 
         })
 
+    } catch (error) {
+        return handleError(req, res, 500, "Ocorreu um erro ao cadastrar o estabelecimento!", err)
     }
 
 }
@@ -336,7 +416,7 @@ exports.getBatteries = async function (req, res) {
                 if (err) {
 
                     logger.register(error, req, _ => {
-                        
+
                         return res.status(500).json({
                             success: false,
                             message: "Ocorreu um erro ao obter a bateria!",
