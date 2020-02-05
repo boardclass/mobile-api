@@ -378,8 +378,6 @@ exports.agenda = async function (req, res) {
 
                 }
 
-                connection.close()
-
                 return res.status(200).json({
                     success: true,
                     message: "Agenda obtida com sucesso!",

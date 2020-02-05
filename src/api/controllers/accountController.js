@@ -223,12 +223,6 @@ exports.tokenUserPassword = function (req, res) {
 
                             }
 
-                            console.log("willcloseconnection");
-
-                            connection.close()
-
-                            console.log("didcloseconnection");
-
                             return res.status(200).json({
                                 success: true,
                                 message: "Token enviado com sucesso!",
@@ -378,8 +372,6 @@ exports.resetUserPassword = async function (req, res) {
 
                     const token = jwtHandler.generate(userId)
                     res.setHeader('access-token', token)
-
-                    connection.close()
 
                     return res.status(200).json({
                         success: true,
