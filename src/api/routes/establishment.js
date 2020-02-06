@@ -14,7 +14,7 @@ module.exports = (app) => {
         establishmentController.storeBranch(req, res)
     })
 
-    app.post('/api/establishment/:establishment_id/address', (req, res) => {
+    app.post('/api/establishment/address', (req, res) => {
         establishmentController.storeAddress(req, res)
     })
 

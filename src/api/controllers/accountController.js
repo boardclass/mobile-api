@@ -339,7 +339,7 @@ exports.validateUserPassword = async function (req, res) {
 
 exports.resetUserPassword = async function (req, res) {
 
-    const userId = req.decoded.userId
+    const userId = req.decoded.data.userId
     const password = req.body.password
 
     req.assert('password', 'A senha deve ser informada!').notEmpty()

@@ -5,7 +5,7 @@ const { SCHEDULE_STATUS, AGENDA_STATUS } = require('../classes/constants')
 exports.store = async function (req, res) {
 
     const date = req.body.date
-    const userId = req.decoded.userId
+    const userId = req.decoded.data.userId
     const batteries = req.body.batteries
 
     try {

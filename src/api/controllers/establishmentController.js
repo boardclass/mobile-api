@@ -166,7 +166,7 @@ exports.login = async function (req, res) {
     req.assert('email', 'O email está em formato inválido').isEmail()
     req.assert('password', 'A senha deve ser informado').notEmpty()
 
-    if (validator.validateFields(req, res)) {        
+    if (validator.validateFields(req, res)) {
         return
     }
 
@@ -223,15 +223,15 @@ exports.login = async function (req, res) {
 
 exports.storeAddress = async function (req, res) {
 
-    let establishment_id = req.params.establishment_id
-    let zipcode = req.body.cep
-    let country = req.body.country
-    let state = req.body.state
-    let city = req.body.city
-    let neighbourhood = req.body.neighbourhood
-    let street = req.body.street
-    let number = req.body.number
-    let complement = req.body.complement
+    const establishmentId = req.decoded.data.establishmentId
+    const zipcode = req.body.cep
+    const country = req.body.country
+    const state = req.body.state
+    const city = req.body.city
+    const neighbourhood = req.body.neighbourhood
+    const street = req.body.street
+    const number = req.body.number
+    const complement = req.body.complement
 
     req.assert('cep', 'O CEP deve ser informado').notEmpty()
     req.assert('cep', 'O CEP está inválido').len(8)
@@ -248,6 +248,30 @@ exports.storeAddress = async function (req, res) {
 
     try {
 
+        const address = await EstablishmentAddress.findOne({
+            where: {
+                establishment_id: establishmentId,
+                zipcode,
+                country,
+                state,
+                city,
+                neighbourhood,
+                street,
+                number
+            }
+        })
+
+        if (address) {
+
+            return res.status(400).json({
+                success: true,
+                message: "Este endereço já se encontra cadastrado para esse estabelecimento!",
+                verbose: null,
+                data: {}
+            })
+
+        }
+
         await EstablishmentAddress.create({
             zipcode,
             country,
@@ -258,7 +282,7 @@ exports.storeAddress = async function (req, res) {
             number,
             complement,
             type_id: ADDRESS.PHYSICAL_ADDRESS_TYPE,
-            establishment_id,
+            establishment_id: establishmentId,
         })
 
         return res.status(200).json({
@@ -269,18 +293,8 @@ exports.storeAddress = async function (req, res) {
         })
 
     } catch (error) {
-
-        logger.register(error, req, _ => {
-
-            return res.status(500).json({
-                success: false,
-                message: "Ocorreu um erro ao cadastrar o endereço!",
-                verbose: `${error}`,
-                data: {}
-            })
-
-        })
-
+        console.log(error);
+        return handleError(req, res, 500, "Ocorreu um erro ao cadastrar o endereço!", error)
     }
 
 }

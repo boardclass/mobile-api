@@ -283,7 +283,7 @@ exports.storeRole = async function (req, res) {
 
 exports.agenda = async function (req, res) {
 
-    const userId = req.decoded.userId
+    const userId = req.decoded.data.userId
 
     try {
 
