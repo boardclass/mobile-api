@@ -57,7 +57,7 @@ exports.login = async function (req, res) {
 
         }
 
-        const token = jwtHandler.generate(user.id)
+        const token = jwtHandler.generate(user.id, null)
 
         res.setHeader('access-token', token)
 
@@ -125,7 +125,7 @@ exports.store = async function (req, res) {
             ]
         })
 
-        const token = jwtHandler.generate(newUser[0].id)
+        const token = jwtHandler.generate(newUser[0].id, null)
 
         res.setHeader('access-token', token)
         res.setHeader('user-id', newUser[0].id)

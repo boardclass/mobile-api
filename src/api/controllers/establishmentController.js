@@ -28,7 +28,7 @@ exports.store = async function (req, res) {
     req.assert('cpf', 'O cpf está em formato inválido').len(11)
     req.assert('professor', 'O nome do professor deve ser informado').notEmpty()
     req.assert('account.email', 'O email deve ser informado').notEmpty()
-    req.assert('account.email', 'O email está em formato inválid').isEmail()
+    req.assert('account.email', 'O email está em formato inválido').isEmail()
     req.assert('account.password', 'A senha deve ser informada').notEmpty()
 
     if (validator.validateFields(req, res) != null) {
@@ -131,7 +131,7 @@ exports.store = async function (req, res) {
                                     })
                             })
 
-                            res.setHeader('access-token', jwtHandler.generate(newEstablishmentId))
+                            res.setHeader('access-token', jwtHandler.generate(null, newEstablishmentId))
                             res.setHeader('establishment-id', newEstablishmentId)
 
                             return res.status(200).json({
@@ -162,14 +162,13 @@ exports.login = async function (req, res) {
     let email = req.body.email
     let password = req.body.password
 
-    req.assert('email', 'O email deve ser informado')
-    req.assert('password', 'A senha deve ser informado')
+    req.assert('email', 'O email deve ser informado').notEmpty()
+    req.assert('email', 'O email está em formato inválido').isEmail()
+    req.assert('password', 'A senha deve ser informado').notEmpty()
 
-    if (validator.validateFields(req, res) != null) {
+    if (validator.validateFields(req, res)) {        
         return
     }
-
-    const token = jwtHandler.generate(email)
 
     try {
 
@@ -206,8 +205,8 @@ exports.login = async function (req, res) {
 
         }
 
-        res.setHeader('access-token', token)
         res.setHeader('user-id', establishment.id)
+        res.setHeader('access-token', jwtHandler.generate(null, establishment.id))
 
         return res.status(200).json({
             success: true,
@@ -217,18 +216,7 @@ exports.login = async function (req, res) {
         })
 
     } catch (error) {
-
-        logger.register(error, req, _ => {
-
-            return res.status(500).json({
-                success: false,
-                message: "Ocorreu um erro ao realizar o login!",
-                verbose: `${error}`,
-                data: {}
-            })
-
-        })
-
+        handleError(req, res, 500, "Ocorreu um erro ao realizar o login!", error)
     }
 
 }
