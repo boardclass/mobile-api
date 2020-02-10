@@ -1,136 +1,8 @@
-const bcrypt = require('bcrypt')
+const validator = require("../classes/validator")
+const jwtHandler = require("../classes/jwt")
 
-const validator = require('../classes/validator')
-const math = require('../classes/math')
-const date = require('../classes/date')
-const logger = require('../classes/logger')
-const mailer = require('../classes/mailer')
-const jwtHandler = require('../classes/jwt')
-
-const { connection } = require('../../config/database')
-
-exports.sendSMS = function (req, res) {
-
-    let userId = req.body.userId
-    let phone = req.body.phone
-
-    let verificationCode = math.getRandomNumber(1000, 9999)
-    let expirationDate = date.addMinutes(new Date(), 3)
-
-    req.assert('userId', 'O id do usuário deve ser informado').notEmpty()
-    req.assert('phone', 'O telefone deve ser informado').notEmpty()
-    req.assert('phone', 'O número do telefone é inválido').len(11)
-
-    if (validator.validateFields(req, res) != null) {
-        return
-    }
-
-    UserModel.findById(userId)
-        .then(user => {
-
-            user.account.verification.code = verificationCode
-            user.account.verification.expiration = expirationDate
-
-            user.save()
-                .then(_ => {
-
-                    return res.status(200).json({
-                        success: true,
-                        message: "Código enviado com sucesso",
-                        data: {}
-                    })
-
-                }).catch(err => {
-
-                    logger.register(error, req, _ => {
-
-                        return res.status(500).json({
-                            success: false,
-                            message: "Ops, algo ocorreu. Tente novamente mais tarde!",
-                            verbose: err,
-                            data: {}
-                        })
-
-                    })
-
-                })
-
-        }).catch(err => {
-
-            logger.register(error, req, _ => {
-
-                return res.status(500).json({
-                    success: false,
-                    message: "Ops, algo ocorreu. Tente novamente mais tarde!",
-                    verbose: err,
-                    data: {}
-                })
-
-            })
-
-        })
-
-}
-
-exports.validateSMS = function (req, res) {
-
-    let userId = req.body.userId
-    let verificationCode = req.body.verificationCode
-
-    req.assert('userId', 'O id do usuário deve ser informado').notEmpty()
-    req.assert('verificationCode', 'O código de verificação deve ser informado').notEmpty()
-    req.assert('verificationCode', 'O código de verificação está inválido').len(4)
-
-    if (validator.validateFields(req, res) != null) {
-        return
-    }
-
-    UserModel.findById(userId)
-        .then(user => {
-
-            if (Date.now() > user.account.verification.expiration) {
-
-                return res.status(400).json({
-                    success: false,
-                    message: "Seu código de validação expirou!",
-                    data: {}
-                })
-
-            }
-
-            if (verificationCode === user.account.verification.code) {
-
-                return res.status(200).json({
-                    success: true,
-                    message: "Código de verificação válidado com sucesso!",
-                    data: {}
-                })
-
-            }
-
-            return res.status(500).json({
-                success: false,
-                message: "Ops, algo ocorreu. Tente novamente mais tarde!",
-                verbose: err,
-                data: {}
-            })
-
-        }).catch(err => {
-
-            logger.register(error, req, _ => {
-
-                return res.status(500).json({
-                    success: false,
-                    message: "Ops, algo ocorreu. Tente novamente mais tarde!",
-                    verbose: err,
-                    data: {}
-                })
-
-            })
-
-        })
-
-}
+const { connection } = require("../../config/database")
+const { handleError } = require('../classes/error-handler')
 
 exports.tokenPassword = function (req, res) {
 
@@ -148,11 +20,12 @@ exports.tokenPassword = function (req, res) {
     try {
 
         const query = `
-                SELECT u.id 
-                FROM users u 
-                INNER JOIN user_accounts ac 
-                    ON ac.user_id = u.id 
-                WHERE ac.email = ?`
+                SELECT 
+                    e.id 
+                FROM establishments e
+                INNER JOIN establishment_accounts ea 
+                    ON ea.establishment_id
+                WHERE ea.email = ?`
 
         connection.query(query, email,
             function (err, results, fields) {
@@ -172,18 +45,16 @@ exports.tokenPassword = function (req, res) {
 
                 }
 
-                const userId = results[0].id
+                const establishmentId = results[0].id
 
-                connection.query(`UPDATE user_accounts 
+                connection.query(`UPDATE establishment_accounts 
                                     SET verification_code = ?, 
                                     code_expiration = DATE_ADD(NOW(), INTERVAL 5 MINUTE)
-                                    WHERE user_id = ?`, [verificationCode, userId],
+                                    WHERE establishment_id = ?`, [verificationCode, establishmentId],
                     function (err, results, fields) {
 
                         if (err) {
-
                             return handleError(req, res, 500, "Ocorreu um erro na recuperação de senha!", err)
-
                         }
 
                         const data = {
@@ -226,7 +97,7 @@ exports.tokenPassword = function (req, res) {
 
 }
 
-exports.validatePassword = async function (req, res) {
+exports.validatePassword = function (req, res) {
 
     const code = req.body.code
     const email = req.body.email
@@ -245,8 +116,8 @@ exports.validatePassword = async function (req, res) {
         mysql.connect(mysql.uri, connection => {
 
             const query = `
-                SELECT user_id
-                FROM user_accounts
+                SELECT establishment_id
+                FROM establishment_accounts
                 WHERE email = ?
                 AND verification_code = ? 
                 AND code_expiration > NOW()`
@@ -269,8 +140,8 @@ exports.validatePassword = async function (req, res) {
 
                     }
 
-                    const userId = results[0].user_id
-                    res.setHeader('access-token', jwtHandler.generate(userId, null))
+                    const establishmentId = results[0].establishment_id
+                    res.setHeader('access-token', jwtHandler.generate(null, establishmentId))
 
                     return res.status(200).json({
                         success: true,
@@ -289,9 +160,9 @@ exports.validatePassword = async function (req, res) {
 
 }
 
-exports.resetPassword = async function (req, res) {
+exports.resetPassword = function (req, res) {
 
-    const userId = req.decoded.data.userId
+    const establishmentId = req.decoded.data.establishmentId
     const password = req.body.password
 
     req.assert('password', 'A senha deve ser informada!').notEmpty()
@@ -306,14 +177,16 @@ exports.resetPassword = async function (req, res) {
 
         mysql.connect(mysql.uri, connection => {
 
-            connection.query(`UPDATE user_accounts SET password = '${cryptedPassword}' WHERE user_id = ?`, [userId],
+            connection.query(`UPDATE establishment_accounts 
+                            SET password = '${cryptedPassword}' 
+                            WHERE establishment_id = ?`, [establishmentId],
                 function (err, results, fields) {
 
                     if (err) {
                         return handleError(req, res, 500, "Ocorreu um erro na recuperação de senha!", err)
                     }
 
-                    const token = jwtHandler.generate(userId, null)
+                    const token = jwtHandler.generate(null, establishmentId)
                     res.setHeader('access-token', token)
 
                     return res.status(200).json({

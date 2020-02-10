@@ -233,7 +233,7 @@ exports.storeAddress = async function (req, res) {
     const number = req.body.number
     const complement = req.body.complement
 
-    req.assert('cep', 'O CEP deve ser informado').notEmpty()
+    req.assert('cep', 'O CEP deve ser informado').notEmpty()    
     req.assert('cep', 'O CEP está inválido').len(8)
     req.assert('country', 'O País deve ser informado').notEmpty()
     req.assert('state', 'O Estado ser informado').notEmpty()
