@@ -2,16 +2,14 @@ const Establishment = require('../models/Establishment')
 const EstablishmentAddress = require('../models/EstablishmentAddress')
 const mysql = require('../../config/mysql')
 
-const { handleError } = require('../classes/error-handler')
 const bcrypt = require('bcrypt')
 const validator = require('../classes/validator')
 const jwtHandler = require('../classes/jwt')
 const logger = require('../classes/logger')
-const Sequelize = require('sequelize')
-const Op = Sequelize.Op
-const { ADDRESS, SCHEDULE_STATUS } = require('../classes/constants')
 
 const { connection } = require('../../config/database')
+const { handleError } = require('../classes/error-handler')
+const { ADDRESS, SCHEDULE_STATUS } = require('../classes/constants')
 
 exports.store = async function (req, res) {
 
@@ -330,7 +328,7 @@ exports.getAgenda = async function (req, res) {
 
                 if (err) {
 
-                    logger.register(error, req, _ => {
+                    logger.register(err, req, _ => {
 
                         return res.status(500).json({
                             success: false,
@@ -399,9 +397,14 @@ exports.getBatteries = async function (req, res) {
                     s.battery_id = b.id 
                     AND s.date = ?
                     AND s.status_id NOT IN(?)
+                INNER JOIN battery_weekdays ew
+                    ON ew.battery_id = b.id
+                INNER JOIN weekday w
+                    ON w.id = ew.weekday_id
                 WHERE
                     b.establishment_id = ?
                     AND b.sport_id = ?
+                    AND w.day = LOWER(DATE_FORMAT(?, "%W"))
                 GROUP BY
                     b.start_hour,
                     b.id`
@@ -410,25 +413,14 @@ exports.getBatteries = async function (req, res) {
                 date,
                 SCHEDULE_STATUS.CANCELED,
                 establishmentId,
-                sportId
+                sportId,
+                date
             ]
 
             connection.query(query, data, function (err, results, fields) {
 
-                if (err) {
-
-                    logger.register(error, req, _ => {
-
-                        return res.status(500).json({
-                            success: false,
-                            message: "Ocorreu um erro ao obter a bateria!",
-                            verbose: `${err}`,
-                            data: {}
-                        })
-
-                    })
-
-                }
+                if (err)
+                    return handleError(req, res, 500, "Ocorreu um erro ao obter a bateria!", err)
 
                 return res.status(200).json({
                     success: true,
@@ -444,19 +436,8 @@ exports.getBatteries = async function (req, res) {
             connection.end()
         })
 
-    } catch (error) {
-
-        logger.register(error, req, _ => {
-
-            return res.status(500).json({
-                success: false,
-                message: "Ocorreu um erro ao obter a bateria!",
-                verbose: `${error}`,
-                data: {}
-            })
-
-        })
-
+    } catch (err) {
+        return handleError(req, res, 500, "Ocorreu um erro ao obter a bateria!", err)
     }
 
 }
