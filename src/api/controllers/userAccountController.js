@@ -242,46 +242,42 @@ exports.validatePassword = async function (req, res) {
 
     try {
 
-        mysql.connect(mysql.uri, connection => {
-
-            const query = `
+        const query = `
                 SELECT user_id
                 FROM user_accounts
                 WHERE email = ?
                 AND verification_code = ? 
                 AND code_expiration > NOW()`
 
-            connection.query(query, [email, code],
-                function (err, results, fields) {
+        connection.query(query, [email, code],
+            function (err, results, fields) {
 
-                    if (err) {
-                        return handleError(req, res, 500, "Ocorreu um erro na recuperação de senha!", err)
-                    }
+                if (err) {
+                    return handleError(req, res, 500, "Ocorreu um erro na recuperação de senha!", err)
+                }
 
-                    if (results.length == 0) {
+                if (results.length == 0) {
 
-                        return res.status(404).json({
-                            success: true,
-                            message: "Este código está incorreto ou expirado!",
-                            verbose: null,
-                            data: {}
-                        })
-
-                    }
-
-                    const userId = results[0].user_id
-                    res.setHeader('access-token', jwtHandler.generate(userId, null))
-
-                    return res.status(200).json({
+                    return res.status(404).json({
                         success: true,
-                        message: "Código validado com sucesso!",
+                        message: "Este código está incorreto ou expirado!",
                         verbose: null,
                         data: {}
                     })
 
+                }
+
+                const userId = results[0].user_id
+                res.setHeader('access-token', jwtHandler.generate(userId, null))
+
+                return res.status(200).json({
+                    success: true,
+                    message: "Código validado com sucesso!",
+                    verbose: null,
+                    data: {}
                 })
 
-        })
+            })
 
     } catch (err) {
         return handleError(req, res, 500, "Ocorreu um erro na recuperação de senha!", err)
@@ -304,28 +300,24 @@ exports.resetPassword = async function (req, res) {
 
         const cryptedPassword = await bcrypt.hash(password, 10)
 
-        mysql.connect(mysql.uri, connection => {
+        connection.query(`UPDATE user_accounts SET password = '${cryptedPassword}' WHERE user_id = ?`, [userId],
+            function (err, results, fields) {
 
-            connection.query(`UPDATE user_accounts SET password = '${cryptedPassword}' WHERE user_id = ?`, [userId],
-                function (err, results, fields) {
+                if (err) {
+                    return handleError(req, res, 500, "Ocorreu um erro na recuperação de senha!", err)
+                }
 
-                    if (err) {
-                        return handleError(req, res, 500, "Ocorreu um erro na recuperação de senha!", err)
-                    }
+                const token = jwtHandler.generate(userId, null)
+                res.setHeader('access-token', token)
 
-                    const token = jwtHandler.generate(userId, null)
-                    res.setHeader('access-token', token)
-
-                    return res.status(200).json({
-                        success: true,
-                        message: "Senha alterada com sucesso!",
-                        verbose: null,
-                        data: {}
-                    })
-
+                return res.status(200).json({
+                    success: true,
+                    message: "Senha alterada com sucesso!",
+                    verbose: null,
+                    data: {}
                 })
 
-        })
+            })
 
     } catch (err) {
         return handleError(req, res, 500, "Ocorreu um erro na alterar a senha!", err)

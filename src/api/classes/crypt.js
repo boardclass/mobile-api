@@ -4,7 +4,6 @@ module.exports = {
 
     hash: function (res, password) {
 
-        
         const hashed = bcrypt.hash(password, 10)
             .then(hash => {
                 return hash

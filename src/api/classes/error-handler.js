@@ -7,7 +7,7 @@ exports.handleError = function (req, res, code, message, err) {
         return res.status(code).json({
             success: false,
             message: message,
-            verbose: err,
+            verbose: `${err}`,
             data: {}
         })
 

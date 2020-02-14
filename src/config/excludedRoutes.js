@@ -8,6 +8,7 @@ module.exports = {
         '/api/mailer',
         '/api/user/password/token', 
         '/api/user/password/validate',
+        '/api/establishment/password/token',
         '/api/establishment/password/validate'
     ]
 
