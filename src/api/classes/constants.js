@@ -1,8 +1,8 @@
 module.exports = {
 
     ADDRESS: {
-        PHYSICAL_ADDRESS_TYPE: 1,
-        SERVICE_ADDRESS_TYPE: 2
+        PHYSICAL_TYPE: 1,
+        SERVICE_TYPE: 2
     },
     SCHEDULE_STATUS: {
         SCHEDULED: 1,

@@ -18,6 +18,10 @@ module.exports = (app) => {
         establishmentController.storeAddress(req, res)
     })
 
+    app.get('/api/establishment/service_addresses', (req, res) => {
+        establishmentController.serviceAddresses(req, res)
+    })
+
     app.post('/api/establishment/:establishment_id/employee', (req, res) => {
         establishmentController.storeEmployee(req, res)
     })
@@ -28,6 +32,10 @@ module.exports = (app) => {
 
     app.post('/api/establishment/:establishment_id/batteries', (req, res) => {
         establishmentController.getBatteries(req, res)
+    })
+
+    app.post('/api/establishment/battery', (req, res) => {
+        establishmentController.storeBattery(req, res)
     })
 
 }

@@ -222,6 +222,7 @@ exports.login = async function (req, res) {
 exports.storeAddress = async function (req, res) {
 
     const establishmentId = req.decoded.data.establishmentId
+    const typeId = req.body.typeId
     const zipcode = req.body.cep
     const country = req.body.country
     const state = req.body.state
@@ -231,7 +232,8 @@ exports.storeAddress = async function (req, res) {
     const number = req.body.number
     const complement = req.body.complement
 
-    req.assert('cep', 'O CEP deve ser informado').notEmpty()    
+    req.assert('typeId', 'O tipo de endereço deve ser informado').notEmpty()
+    req.assert('cep', 'O CEP deve ser informado').notEmpty()
     req.assert('cep', 'O CEP está inválido').len(8)
     req.assert('country', 'O País deve ser informado').notEmpty()
     req.assert('state', 'O Estado ser informado').notEmpty()
@@ -246,53 +248,183 @@ exports.storeAddress = async function (req, res) {
 
     try {
 
-        const address = await EstablishmentAddress.findOne({
-            where: {
-                establishment_id: establishmentId,
+        let query = `
+            SELECT * 
+            FROM establishment_addresses
+            WHERE 
+                establishment_id = ?
+                AND type_id = ?
+        `
+
+        let queryValues = [
+            establishmentId,
+            typeId
+        ]
+
+        connection.query(query, queryValues, function (err, result, _) {
+
+            if (err)
+                return handleError(req, res, 500, "Ocorreu um erro ao cadastrar o endereço!", err)
+
+            if (result.length != 0 && typeId === ADDRESS.PHYSICAL_TYPE) {
+
+                query = `
+                    UPDATE 
+                        establishment_addresses 
+                    SET 
+                        zipcode = ?,
+                        country = ?,
+                        state = ?,
+                        city = ?,
+                        neighbourhood = ?,
+                        street = ?,
+                        number = ?,
+                        complement = ?
+                    WHERE 
+                    establishment_id = ?`
+
+                queryValues = [
+                    zipcode,
+                    country,
+                    state,
+                    city,
+                    neighbourhood,
+                    street,
+                    number,
+                    complement,
+                    establishmentId
+                ]
+
+                connection.query(query, queryValues, function (err, result, _) {
+
+                    if (err)
+                        return handleError(req, res, 500, "Ocorreu um erro ao cadastrar o endereço!", err)
+
+                    return res.status(200).json({
+                        success: true,
+                        message: "Endereço atualizado com sucesso!",
+                        verbose: null,
+                        data: {}
+                    })
+
+                })
+
+            } else {
+
+                query = `
+                    INSERT INTO establishment_addresses
+                        (
+                            establishment_id,
+                            type_id,
+                            zipcode,
+                            country,
+                            state,
+                            city,
+                            neighbourhood,
+                            street,
+                            number,
+                            complement,
+                            created_at,
+                            updated_at
+                        )
+                    VALUES 
+                    (
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        ?,
+                        NOW(),
+                        NOW()
+                    )   
+                `
+
+                queryValues = [
+                    establishmentId,
+                    typeId,
+                    zipcode,
+                    country,
+                    state,
+                    city,
+                    neighbourhood,
+                    street,
+                    number,
+                    complement
+                ]
+
+                connection.query(query, queryValues, function (err, result, _) {
+
+                    if (err)
+                        return handleError(req, res, 500, "Ocorreu um erro ao cadastrar o endereço!", err)
+
+                    return res.status(200).json({
+                        success: true,
+                        message: "Endereço cadastrado com sucesso!",
+                        verbose: null,
+                        data: {}
+                    })
+
+                })
+
+            }
+
+        })
+
+    } catch (err) {
+        return handleError(req, res, 500, "Ocorreu um erro ao cadastrar o endereço!", err)
+    }
+
+}
+
+exports.serviceAddresses = async function (req, res) {
+
+    const establishmentId = req.decoded.data.establishmentId
+
+    try {
+
+        const query = `
+            SELECT 
+                id,
                 zipcode,
                 country,
                 state,
                 city,
                 neighbourhood,
                 street,
-                number
-            }
-        })
+                number,
+                complement 
+            FROM establishment_addresses
+            WHERE 
+                establishment_id = ?
+                AND type_id = ?
+        `
 
-        if (address) {
+        const queryValues = [
+            establishmentId,
+            ADDRESS.SERVICE_TYPE
+        ]
 
-            return res.status(400).json({
+        connection.query(query, queryValues, function (err, result, _) {
+
+            if (err)
+                return handleError(req, res, 500, "Ocorreu um erro ao cadastrar o endereço!", err)
+
+            return res.status(200).json({
                 success: true,
-                message: "Este endereço já se encontra cadastrado para esse estabelecimento!",
+                message: "Consulta realizada com sucesso!",
                 verbose: null,
-                data: {}
+                data: { addresses: result }
             })
 
-        }
-
-        await EstablishmentAddress.create({
-            zipcode,
-            country,
-            state,
-            city,
-            neighbourhood,
-            street,
-            number,
-            complement,
-            type_id: ADDRESS.PHYSICAL_ADDRESS_TYPE,
-            establishment_id: establishmentId,
         })
 
-        return res.status(200).json({
-            success: true,
-            message: "Endereço cadastrado com sucesso!",
-            verbose: null,
-            data: {}
-        })
-
-    } catch (error) {
-        console.log(error);
-        return handleError(req, res, 500, "Ocorreu um erro ao cadastrar o endereço!", error)
+    } catch (err) {
+        return handleError(req, res, 500, "Ocorreu um erro ao obter os endereços de atendimento!", err)
     }
 
 }
@@ -380,6 +512,12 @@ exports.getBatteries = async function (req, res) {
     const sportId = req.body.sportId
     const establishmentId = req.params.establishment_id
 
+    req.assert('date', 'A data deve ser informado').notEmpty()
+    req.assert('sportId', 'O id do esporte deve ser informado').notEmpty()
+
+    if (validator.validateFields(req, res) != null)
+        return
+
     try {
 
         mysql.connect(mysql.uri, connection => {
@@ -440,4 +578,140 @@ exports.getBatteries = async function (req, res) {
         return handleError(req, res, 500, "Ocorreu um erro ao obter a bateria!", err)
     }
 
+}
+
+exports.storeBattery = async function (req, res) {
+
+    const establishmentId = req.decoded.data.establishmentId
+    const sportId = req.body.sportId
+    const addressId = req.body.addressId
+    const startHour = req.body.startHour
+    const finishHour = req.body.finishHour
+    const price = req.body.price
+    const peopleAmount = req.body.peopleAmount
+    const weekdays = req.body.weekdays
+
+    req.assert('sportId', 'O id do esporte deve ser informado').notEmpty()
+    req.assert('addressId', 'O id do endereço deve ser informado').notEmpty()
+    req.assert('startHour', 'A hora de início deve ser informada').notEmpty()
+    req.assert('finishHour', 'A hora de fim deve ser informada').notEmpty()
+    req.assert('price', 'O valor deve ser informado').notEmpty()
+    req.assert('peopleAmount', 'O quantidade máxima de pessoas deve ser informada').notEmpty()
+    req.assert('weekdays', 'Os dias da semana devem ser informados').notEmpty()
+
+    if (validator.validateFields(req, res) != null)
+        return
+
+    try {
+
+        connection.beginTransaction(function (err) {
+
+            if (err)
+                return handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
+
+            let query = `
+                INSERT INTO batteries 
+                (
+                    establishment_id, 
+                    address_id, 
+                    sport_id, 
+                    start_hour, 
+                    end_hour, 
+                    session_value, 
+                    people_allowed, 
+                    created_at, 
+                    updated_at
+                )
+                VALUES
+                (
+                    ?, 
+                    ?, 
+                    ?, 
+                    ?, 
+                    ?, 
+                    ?, 
+                    ?, 
+                    NOW(), 
+                    NOW()
+                )
+            `
+
+            let queryValues = [
+                establishmentId,
+                addressId,
+                sportId,
+                startHour,
+                finishHour,
+                price,
+                peopleAmount
+            ]
+
+            connection.query(query, queryValues, function (err, results, fields) {
+
+                if (err) {
+                    return connection.rollback(function () {
+                        handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
+                    })
+                }
+
+                query = `
+                    INSERT INTO battery_weekdays
+                    (
+                        battery_id,
+                        weekday_id
+                    )
+                    VALUES
+                    (
+                        ?,
+                        ?
+                    )
+                `
+
+                for (index in weekdays) {
+
+                    queryValues = [
+                        results.insertId,
+                        weekdays[index]
+                    ]
+
+                    connection.query(query, queryValues, function (err, result, fields) {
+
+                        if (err) {
+                            return connection.rollback(function () {
+                                handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
+                            })
+                        }
+
+                        if (index == weekdays.length - 1) {
+
+                            connection.commit(function (err) {
+
+                                if (err) {
+                                    return connection.rollback(function () {
+                                        handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
+                                    })
+                                }
+
+                                return res.status(200).json({
+                                    success: true,
+                                    message: "Bateria adicionado com sucesso!",
+                                    verbose: null,
+                                    data: {}
+                                })
+
+                            })
+
+                        }
+
+                    })
+
+                }
+
+            })
+
+        })
+
+    } catch (err) {
+        return handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
+    }
 }
