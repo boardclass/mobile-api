@@ -11,6 +11,10 @@ module.exports = {
     },
     AGENDA_STATUS: {
         AVAILABLE: 1
+    },
+    USER_TYPE: {
+        USER: 1,
+        ASSISTANT: 2
     }
 
 }

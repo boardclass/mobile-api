@@ -9,7 +9,7 @@ const logger = require('../classes/logger')
 
 const { connection } = require('../../config/database')
 const { handleError } = require('../classes/error-handler')
-const { ADDRESS, SCHEDULE_STATUS } = require('../classes/constants')
+const { ADDRESS, SCHEDULE_STATUS, USER_TYPE } = require('../classes/constants')
 
 exports.store = async function (req, res) {
 
@@ -431,7 +431,244 @@ exports.serviceAddresses = async function (req, res) {
 
 exports.storeBranch = async function (req, res) { }
 
-exports.storeEmployee = async function (req, res) { }
+exports.storeEmployee = async function (req, res) {
+
+    const establishmentId = req.decoded.data.establishmentId
+    const name = req.body.name
+    const cpf = req.body.cpf
+    const phone = req.body.phone
+    const account = {
+        email: req.body.account.email,
+        password: req.body.account.password
+    }
+
+    req.assert('name', 'O nome deve ser informado').notEmpty()
+    req.assert('cpf', 'O CPF deve ser informado').notEmpty()
+    req.assert('cpf', 'O CPF está com formato inválido').len(11)
+    req.assert('cpf', 'O CPF está deve conter apenas números').isNumeric()
+    req.assert('phone', 'O telefone deve ser informado').notEmpty()
+    req.assert('phone', 'O telefone está com formato inválido').len(13)
+    req.assert('phone', 'O telefone deve conter apenas números').isNumeric()
+    req.assert('account.email', 'O email deve ser informado').notEmpty()
+    req.assert('account.email', 'O email está em formato inválido').isEmail()
+    req.assert('account.password', 'A senha deve ser informada').notEmpty()
+
+    if (validator.validateFields(req, res) != null)
+        return
+
+    try {
+
+        account.password = await bcrypt.hash(account.password, 10)
+
+        let query = `
+            SELECT 1
+            FROM users u
+            INNER JOIN establishment_employees ee 
+                ON ee.user_id = u.id
+            INNER JOIN user_accounts ua 
+                ON ua.user_id = u.id
+            INNER JOIN users_roles ur
+                ON ur.user_id = u.id
+            WHERE 
+                ee.establishment_id = ?
+                AND (
+                    u.cpf = ?
+                    OR u.phone = ?
+                    OR ua.email = ?
+                    OR ur.role_id = ?  
+                )
+        `
+
+        let queryValues = [
+            establishmentId,
+            cpf,
+            phone,
+            account.email,
+            USER_TYPE.ASSISTANT
+        ]
+
+        connection.beginTransaction(function (err) {
+
+            connection.query(query, queryValues, function (err, result, _) {
+
+                if (err)
+                    return handleError(req, res, 500, "Ocorreu um erro ao cadastrar o professor!", err)
+
+                if (result.length != 0) {
+
+                    return res.status(200).json({
+                        success: true,
+                        message: "Os dados inseridos já estão em utilização!",
+                        verbose: null,
+                        data: {}
+                    })
+
+                } else {
+
+                    query = `
+                        INSERT INTO users
+                        (
+                            cpf,
+                            name,
+                            phone,
+                            created_at,
+                            updated_at
+                        )
+                        VALUES
+                        (
+                            ?,
+                            ?,
+                            ?,
+                            NOW(),
+                            NOW()
+                        )
+                    `
+                    
+                    queryValues = [
+                        cpf,
+                        name,
+                        phone
+                    ]
+
+                    connection.query(query, queryValues, function (err, result, _) {
+
+                        if (err) {
+                            return connection.rollback(function () {
+                                handleError(req, res, 500, "Ocorreu um erro ao cadastrar o professor!", err)
+                            })
+                        }
+
+                        const insertedUserId = result.insertId
+
+                        query = `
+                            INSERT INTO user_accounts
+                            (
+                                user_id,
+                                email,
+                                password,
+                                created_at,
+                                updated_at
+                            )
+                            VALUES
+                            (
+                                ?,
+                                ?,
+                                ?,
+                                NOW(),
+                                NOW()
+                            )
+                        `
+
+                        console.log(account);        
+
+                        queryValues = [
+                            insertedUserId,
+                            account.email,
+                            account.password
+                        ]
+
+                        connection.query(query, queryValues, function (err, result, _) {
+
+                            if (err) {
+                                return connection.rollback(function () {
+                                    handleError(req, res, 500, "Ocorreu um erro ao cadastrar o professor!", err)
+                                })
+                            }
+
+                            query = `
+                                INSERT INTO users_roles
+                                (
+                                    user_id,
+                                    role_id,
+                                    created_at,
+                                    updated_at
+                                )
+                                VALUES
+                                (
+                                    ?,
+                                    ?,
+                                    NOW(),
+                                    NOW()
+                                )
+                            `
+                            queryValues = [
+                                insertedUserId,
+                                USER_TYPE.ASSISTANT
+                            ]
+
+                            connection.query(query, queryValues, function (err, result, _) {
+
+                                if (err) {
+                                    return connection.rollback(function () {
+                                        handleError(req, res, 500, "Ocorreu um erro ao cadastrar o professor!", err)
+                                    })
+                                }
+
+                                query = `
+                                INSERT INTO establishment_employees
+                                (
+                                    establishment_id,
+                                    user_id,
+                                    created_at,
+                                    updated_at
+                                )
+                                VALUES
+                                (
+                                    ?,
+                                    ?,
+                                    NOW(),
+                                    NOW()
+                                )
+                            `
+                                queryValues = [
+                                    establishmentId,
+                                    insertedUserId
+                                ]
+
+                                connection.query(query, queryValues, function (err, result, _) {
+
+                                    if (err) {
+                                        return connection.rollback(function () {
+                                            handleError(req, res, 500, "Ocorreu um erro ao cadastrar o professor!", err)
+                                        })
+                                    }
+
+                                    connection.commit(function (err) {
+
+                                        if (err) {
+                                            return connection.rollback(function () {
+                                                handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
+                                            })
+                                        }
+
+                                        return res.status(200).json({
+                                            success: true,
+                                            message: "Cadastro realizado com sucesso!",
+                                            verbose: null,
+                                            data: {}
+                                        })
+
+                                    })
+
+                                })
+
+                            })
+
+                        })
+
+                    })
+
+                }
+
+            })
+
+        })
+
+    } catch (err) {
+        return handleError(req, res, 500, "Ocorreu um erro ao cadastrar o professor!", err)
+    }
+
+}
 
 exports.getAgenda = async function (req, res) {
 

@@ -22,7 +22,7 @@ module.exports = (app) => {
         establishmentController.serviceAddresses(req, res)
     })
 
-    app.post('/api/establishment/:establishment_id/employee', (req, res) => {
+    app.post('/api/establishment/employee', (req, res) => {
         establishmentController.storeEmployee(req, res)
     })
 
