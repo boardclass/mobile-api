@@ -523,7 +523,7 @@ exports.storeEmployee = async function (req, res) {
                             NOW()
                         )
                     `
-                    
+
                     queryValues = [
                         cpf,
                         name,
@@ -559,7 +559,7 @@ exports.storeEmployee = async function (req, res) {
                             )
                         `
 
-                        console.log(account);        
+                        console.log(account);
 
                         queryValues = [
                             insertedUserId,
@@ -666,6 +666,55 @@ exports.storeEmployee = async function (req, res) {
 
     } catch (err) {
         return handleError(req, res, 500, "Ocorreu um erro ao cadastrar o professor!", err)
+    }
+
+}
+
+exports.employees = async function (req, res) {
+
+    const establishmentId = req.decoded.data.establishmentId
+
+    try {
+
+        const query = `
+            SELECT 
+                u.id,
+                u.name,
+                u.phone,
+                ua.email
+            FROM users u
+            INNER JOIN establishment_employees ee 
+                ON ee.user_id = u.id
+            INNER JOIN user_accounts ua 
+                ON ua.user_id = u.id
+            INNER JOIN users_roles ur
+                ON ur.user_id = u.id
+            WHERE 
+                ee.establishment_id = ?
+                AND ur.role_id = ?
+        `
+
+        const queryValues = [
+            establishmentId,
+            USER_TYPE.ASSISTANT
+        ]
+
+        connection.query(query, queryValues, function (err, result, _) {
+
+            if (err)
+                return handleError(req, res, 500, "Ocorreu um erro ao cadastrar o professor!", err)
+
+            return res.status(200).json({
+                success: true,
+                message: "Dados obtidos com sucesso!",
+                verbose: null,
+                data: { employees: result }
+            })
+
+        })
+
+    } catch (err) {
+        return handleError(req, res, 500, "Ocorreu um erro ao obter os professores!", err)
     }
 
 }

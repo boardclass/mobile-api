@@ -26,6 +26,10 @@ module.exports = (app) => {
         establishmentController.storeEmployee(req, res)
     })
 
+    app.get('/api/establishment/employees', (req, res) => {
+        establishmentController.employees(req, res)
+    })
+
     app.get('/api/establishment/:establishment_id/agenda', (req, res) => {
         establishmentController.getAgenda(req, res)
     })
