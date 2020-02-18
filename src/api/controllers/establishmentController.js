@@ -1,5 +1,4 @@
 const Establishment = require('../models/Establishment')
-const EstablishmentAddress = require('../models/EstablishmentAddress')
 const mysql = require('../../config/mysql')
 
 const bcrypt = require('bcrypt')
@@ -496,7 +495,7 @@ exports.storeEmployee = async function (req, res) {
 
                 if (result.length != 0) {
 
-                    return res.status(200).json({
+                    return res.status(400).json({
                         success: true,
                         message: "Os dados inseridos já estão em utilização!",
                         verbose: null,
@@ -725,69 +724,42 @@ exports.getAgenda = async function (req, res) {
 
     try {
 
-        mysql.connect(mysql.uri, connection => {
-
-            const query = `
-                SELECT
+        const query = `
+            SELECT
                 DATE_FORMAT(ess.date, "%Y-%m-%d") AS date,
-                    es.id AS status_id,
-                    es.short_name AS status
-                FROM
-                    establishments_status ess
-                INNER JOIN establishment_status es ON
-                    es.id = ess.status_id
-                WHERE
-                    ess.establishment_id = ? 
-                    AND ess.date >= DATE_FORMAT(NOW(), "%Y-%m-%d")
-                ORDER BY
-                    ess.date`
+                es.id AS status_id,
+                es.short_name AS status
+            FROM
+                establishments_status ess
+            INNER JOIN establishment_status es ON
+                es.id = ess.status_id
+            WHERE
+                ess.establishment_id = ? 
+                AND ess.date >= DATE_FORMAT(NOW(), "%Y-%m-%d")
+            ORDER BY
+                ess.date
+        `
+        
+        connection.query(query, establishmentId, function (err, results, _) {
 
-            connection.query(query, establishmentId, function (err, results, fields) {
+            if (err)
+                return handleError(req, res, 500, "Ocorreu um erro ao obter a agenda!", err)
 
-                if (err) {
-
-                    logger.register(err, req, _ => {
-
-                        return res.status(500).json({
-                            success: false,
-                            message: "Ocorreu um erro ao obter a agenda!",
-                            verbose: `${err}`,
-                            data: {}
-                        })
-                    })
-
-                }
-
-                return res.status(200).json({
-                    success: true,
-                    message: "Agenda obtida com sucesso!",
-                    verbose: null,
-                    data: {
-                        agenda: {
-                            dates: results
-                        }
+            return res.status(200).json({
+                success: true,
+                message: "Agenda obtida com sucesso!",
+                verbose: null,
+                data: {
+                    agenda: {
+                        dates: results
                     }
-                })
-
-            })
-
-            connection.end()
-
-        })
-
-    } catch (error) {
-
-        logger.register(error, req, _ => {
-
-            return res.status(500).json({
-                success: false,
-                message: "Ocorreu um erro ao obter a agenda!",
-                verbose: `${error}`,
-                data: {}
+                }
             })
 
         })
 
+    } catch (err) {
+        return handleError(req, res, 500, "Ocorreu um erro ao obter a agenda!", err)
     }
 
 }
@@ -1000,4 +972,117 @@ exports.storeBattery = async function (req, res) {
     } catch (err) {
         return handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
     }
+}
+
+exports.storeSituation = async function (req, res) {
+
+    const date = req.body.date
+    const statusId = req.body.statusId
+    const description = req.body.description
+    const establishmentId = req.decoded.data.establishmentId
+
+    req.assert('date', 'A data deve ser informada').notEmpty()
+    req.assert('statusId', 'O id do status deve ser informado').notEmpty()
+    req.assert('description', 'A descrição deve ser informada').notEmpty()
+
+    if (validator.validateFields(req, res) != null)
+        return
+
+    try {
+
+        let query = `
+            SELECT 1
+            FROM schedules s
+            INNER JOIN batteries b 
+                ON b.id = s.battery_id
+            WHERE b.establishment_id = ?
+            AND s.date = ?
+            AND status_id NOT IN (?)
+        `
+
+        let queryValues = [
+            establishmentId,
+            date,
+            SCHEDULE_STATUS.CANCELED
+        ]
+
+        connection.beginTransaction(function (err) {
+
+            connection.query(query, queryValues, function (err, result, _) {
+
+                if (err)
+                    return handleError(req, res, 500, "Ocorreu um erro ao registrar a situação!", err)
+
+                if (result.length != 0) {
+
+                    return res.status(400).json({
+                        success: true,
+                        message: "Não foi possível registrar a situação, existem agendamentos pendentes na data selecionada!",
+                        verbose: null,
+                        data: {}
+                    })
+
+                } else {
+
+                    query = `
+                        INSERT INTO establishments_status
+                        (
+                            establishment_id,
+                            status_id,
+                            date,
+                            description
+                        )
+                        VALUES
+                        (
+                            ?,
+                            ?,
+                            ?,
+                            ?
+                        )
+                    `
+
+                    queryValues = [
+                        establishmentId,
+                        statusId,
+                        date,
+                        description
+                    ]
+
+                    connection.query(query, queryValues, function (err, result, _) {
+
+                        if (err) {
+                            return connection.rollback(function () {
+                                handleError(req, res, 500, "Ocorreu um erro ao registrar a situação!", err)
+                            })
+                        }
+
+                        connection.commit(function (err) {
+
+                            if (err) {
+                                return connection.rollback(function () {
+                                    handleError(req, res, 500, "Ocorreu um erro ao registrar a situação!", err)
+                                })
+                            }
+
+                            return res.status(200).json({
+                                success: true,
+                                message: "Situação registrada com sucesso!",
+                                verbose: null,
+                                data: {}
+                            })
+
+                        })
+
+                    })
+
+                }
+
+            })
+
+        })
+
+    } catch (err) {
+        return handleError(req, res, 500, "Ocorreu um erro ao registrar a situação!", err)
+    }
+
 }

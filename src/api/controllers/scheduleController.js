@@ -1,6 +1,6 @@
 const mysql = require('../../config/mysql')
 const logger = require('../classes/logger')
-const { SCHEDULE_STATUS, AGENDA_STATUS } = require('../classes/constants')
+const { SCHEDULE_STATUS } = require('../classes/constants')
 
 exports.store = async function (req, res) {
 

@@ -9,8 +9,12 @@ module.exports = {
         CANCELED: 2,
         PAID: 3
     },
-    AGENDA_STATUS: {
-        AVAILABLE: 1
+    ESTABLISHMENT_STATUS: {
+        AVAILABLE: 1,
+        CLOSED: 2,
+        MAINTENANCE: 3,
+        FULL: 4,
+        OTHER: 5
     },
     USER_TYPE: {
         USER: 1,
