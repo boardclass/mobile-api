@@ -829,7 +829,6 @@ exports.getBatteries = async function (req, res) {
 
             })
 
-            connection.end()
         })
 
     } catch (err) {

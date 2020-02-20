@@ -102,8 +102,6 @@ exports.store = async function (req, res) {
 
                                         })
 
-                                        connection.end()
-
                                     }
 
                                 })
@@ -129,8 +127,6 @@ exports.store = async function (req, res) {
                                             })
 
                                         })
-
-                                        connection.end()
 
                                     }
 

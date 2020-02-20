@@ -35,8 +35,6 @@ exports.sports = async function (req, res) {
 
             })
 
-            connection.end()
-
         })
 
     } catch (error) {
@@ -105,8 +103,6 @@ exports.addresses = async function (req, res) {
                 })
 
             })
-
-            connection.end()
 
         })
 
@@ -196,8 +192,6 @@ exports.establishments = async function (req, res) {
                 })
 
             })
-
-            connection.end()
 
         })
 
