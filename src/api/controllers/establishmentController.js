@@ -202,7 +202,7 @@ exports.login = async function (req, res) {
 
         }
 
-        res.setHeader('user-id', establishment.id)
+        res.setHeader('establishment-id', establishment.id)
         res.setHeader('access-token', jwtHandler.generate(null, establishment.id))
 
         return res.status(200).json({
