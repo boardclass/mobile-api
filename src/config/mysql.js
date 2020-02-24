@@ -8,7 +8,6 @@ module.exports = {
     password: process.env.SQL_PASSWORD || '',
     database: process.env.SQL_DATABASE || 'board_class',
     connectionLimit: 10,
-
     define: {
         timestamps: true,
         underscored: true
@@ -16,15 +15,9 @@ module.exports = {
 
     connect: function (uri, callback) {
 
-        var connection = mysql.createPool({
-            connectionLimit: this.connectionLimit,
-            host: this.host,
-            user: this.username,
-            password: this.password,
-            database: this.database,
-            port: this.port
-        })
+        var connection = mysql.createConnection(uri)
 
+        connection.connect()
         callback(connection)
 
     }

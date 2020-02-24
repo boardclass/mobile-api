@@ -1,15 +1,24 @@
 const mysql = require('mysql2')
-const { uri } = require('../config/mysql')
+const connectionData = require('../config/mysql')
 
-const connection = mysql.createConnection(uri)
+const connection = mysql.createPool({
+    host: connectionData.host,
+    user: connectionData.username,
+    password: connectionData.password,
+    database: connectionData.database,
+    port: connectionData.port,
+    waitForConnections: true,
+    connectionLimit: connectionData.connectionLimit,
+    queueLimit: 0
+})
 
-connection.connect((error => {
-    if (!error) {
-        console.log(`Database connected successfully on ${uri}`)
-    } else {
-        console.log(error)
-    }
-}))
+// connection.connect((error => {
+//     if (!error) {
+//         console.log(`Database connected successfully on ${connectionData.uri}`)
+//     } else {
+//         console.log(error)
+//     }
+// }))
 
 module.exports = {
     connection
