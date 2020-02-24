@@ -389,7 +389,7 @@ exports.serviceAddresses = async function (req, res) {
         const query = `
             SELECT 
                 id,
-                zipcode,
+                zipcode AS cep,
                 country,
                 state,
                 city,
