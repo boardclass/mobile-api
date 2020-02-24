@@ -12,6 +12,7 @@ const connection = mysql.createPool({
     queueLimit: 0
 })
 
+// TODO: CHECK IF NEED CONNECTION INSTEAD POOL
 // connection.connect((error => {
 //     if (!error) {
 //         console.log(`Database connected successfully on ${connectionData.uri}`)
