@@ -764,7 +764,7 @@ exports.getAgenda = async function (req, res) {
 
 }
 
-exports.getBatteries = async function (req, res) {
+exports.getAvailableBatteries = async function (req, res) {
 
     const date = req.body.date
     const sportId = req.body.sportId
@@ -833,6 +833,90 @@ exports.getBatteries = async function (req, res) {
 
     } catch (err) {
         return handleError(req, res, 500, "Ocorreu um erro ao obter a bateria!", err)
+    }
+
+}
+
+exports.batteries = async function (req, res) {
+
+    const establishmentId = req.decoded.data.establishmentId
+
+    const query = `
+        SELECT 
+            b.id,
+            b.start_hour,
+            b.end_hour,
+            b.session_value,
+            b.address_id,
+            ea.zipcode AS cep,
+            ea.country,
+            ea.state,
+            ea.city,
+            ea.neighbourhood,
+            ea.street,
+            ea.number,
+            ea.complement,
+            b.sport_id,
+            s.display_name
+        FROM batteries b
+        INNER JOIN sports s 
+            ON s.id = b.sport_id
+        INNER JOIN establishment_addresses ea
+            ON ea.id = b.address_id
+        WHERE b.establishment_id = ?
+    `
+
+    const queryValues = [
+        establishmentId
+    ]
+
+    try {
+
+        connection.query(query, queryValues, function (err, results, _) {
+
+            if (err)
+                return handleError(req, res, 500, "Ocorreu um erro ao obter as baterias!", err)
+
+            const batteries = []
+
+            for (row of results) {
+
+                batteries.push({
+                    id: row.id,
+                    startHour: row.start_hour,
+                    endHour: row.end_hour,
+                    value: row.session_value,
+                    address: {
+                        id: row.address_id,
+                        cep: row.cep,
+                        country: row.country,
+                        state: row.state,
+                        city: row.city,
+                        neighbourhood: row.neighbourhood,
+                        number: row.number,
+                        complement: row.complement
+                    },
+                    sport: {
+                        id: row.sport_id,
+                        name: row.display_name
+                    }
+                })
+
+            }
+
+            return res.status(200).json({
+                success: true,
+                message: "Consulta realizada com sucesso!",
+                verbose: null,
+                data: {
+                    batteries: batteries
+                }
+            })
+
+        })
+
+    } catch (err) {
+        return handleError(req, res, 500, "Ocorreu um erro ao obter as baterias!", err)
     }
 
 }

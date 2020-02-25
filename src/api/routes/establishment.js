@@ -34,8 +34,12 @@ module.exports = (app) => {
         establishmentController.getAgenda(req, res)
     })
 
-    app.post('/api/establishment/:establishment_id/batteries', (req, res) => {
-        establishmentController.getBatteries(req, res)
+    app.post('/api/establishment/:establishment_id/available_batteries', (req, res) => {
+        establishmentController.getAvailableBatteries(req, res)
+    })
+
+    app.get('/api/establishment/batteries', (req, res) => {
+        establishmentController.batteries(req, res)
     })
 
     app.post('/api/establishment/battery', (req, res) => {
