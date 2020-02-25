@@ -46,6 +46,11 @@ module.exports = (app) => {
         establishmentController.storeBattery(req, res)
     })
 
+    app.delete('/api/establishment/battery', (req, res) => {
+        // TODO: Implement delete endpoint on controller
+        establishmentController.deleteBattery(req, res)
+    })
+
     app.post('/api/establishment/situation', (req, res) => {
         establishmentController.storeSituation(req, res)
     })
