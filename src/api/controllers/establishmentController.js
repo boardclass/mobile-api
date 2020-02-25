@@ -896,6 +896,7 @@ exports.batteries = async function (req, res) {
         INNER JOIN establishment_addresses ea
             ON ea.id = b.address_id
         WHERE b.establishment_id = ?
+        ORDER BY b.start_hour
     `
 
     const queryValues = [
