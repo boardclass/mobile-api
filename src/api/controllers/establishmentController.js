@@ -889,14 +889,23 @@ exports.batteries = async function (req, res) {
             ea.number,
             ea.complement,
             b.sport_id,
-            s.display_name
+            s.display_name,
+            w.id AS weekday_id,
+            w.day
         FROM batteries b
         INNER JOIN sports s 
             ON s.id = b.sport_id
         INNER JOIN establishment_addresses ea
             ON ea.id = b.address_id
-        WHERE b.establishment_id = ?
-        ORDER BY b.start_hour
+        INNER JOIN battery_weekdays bw
+            ON bw.battery_id = b.id
+        INNER JOIN weekday w 
+            ON w.id = bw.weekday_id
+        WHERE 
+            b.establishment_id = ?
+        ORDER BY 
+            b.start_hour, 
+            weekday_id
     `
 
     const queryValues = [
@@ -914,26 +923,46 @@ exports.batteries = async function (req, res) {
 
             for (row of results) {
 
-                batteries.push({
-                    id: row.id,
-                    startHour: row.start_hour,
-                    endHour: row.end_hour,
-                    value: row.session_value,
-                    address: {
-                        id: row.address_id,
-                        cep: row.cep,
-                        country: row.country,
-                        state: row.state,
-                        city: row.city,
-                        neighbourhood: row.neighbourhood,
-                        number: row.number,
-                        complement: row.complement
-                    },
-                    sport: {
-                        id: row.sport_id,
-                        name: row.display_name
-                    }
+                let filtered = batteries.findIndex(value => {
+                    return value.id === row.id
                 })
+
+                if (filtered >= 0) {
+
+                    batteries[filtered].workingDays.push({
+                        id: row.weekday_id,
+                        day: row.day
+                    })
+
+                } else {
+
+                    batteries.push({
+                        id: row.id,
+                        startHour: row.start_hour,
+                        endHour: row.end_hour,
+                        value: row.session_value,
+                        address: {
+                            id: row.address_id,
+                            cep: row.cep,
+                            country: row.country,
+                            state: row.state,
+                            city: row.city,
+                            street: row.street,
+                            neighbourhood: row.neighbourhood,
+                            number: row.number,
+                            complement: row.complement
+                        },
+                        sport: {
+                            id: row.sport_id,
+                            name: row.display_name
+                        },
+                        workingDays: [{
+                            id: row.weekday_id,
+                            day: row.day
+                        }]
+                    })
+
+                }
 
             }
 
@@ -1205,7 +1234,7 @@ exports.storeSituation = async function (req, res) {
                                 }
 
                                 conn.release()
-                                
+
                                 return res.status(200).json({
                                     success: true,
                                     message: "Situação registrada com sucesso!",
