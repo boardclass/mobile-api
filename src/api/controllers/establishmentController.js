@@ -940,7 +940,7 @@ exports.batteries = async function (req, res) {
                         id: row.id,
                         startHour: row.start_hour,
                         endHour: row.end_hour,
-                        value: row.session_value,
+                        price: row.session_value,
                         address: {
                             id: row.address_id,
                             cep: row.cep,
