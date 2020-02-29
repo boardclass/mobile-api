@@ -760,16 +760,15 @@ exports.getAgenda = async function (req, res) {
             (
                 SELECT
                     DATE_FORMAT(s.date, "%Y-%m-%d") AS date,
-                    es.id AS status_id,
-                    es.name AS status,
-                    es.short_name AS short_status
+                    (SELECT id FROM establishment_status WHERE id = IF(COUNT(s.id) < b.people_allowed, 5, 4)) as status_id,
+                    (SELECT name FROM establishment_status WHERE id = IF(COUNT(s.id) < b.people_allowed, 5, 4)) as status,
+                    (SELECT short_name FROM establishment_status WHERE id = IF(COUNT(s.id) < b.people_allowed, 5, 4)) as short_status
                 FROM
                     schedules s
                 INNER JOIN batteries b ON
                     b.id = s.battery_id
-                INNER JOIN establishment_status es ON es.id = ()
                 WHERE
-                    b.establishment_id IN (SELECT DISTINCT id FROM establishment_status WHERE id = IF(COUNT(s.id) < b.people_allowed, 5, 4)) 
+                    b.establishment_id = ? 
                     AND s.status_id NOT IN(?)
                 GROUP BY s.date
             )
