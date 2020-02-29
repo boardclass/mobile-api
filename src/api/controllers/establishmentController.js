@@ -769,7 +769,7 @@ exports.getAgenda = async function (req, res) {
                     b.id = s.battery_id
                 INNER JOIN establishment_status es ON es.id = ()
                 WHERE
-                    b.establishment_id = (SELECT id FROM establishment_status WHERE id = IF(COUNT(s.id) < b.people_allowed, 5, 4)) 
+                    b.establishment_id IN (SELECT DISTINCT id FROM establishment_status WHERE id = IF(COUNT(s.id) < b.people_allowed, 5, 4)) 
                     AND s.status_id NOT IN(?)
                 GROUP BY s.date
             )
