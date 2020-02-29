@@ -760,8 +760,8 @@ exports.getAgenda = async function (req, res) {
             (
                 SELECT
                     DATE_FORMAT(s.date, "%Y-%m-%d") AS date,
-                    (SELECT id FROM establishment_status WHERE id = IF(COUNT(s.id) < b.people_allowed, 4, 5)) as status_id,
-                    (SELECT name FROM establishment_status WHERE id = IF(COUNT(s.id) < b.people_allowed, 4, 5)) as status,
+                    (SELECT id FROM establishment_status WHERE id = IF(COUNT(s.id) < b.people_allowed, 5, 4)) as status_id,
+                    (SELECT name FROM establishment_status WHERE id = IF(COUNT(s.id) < b.people_allowed, 5, 4)) as status,
                     (SELECT short_name FROM establishment_status WHERE id = IF(COUNT(s.id) < b.people_allowed, 4, 5)) as short_status
                 FROM
                     schedules s
