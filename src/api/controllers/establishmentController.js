@@ -1,10 +1,8 @@
 const Establishment = require('../models/Establishment')
-const mysql = require('../../config/mysql')
 
 const bcrypt = require('bcrypt')
 const validator = require('../classes/validator')
 const jwtHandler = require('../classes/jwt')
-const logger = require('../classes/logger')
 
 const { connection } = require('../../config/database')
 const { handleError } = require('../classes/error-handler')
@@ -62,7 +60,6 @@ exports.store = async function (req, res) {
         connection.getConnection(function (err, conn) {
 
             conn.beginTransaction(function (err) {
-
                 if (err)
                     return handleError(req, res, 500, "Ocorreu um erro ao cadastrar o estabelecimento!", err)
 
@@ -798,18 +795,25 @@ exports.getAgenda = async function (req, res) {
             establishmentId
         ]
 
-        connection.query(query, queryValues, function (err, results, _) {
+        connection.getConnection(function (err, conn) {
 
             if (err)
                 return handleError(req, res, 500, "Ocorreu um erro ao obter a agenda!", err)
 
-            return res.status(200).json({
-                success: true,
-                message: "Agenda obtida com sucesso!",
-                verbose: null,
-                data: {
-                    agenda: results
-                }
+            conn.query(query, queryValues, function (err, results, _) {
+
+                if (err)
+                    return handleError(req, res, 500, "Ocorreu um erro ao obter a agenda!", err)
+
+                return res.status(200).json({
+                    success: true,
+                    message: "Agenda obtida com sucesso!",
+                    verbose: null,
+                    data: {
+                        agenda: results
+                    }
+                })
+
             })
 
         })
@@ -868,18 +872,25 @@ exports.getAvailableBatteries = async function (req, res) {
             date
         ]
 
-        connection.query(query, data, function (err, results, fields) {
+        connection.getConnection(function (err, conn) {
 
             if (err)
                 return handleError(req, res, 500, "Ocorreu um erro ao obter a bateria!", err)
 
-            return res.status(200).json({
-                success: true,
-                message: "Bateria obtida com sucesso!",
-                verbose: null,
-                data: {
-                    batteries: results
-                }
+            conn.query(query, data, function (err, results, fields) {
+
+                if (err)
+                    return handleError(req, res, 500, "Ocorreu um erro ao obter a bateria!", err)
+
+                return res.status(200).json({
+                    success: true,
+                    message: "Bateria obtida com sucesso!",
+                    verbose: null,
+                    data: {
+                        batteries: results
+                    }
+                })
+
             })
 
         })
@@ -929,18 +940,25 @@ exports.getBatteriesByDate = async function (req, res) {
             date
         ]
 
-        connection.query(query, data, function (err, results, fields) {
+        connection.getConnection(function (err, conn) {
 
             if (err)
                 return handleError(req, res, 500, "Ocorreu um erro ao obter a bateria!", err)
 
-            return res.status(200).json({
-                success: true,
-                message: "Bateria obtida com sucesso!",
-                verbose: null,
-                data: {
-                    batteries: results
-                }
+            conn.query(query, data, function (err, results, fields) {
+
+                if (err)
+                    return handleError(req, res, 500, "Ocorreu um erro ao obter a bateria!", err)
+
+                return res.status(200).json({
+                    success: true,
+                    message: "Bateria obtida com sucesso!",
+                    verbose: null,
+                    data: {
+                        batteries: results
+                    }
+                })
+
             })
 
         })
@@ -996,65 +1014,72 @@ exports.batteries = async function (req, res) {
 
     try {
 
-        connection.query(query, queryValues, function (err, results, _) {
+        connection.getConnection(function (err, conn) {
 
             if (err)
                 return handleError(req, res, 500, "Ocorreu um erro ao obter as baterias!", err)
 
-            const batteries = []
+            conn.query(query, queryValues, function (err, results, _) {
 
-            for (row of results) {
+                if (err)
+                    return handleError(req, res, 500, "Ocorreu um erro ao obter as baterias!", err)
 
-                let filtered = batteries.findIndex(value => {
-                    return value.id === row.id
-                })
+                const batteries = []
 
-                if (filtered >= 0) {
+                for (row of results) {
 
-                    batteries[filtered].workingDays.push({
-                        id: row.weekday_id,
-                        day: row.day
+                    let filtered = batteries.findIndex(value => {
+                        return value.id === row.id
                     })
 
-                } else {
+                    if (filtered >= 0) {
 
-                    batteries.push({
-                        id: row.id,
-                        startHour: row.start_hour,
-                        endHour: row.end_hour,
-                        price: row.session_value,
-                        address: {
-                            id: row.address_id,
-                            cep: row.cep,
-                            country: row.country,
-                            state: row.state,
-                            city: row.city,
-                            street: row.street,
-                            neighbourhood: row.neighbourhood,
-                            number: row.number,
-                            complement: row.complement
-                        },
-                        sport: {
-                            id: row.sport_id,
-                            name: row.display_name
-                        },
-                        workingDays: [{
+                        batteries[filtered].workingDays.push({
                             id: row.weekday_id,
                             day: row.day
-                        }]
-                    })
+                        })
+
+                    } else {
+
+                        batteries.push({
+                            id: row.id,
+                            startHour: row.start_hour,
+                            endHour: row.end_hour,
+                            price: row.session_value,
+                            address: {
+                                id: row.address_id,
+                                cep: row.cep,
+                                country: row.country,
+                                state: row.state,
+                                city: row.city,
+                                street: row.street,
+                                neighbourhood: row.neighbourhood,
+                                number: row.number,
+                                complement: row.complement
+                            },
+                            sport: {
+                                id: row.sport_id,
+                                name: row.display_name
+                            },
+                            workingDays: [{
+                                id: row.weekday_id,
+                                day: row.day
+                            }]
+                        })
+
+                    }
 
                 }
 
-            }
+                return res.status(200).json({
+                    success: true,
+                    message: "Consulta realizada com sucesso!",
+                    verbose: null,
+                    data: {
+                        batteries: batteries
+                    }
+                })
 
-            return res.status(200).json({
-                success: true,
-                message: "Consulta realizada com sucesso!",
-                verbose: null,
-                data: {
-                    batteries: batteries
-                }
             })
 
         })
@@ -1346,7 +1371,7 @@ exports.getSchedulesByBattery = async function (req, res) {
 
     const date = req.params.date
     const batteryId = req.params.battery_id
-    
+
     try {
 
         const query = `
@@ -1374,24 +1399,110 @@ exports.getSchedulesByBattery = async function (req, res) {
             SCHEDULE_STATUS.CANCELED
         ]
 
-        connection.query(query, queryValues, function (err, results, _) {
+        connection.getConnection(function (err, conn) {
 
             if (err)
                 return handleError(req, res, 500, "Ocorreu um erro ao obter os agendamentos!", err)
 
-            return res.status(200).json({
-                success: true,
-                message: "Busca realizada com sucesso!",
-                verbose: null,
-                data: {
-                    schedules: results
-                }
+            conn.query(query, queryValues, function (err, results, _) {
+
+                if (err)
+                    return handleError(req, res, 500, "Ocorreu um erro ao obter os agendamentos!", err)
+
+                return res.status(200).json({
+                    success: true,
+                    message: "Busca realizada com sucesso!",
+                    verbose: null,
+                    data: {
+                        schedules: results
+                    }
+                })
+
             })
 
         })
 
     } catch (err) {
         return handleError(req, res, 500, "Ocorreu um erro ao obter os agendamentos!", err)
+    }
+
+}
+
+exports.deleteSchedules = async function (req, res) {
+
+    const schedulesId = req.body.schedulesId
+
+    req.assert('schedulesId', 'Os ids dos agendamentos devem ser informados').notEmpty()
+
+    if (validator.validateFields(req, res) != null)
+        return
+
+    try {
+
+        const query = `
+            UPDATE
+                schedules
+            SET status_id = ?
+            WHERE id IN (?)
+        `
+
+        const queryValues = [
+            SCHEDULE_STATUS.CANCELED,
+            schedulesId
+        ]
+
+        connection.getConnection(function (err, conn) {
+
+            if (err)
+                return handleError(req, res, 500, "Ocorreu um erro ao obter cancelar os agendamentos!", err)
+
+            conn.beginTransaction(function (err) {
+
+                if (err) {
+                    return conn.rollback(function () {
+                        conn.release()
+                        handleError(req, res, 500, "Ocorreu um erro ao obter cancelar os agendamentos!", err)
+                    })
+                }
+
+                conn.query(query, queryValues, function (err, results, _) {
+
+                    if (err) {
+                        return conn.rollback(function () {
+                            conn.release()
+                            handleError(req, res, 500, "Ocorreu um erro ao obter cancelar os agendamentos!", err)
+                        })
+                    }
+
+                    conn.commit(function (err) {
+                        if (err) {
+
+                            return conn.rollback(function () {
+                                conn.release()
+                                handleError(req, res, 500, "Ocorreu um erro ao obter cancelar os agendamentos!", err)
+                            })
+
+                        } else {
+                            conn.release()
+                        }
+
+                    })
+
+                    return res.status(200).json({
+                        success: true,
+                        message: "Os agendamentos foram cancelados com sucesso!",
+                        verbose: null,
+                        data: {}
+                    })
+
+                })
+
+            })
+
+        })
+
+    } catch (err) {
+        return handleError(req, res, 500, "Ocorreu um erro ao obter cancelar os agendamentos!", err)
     }
 
 }

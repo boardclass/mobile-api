@@ -63,4 +63,9 @@ module.exports = (app) => {
         establishmentController.getSchedulesByBattery(req, res)
     })
 
+    app.delete('/api/establishment/schedules', (req, res) => {
+        // TODO: Implement delete endpoint on controller
+        establishmentController.deleteSchedules(req, res)
+    })
+
 }
