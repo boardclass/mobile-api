@@ -1377,7 +1377,7 @@ exports.getSchedulesByBattery = async function (req, res) {
         const query = `
             SELECT
                 s.id,
-                u.id AS user_id,
+                u.id AS userId,
                 u.name AS user
             FROM schedules s
             INNER JOIN batteries b
