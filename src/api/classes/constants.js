@@ -14,7 +14,8 @@ module.exports = {
         CLOSED: 2,
         MAINTENANCE: 3,
         FULL: 4,
-        OTHER: 5
+        SCHEDULES: 5,
+        OTHER: 6
     },
     USER_TYPE: {
         USER: 1,

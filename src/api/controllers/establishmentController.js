@@ -757,22 +757,48 @@ exports.getAgenda = async function (req, res) {
     try {
 
         const query = `
-            SELECT
-                DATE_FORMAT(ess.date, "%Y-%m-%d") AS date,
-                es.id AS status_id,
-                es.short_name AS status
-            FROM
-                establishments_status ess
-            INNER JOIN establishment_status es ON
-                es.id = ess.status_id
-            WHERE
-                ess.establishment_id = ? 
-                AND ess.date >= DATE_FORMAT(NOW(), "%Y-%m-%d")
-            ORDER BY
-                ess.date
+            (
+                SELECT
+                    DATE_FORMAT(s.date, "%Y-%m-%d") AS date,
+                    (SELECT id FROM establishment_status WHERE id = IF(COUNT(s.id) < b.people_allowed, 5, 4)) as status_id,
+                    (SELECT name FROM establishment_status WHERE id = IF(COUNT(s.id) < b.people_allowed, 5, 4)) as status,
+                    (SELECT short_name FROM establishment_status WHERE id = IF(COUNT(s.id) < b.people_allowed, 5, 4)) as short_status
+                FROM
+                    schedules s
+                INNER JOIN batteries b ON
+                    b.id = s.battery_id
+                WHERE
+                    b.establishment_id = ? 
+                    AND s.status_id NOT IN(?)
+                GROUP BY s.date
+            )
+            
+            Union 
+            
+            (
+                SELECT
+                    DATE_FORMAT(ess.date, "%Y-%m-%d") AS date,
+                    es.id AS status_id,
+                    es.name AS status,
+                    es.short_name AS short_status
+                FROM
+                    establishments_status ess
+                INNER JOIN establishment_status es ON
+                    es.id = ess.status_id
+                WHERE
+                    ess.establishment_id = ?
+            )
+            
+            ORDER BY date
         `
 
-        connection.query(query, establishmentId, function (err, results, _) {
+        const queryValues = [
+            establishmentId,
+            SCHEDULE_STATUS.CANCELED,
+            establishmentId
+        ]
+
+        connection.query(query, queryValues, function (err, results, _) {
 
             if (err)
                 return handleError(req, res, 500, "Ocorreu um erro ao obter a agenda!", err)
@@ -782,9 +808,7 @@ exports.getAgenda = async function (req, res) {
                 message: "Agenda obtida com sucesso!",
                 verbose: null,
                 data: {
-                    agenda: {
-                        dates: results
-                    }
+                    agenda: results
                 }
             })
 
