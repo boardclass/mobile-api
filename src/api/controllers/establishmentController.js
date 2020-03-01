@@ -810,55 +810,113 @@ exports.getAvailableBatteries = async function (req, res) {
 
     try {
 
-        mysql.connect(mysql.uri, connection => {
+        const query = `
+            SELECT
+                b.id,
+                b.start_hour AS startHour,
+                b.end_hour AS endHour,
+                b.session_value AS price,
+                ABS(COUNT(s.id) - b.people_allowed) AS availableVacancies
+            FROM
+                batteries b
+            LEFT JOIN schedules s ON
+                s.battery_id = b.id 
+                AND s.date = ?
+                AND s.status_id NOT IN(?)
+            INNER JOIN battery_weekdays ew
+                ON ew.battery_id = b.id
+            INNER JOIN weekday w
+                ON w.id = ew.weekday_id
+            WHERE
+                b.establishment_id = ?
+                AND b.sport_id = ?
+                AND w.day = LOWER(DATE_FORMAT(?, "%W"))
+            GROUP BY
+                b.start_hour,
+                b.id
+        `
 
-            const query = `
-                SELECT
-                    b.id,
-                    b.start_hour AS startHour,
-                    b.end_hour AS endHour,
-                    b.session_value AS price,
-                    ABS(COUNT(s.id) - b.people_allowed) AS availableVacancies
-                FROM
-                    batteries b
-                LEFT JOIN schedules s ON
-                    s.battery_id = b.id 
-                    AND s.date = ?
-                    AND s.status_id NOT IN(?)
-                INNER JOIN battery_weekdays ew
-                    ON ew.battery_id = b.id
-                INNER JOIN weekday w
-                    ON w.id = ew.weekday_id
-                WHERE
-                    b.establishment_id = ?
-                    AND b.sport_id = ?
-                    AND w.day = LOWER(DATE_FORMAT(?, "%W"))
-                GROUP BY
-                    b.start_hour,
-                    b.id`
+        const data = [
+            date,
+            SCHEDULE_STATUS.CANCELED,
+            establishmentId,
+            sportId,
+            date
+        ]
 
-            const data = [
-                date,
-                SCHEDULE_STATUS.CANCELED,
-                establishmentId,
-                sportId,
-                date
-            ]
+        connection.query(query, data, function (err, results, fields) {
 
-            connection.query(query, data, function (err, results, fields) {
+            if (err)
+                return handleError(req, res, 500, "Ocorreu um erro ao obter a bateria!", err)
 
-                if (err)
-                    return handleError(req, res, 500, "Ocorreu um erro ao obter a bateria!", err)
+            return res.status(200).json({
+                success: true,
+                message: "Bateria obtida com sucesso!",
+                verbose: null,
+                data: {
+                    batteries: results
+                }
+            })
 
-                return res.status(200).json({
-                    success: true,
-                    message: "Bateria obtida com sucesso!",
-                    verbose: null,
-                    data: {
-                        batteries: results
-                    }
-                })
+        })
 
+    } catch (err) {
+        return handleError(req, res, 500, "Ocorreu um erro ao obter a bateria!", err)
+    }
+
+}
+
+exports.getBatteriesByDate = async function (req, res) {
+
+    const date = req.params.date
+    const establishmentId = req.decoded.data.establishmentId
+
+    try {
+
+        const query = `
+            SELECT
+                b.id,
+                b.start_hour AS startHour,
+                b.end_hour AS endHour,
+                b.session_value AS price,
+                ABS(COUNT(s.id) - b.people_allowed) AS availableVacancies
+            FROM
+                batteries b
+            LEFT JOIN schedules s ON
+                s.battery_id = b.id 
+                AND s.date = ?
+                AND s.status_id NOT IN(?)
+            INNER JOIN battery_weekdays ew
+                ON ew.battery_id = b.id
+            INNER JOIN weekday w
+                ON w.id = ew.weekday_id
+            WHERE
+                b.establishment_id = ?
+                AND w.day = LOWER(DATE_FORMAT(?, "%W"))
+            GROUP BY
+                b.start_hour,
+                b.id
+        `
+
+        const data = [
+            date,
+            SCHEDULE_STATUS.CANCELED,
+            establishmentId,
+            date
+        ]
+
+        connection.query(query, data, function (err, results, fields) {
+
+            if (err)
+                return handleError(req, res, 500, "Ocorreu um erro ao obter a bateria!", err)
+
+            return res.status(200).json({
+                success: true,
+                message: "Bateria obtida com sucesso!",
+                verbose: null,
+                data: {
+                    batteries: results
+                }
             })
 
         })

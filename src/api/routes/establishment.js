@@ -42,6 +42,10 @@ module.exports = (app) => {
         establishmentController.batteries(req, res)
     })
 
+    app.get('/api/establishment/:date/batteries', (req, res) => {
+        establishmentController.getBatteriesByDate(req, res)
+    })
+
     app.post('/api/establishment/battery', (req, res) => {
         establishmentController.storeBattery(req, res)
     })
