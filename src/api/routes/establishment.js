@@ -55,8 +55,8 @@ module.exports = (app) => {
         establishmentController.storeSituation(req, res)
     })
 
-    app.get('/api/establishment/schedules', (req, res) => {
-        establishmentController.getSchedules(req, res)
+    app.get('/api/establishment/schedules/:battery_id/:date', (req, res) => {
+        establishmentController.getSchedulesByBattery(req, res)
     })
 
 }

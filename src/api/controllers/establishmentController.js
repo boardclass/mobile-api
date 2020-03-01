@@ -1284,22 +1284,16 @@ exports.storeSituation = async function (req, res) {
 
 }
 
-exports.getSchedules = async function (req, res) {
+exports.getSchedulesByBattery = async function (req, res) {
 
-    const establishmentId = req.decoded.data.establishmentId
-
+    const date = req.params.date
+    const batteryId = req.params.battery_id
+    
     try {
 
         const query = `
-            SELECT 
-                s.id, 
-                DATE_FORMAT(s.date,'%Y-%m-%d') as date, 
-                sp.id AS sport_id, 
-                sp.display_name AS sport, 
-                b.id AS battery_id,
-                b.start_hour,
-                b.end_hour,
-                b.session_value AS price,
+            SELECT
+                s.id,
                 u.id AS user_id,
                 u.name AS user
             FROM schedules s
@@ -1307,22 +1301,18 @@ exports.getSchedules = async function (req, res) {
                 ON b.id = s.battery_id
             INNER JOIN establishments e
                 ON e.id = b.establishment_id
-            INNER JOIN sports sp
-                ON sp.id = b.sport_id
             INNER JOIN users u
                 ON u.id = s.user_id
-            INNER JOIN battery_weekdays ew
-                ON ew.battery_id = b.id
-            INNER JOIN weekday w
-                ON w.id = ew.weekday_id
-            WHERE b.establishment_id = ?
+            WHERE 
+                b.id = ?
+                AND s.date = ?
                 AND s.status_id NOT IN (?)
-                AND w.day = LOWER(DATE_FORMAT(date, "%W"))
-            ORDER BY date DESC, sport, start_hour
+            ORDER BY user
         `
 
         const queryValues = [
-            establishmentId,
+            batteryId,
+            date,
             SCHEDULE_STATUS.CANCELED
         ]
 
@@ -1331,62 +1321,12 @@ exports.getSchedules = async function (req, res) {
             if (err)
                 return handleError(req, res, 500, "Ocorreu um erro ao obter os agendamentos!", err)
 
-            const agenda = []
-
-            for (row of results) {
-
-                let filtered = agenda.findIndex(value => {
-                    return value.date === row.date
-                })
-
-                if (filtered >= 0) {
-
-                    agenda[filtered].batteries.push({
-                        id: row.battery_id,
-                        startHour: row.start_hour,
-                        endHour: row.end_hour,
-                        price: row.price,
-                        sport: {
-                            id: row.sport_id,
-                            name: row.sport
-                        },
-                        user: {
-                            id: row.user_id,
-                            name: row.user
-                        }
-                    })
-
-                } else {
-
-                    agenda.push({
-                        id: row.id,
-                        date: row.date,
-                        batteries: [{
-                            id: row.battery_id,
-                            startHour: row.start_hour,
-                            endHour: row.end_hour,
-                            price: row.price,
-                            sport: {
-                                id: row.sport_id,
-                                name: row.sport
-                            },
-                            user: {
-                                id: row.user_id,
-                                name: row.user
-                            }
-                        }]
-                    })
-
-                }
-
-            }
-
             return res.status(200).json({
                 success: true,
                 message: "Busca realizada com sucesso!",
                 verbose: null,
                 data: {
-                    schedules: agenda
+                    schedules: results
                 }
             })
 
