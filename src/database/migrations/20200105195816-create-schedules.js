@@ -53,11 +53,11 @@ module.exports = {
           onDelete: 'RESTRICT'
         },
         start_hour: {
-          type: Sequelize.INTEGER,
+          type: Sequelize.TIME,
           allowNull: true
         },
         end_hour: {
-          type: Sequelize.INTEGER,
+          type: Sequelize.TIME,
           allowNull: true
         },
         created_at: {

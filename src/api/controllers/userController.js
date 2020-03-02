@@ -296,8 +296,8 @@ exports.agenda = async function (req, res) {
                     e.id AS establishment_id, 
                     e.name AS establishment,
                     b.id AS battery_id,
-                    b.start_hour,
-                    b.end_hour,
+                    TIME_FORMAT(b.start_hour, "%H:%i") AS start_hour,
+                    TIME_FORMAT(b.end_hour, "%H:%i") AS end_hour,
                     b.session_value AS price
                 FROM schedules s
                 INNER JOIN batteries b

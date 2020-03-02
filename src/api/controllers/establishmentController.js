@@ -837,8 +837,8 @@ exports.getAvailableBatteries = async function (req, res) {
         const query = `
             SELECT
                 b.id,
-                b.start_hour AS startHour,
-                b.end_hour AS endHour,
+                TIME_FORMAT(b.start_hour, "%H:%i") AS startHour,
+                TIME_FORMAT(b.end_hour, "%H:%i") AS endHour,
                 b.session_value AS price,
                 ABS(COUNT(s.id) - b.people_allowed) AS availableVacancies
             FROM
@@ -900,8 +900,8 @@ exports.getBatteriesByDate = async function (req, res) {
         const query = `
             SELECT
                 b.id,
-                b.start_hour AS startHour,
-                b.end_hour AS endHour,
+                TIME_FORMAT(b.start_hour, "%H:%i") AS startHour,
+                TIME_FORMAT(b.end_hour, "%H:%i") AS endHour,
                 b.session_value AS price,
                 ABS(COUNT(s.id) - b.people_allowed) AS availableVacancies
             FROM
@@ -958,8 +958,8 @@ exports.batteries = async function (req, res) {
     const query = `
         SELECT 
             b.id,
-            b.start_hour,
-            b.end_hour,
+            TIME_FORMAT(b.start_hour, "%H:%i") AS start_hour,
+            TIME_FORMAT(b.end_hour, "%H:%i") AS end_hour,
             b.session_value,
             b.address_id,
             ea.zipcode AS cep,
@@ -1063,7 +1063,7 @@ exports.batteries = async function (req, res) {
         return handleError(req, res, 500, "Ocorreu um erro ao obter as baterias!", err)
     }
 
-}
+} 
 
 exports.storeBattery = async function (req, res) {
 

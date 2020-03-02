@@ -3,8 +3,8 @@ const { Model, DataTypes } = require('sequelize')
 class Batteries extends Model {
     static init(sequelize) {
         super.init({
-            start_hour: DataTypes.INTEGER,
-            end_hour: DataTypes.INTEGER,
+            start_hour: DataTypes.TIME,
+            end_hour: DataTypes.TIME,
             session_seconds: DataTypes.INTEGER,
             session_value: DataTypes.FLOAT,
             people_allowed: DataTypes.INTEGER
