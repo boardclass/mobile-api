@@ -1063,7 +1063,7 @@ exports.batteries = async function (req, res) {
         return handleError(req, res, 500, "Ocorreu um erro ao obter as baterias!", err)
     }
 
-} 
+}
 
 exports.storeBattery = async function (req, res) {
 
@@ -1101,31 +1101,31 @@ exports.storeBattery = async function (req, res) {
                 }
 
                 let query = `
-                INSERT INTO batteries 
-                (
-                    establishment_id, 
-                    address_id, 
-                    sport_id, 
-                    start_hour, 
-                    end_hour, 
-                    session_value, 
-                    people_allowed, 
-                    created_at, 
-                    updated_at
-                )
-                VALUES
-                (
-                    ?, 
-                    ?, 
-                    ?, 
-                    ?, 
-                    ?, 
-                    ?, 
-                    ?, 
-                    NOW(), 
-                    NOW()
-                )
-            `
+                    INSERT INTO batteries 
+                    (
+                        establishment_id, 
+                        address_id, 
+                        sport_id, 
+                        start_hour, 
+                        end_hour, 
+                        session_value, 
+                        people_allowed, 
+                        created_at, 
+                        updated_at
+                    )
+                    VALUES
+                    (
+                        ?, 
+                        ?, 
+                        ?, 
+                        ?, 
+                        ?, 
+                        ?, 
+                        ?, 
+                        NOW(), 
+                        NOW()
+                    )
+                `
 
                 let queryValues = [
                     establishmentId,
@@ -1147,17 +1147,17 @@ exports.storeBattery = async function (req, res) {
                     }
 
                     query = `
-                    INSERT INTO battery_weekdays
-                    (
-                        battery_id,
-                        weekday_id
-                    )
-                    VALUES
-                    (
-                        ?,
-                        ?
-                    )
-                `
+                        INSERT INTO battery_weekdays
+                        (
+                            battery_id,
+                            weekday_id
+                        )
+                        VALUES
+                        (
+                            ?,
+                            ?
+                        )
+                    `
 
                     for (index in weekdays) {
 
@@ -1188,13 +1188,6 @@ exports.storeBattery = async function (req, res) {
 
                                     conn.release()
 
-                                    return res.status(200).json({
-                                        success: true,
-                                        message: "Bateria adicionado com sucesso!",
-                                        verbose: null,
-                                        data: {}
-                                    })
-
                                 })
 
                             }
@@ -1202,6 +1195,13 @@ exports.storeBattery = async function (req, res) {
                         })
 
                     }
+
+                    return res.status(200).json({
+                        success: true,
+                        message: "Bateria adicionado com sucesso!",
+                        verbose: null,
+                        data: {}
+                    })
 
                 })
 
