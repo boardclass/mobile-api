@@ -1409,6 +1409,8 @@ exports.getSchedulesByBattery = async function (req, res) {
                 if (err)
                     return handleError(req, res, 500, "Ocorreu um erro ao obter os agendamentos!", err)
 
+                conn.release()
+
                 return res.status(200).json({
                     success: true,
                     message: "Busca realizada com sucesso!",
