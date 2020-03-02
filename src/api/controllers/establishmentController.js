@@ -1342,7 +1342,7 @@ exports.storeSituation = async function (req, res) {
 
 }
 
-exports.getSchedules = async function (req, res) {
+exports.getSchedulesByBattery = async function (req, res) {
 
     const establishmentId = req.decoded.data.establishmentId
 
