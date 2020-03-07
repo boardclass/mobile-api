@@ -1460,7 +1460,7 @@ exports.situationByDate = async function (req, res) {
     try {
 
         const query = `
-            SELECT 
+            SELECT DISTINCT
                 id,
                 status_id AS statusId,
                 description
@@ -1468,6 +1468,7 @@ exports.situationByDate = async function (req, res) {
             WHERE 
                 establishment_id = ?
                 AND date = ?
+            ORDER BY id DESC
         `
 
         const queryValues = [
