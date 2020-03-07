@@ -1487,11 +1487,22 @@ exports.situationByDate = async function (req, res) {
 
                 conn.release()
 
+                if (result.length === 0) {
+
+                    return res.status(404).json({
+                        success: true,
+                        message: "Não há situação cadastrada!",
+                        verbose: null,
+                        data: result
+                    })
+
+                }
+
                 return res.status(200).json({
                     success: true,
                     message: "Situação recuperada com sucesso!",
                     verbose: null,
-                    data: result
+                    data: result[0]
                 })
 
             })
