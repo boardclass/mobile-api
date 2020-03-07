@@ -1218,17 +1218,20 @@ exports.storeSituation = async function (req, res) {
 
     const date = req.body.date
     const statusId = req.body.statusId
-    const description = req.body.description
+    let description = req.body.description
     const establishmentId = req.decoded.data.establishmentId
 
     req.assert('date', 'A data deve ser informada').notEmpty()
     req.assert('statusId', 'O id do status deve ser informado').notEmpty()
-    req.assert('description', 'A descrição deve ser informada').notEmpty()
 
     if (validator.validateFields(req, res) != null)
         return
 
     try {
+
+        if (description == undefined) {
+            description = null
+        }
 
         let query = `
             SELECT 1
@@ -1338,6 +1341,165 @@ exports.storeSituation = async function (req, res) {
 
     } catch (err) {
         return handleError(req, res, 500, "Ocorreu um erro ao registrar a situação!", err)
+    }
+
+}
+
+exports.editSituation = async function (req, res) {
+
+    const id = req.body.id
+    const statusId = req.body.statusId
+    let description = req.body.description
+
+    req.assert('id', 'O id do situação deve ser informado').notEmpty()
+    req.assert('statusId', 'O id do status deve ser informado').notEmpty()
+
+    if (validator.validateFields(req, res) != null)
+        return
+
+    try {
+
+        if (description == undefined) {
+            description = null
+        }
+
+        const query = `
+            UPDATE 
+                establishments_status
+            SET 
+                status_id = ?,
+                description = ?
+            WHERE 
+                id = ?
+        `
+
+        const queryValues = [
+            statusId,
+            description,
+            id
+        ]
+
+        connection.getConnection(function (err, conn) {
+
+            if (err)
+                return handleError(req, res, 500, "Ocorreu um erro ao editar a situação!", err)
+
+            conn.beginTransaction(function (err) {
+
+                if (err) {
+                    return conn.rollback(function () {
+                        conn.release()
+                        handleError(req, res, 500, "Ocorreu um erro ao editar a situação!", err)
+                    })
+                }
+
+                conn.query(query, queryValues, function (err, result, _) {
+
+                    if (err) {
+                        return conn.rollback(function () {
+                            conn.release()
+                            handleError(req, res, 500, "Ocorreu um erro ao editar a situação!", err)
+                        })
+                    }
+
+                    conn.commit(function (err) {
+                        if (err) {
+
+                            return conn.rollback(function () {
+                                conn.release()
+                                handleError(req, res, 500, "Ocorreu um erro ao editar a situação!", err)
+                            })
+
+                        } else {
+
+                            conn.release()
+
+                            if (result.affectedRows == 0) {
+
+                                return res.status(400).json({
+                                    success: true,
+                                    message: "Não foi possível editar a situação!",
+                                    verbose: null,
+                                    data: {}
+                                })
+
+                            }
+
+                            return res.status(200).json({
+                                success: true,
+                                message: "Situação editada com sucesso!",
+                                verbose: null,
+                                data: {
+                                    id,
+                                    statusId,
+                                    description
+                                }
+                            })
+
+                        }
+
+                    })
+
+                })
+
+            })
+
+        })
+
+    } catch (err) {
+        return handleError(req, res, 500, "Ocorreu um erro ao editar a situação!", err)
+    }
+
+}
+
+exports.situationByDate = async function (req, res) {
+
+    const date = req.params.date
+    const establishmentId = req.decoded.data.establishmentId
+
+    try {
+
+        const query = `
+            SELECT 
+                id,
+                status_id AS statusId,
+                description
+            FROM establishments_status
+            WHERE 
+                establishment_id = ?
+                AND date = ?
+        `
+
+        const queryValues = [
+            establishmentId,
+            date
+        ]
+
+        connection.getConnection(function (err, conn) {
+
+            if (err)
+                return handleError(req, res, 500, "Ocorreu um erro ao recuperar a situação!", err)
+
+            conn.query(query, queryValues, function (err, result, _) {
+
+                if (err)
+                    return handleError(req, res, 500, "Ocorreu um erro ao recuperar a situação!", err)
+
+                conn.release()
+
+                return res.status(200).json({
+                    success: true,
+                    message: "Situação recuperada com sucesso!",
+                    verbose: null,
+                    data: result
+                })
+
+            })
+
+        })
+
+    } catch (err) {
+        return handleError(req, res, 500, "Ocorreu um erro ao recuperar a situação!", err)
     }
 
 }
