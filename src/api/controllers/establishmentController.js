@@ -1109,44 +1109,27 @@ exports.storeBattery = async function (req, res) {
                     })
                 }
 
-                let query = `
-                    INSERT INTO batteries 
-                    (
-                        establishment_id, 
-                        address_id, 
-                        sport_id, 
-                        start_hour, 
-                        end_hour, 
-                        session_value, 
-                        people_allowed, 
-                        created_at, 
-                        updated_at
-                    )
-                    VALUES
-                    (
-                        ?, 
-                        ?, 
-                        ?, 
-                        ?, 
-                        ?, 
-                        ?, 
-                        ?, 
-                        NOW(), 
-                        NOW()
-                    )
+                let fetchQuery = `
+                    SELECT *
+                    FROM batteries 
+                    WHERE 
+                        establishment_id = ?
+                        AND sport_id = ?
+                        AND address_id = ?
+                        AND ((? >= start_hour AND ? < end_hour) OR (? > start_hour AND ? <= end_hour))
                 `
 
-                let queryValues = [
+                let fetchParams = [
                     establishmentId,
-                    addressId,
                     sportId,
+                    addressId,
+                    startHour, 
                     startHour,
                     finishHour,
-                    price,
-                    peopleAmount
+                    finishHour
                 ]
 
-                conn.query(query, queryValues, function (err, results, fields) {
+                conn.query(fetchQuery, fetchParams, function (err, result, _) {
 
                     if (err) {
                         return conn.rollback(function () {
@@ -1154,28 +1137,10 @@ exports.storeBattery = async function (req, res) {
                             handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
                         })
                     }
+                    
+                    if (result.length > 0) {
 
-                    query = `
-                        INSERT INTO battery_weekdays
-                        (
-                            battery_id,
-                            weekday_id
-                        )
-                        VALUES
-                        (
-                            ?,
-                            ?
-                        )
-                    `
-
-                    for (index in weekdays) {
-
-                        queryValues = [
-                            results.insertId,
-                            weekdays[index]
-                        ]
-
-                        conn.query(query, queryValues, function (err, result, fields) {
+                        conn.commit(function (err) {
 
                             if (err) {
                                 return conn.rollback(function () {
@@ -1184,32 +1149,122 @@ exports.storeBattery = async function (req, res) {
                                 })
                             }
 
-                            if (index == weekdays.length - 1) {
+                            conn.release()
 
-                                conn.commit(function (err) {
+                        })
 
-                                    if (err) {
-                                        return conn.rollback(function () {
-                                            conn.release()
-                                            handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
-                                        })
-                                    }
-
-                                    conn.release()
-
-                                })
-
-                            }
-
+                        return res.status(400).json({
+                            success: true,
+                            message: "Esses horários já estão sendo utilizados!",
+                            verbose: null,
+                            data: {}
                         })
 
                     }
 
-                    return res.status(200).json({
-                        success: true,
-                        message: "Bateria adicionado com sucesso!",
-                        verbose: null,
-                        data: {}
+                    let query = `
+                        INSERT INTO batteries 
+                        (
+                            establishment_id, 
+                            address_id, 
+                            sport_id, 
+                            start_hour, 
+                            end_hour, 
+                            session_value, 
+                            people_allowed, 
+                            created_at, 
+                            updated_at
+                        )
+                        VALUES
+                        (
+                            ?, 
+                            ?, 
+                            ?, 
+                            ?, 
+                            ?, 
+                            ?, 
+                            ?, 
+                            NOW(), 
+                            NOW()
+                        )
+                    `
+
+                    let queryValues = [
+                        establishmentId,
+                        addressId,
+                        sportId,
+                        startHour,
+                        finishHour,
+                        price,
+                        peopleAmount
+                    ]
+
+                    conn.query(query, queryValues, function (err, results, fields) {
+
+                        if (err) {
+                            return conn.rollback(function () {
+                                conn.release()
+                                handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
+                            })
+                        }
+
+                        query = `
+                            INSERT INTO battery_weekdays
+                            (
+                                battery_id,
+                                weekday_id
+                            )
+                            VALUES
+                            (
+                                ?,
+                                ?
+                            )
+                        `
+
+                        for (index in weekdays) {
+
+                            queryValues = [
+                                results.insertId,
+                                weekdays[index]
+                            ]
+
+                            conn.query(query, queryValues, function (err, result, fields) {
+
+                                if (err) {
+                                    return conn.rollback(function () {
+                                        conn.release()
+                                        handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
+                                    })
+                                }
+
+                                if (index == weekdays.length - 1) {
+
+                                    conn.commit(function (err) {
+
+                                        if (err) {
+                                            return conn.rollback(function () {
+                                                conn.release()
+                                                handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
+                                            })
+                                        }
+
+                                        conn.release()
+
+                                    })
+
+                                }
+
+                            })
+
+                        }
+
+                        return res.status(200).json({
+                            success: true,
+                            message: "Bateria adicionado com sucesso!",
+                            verbose: null,
+                            data: {}
+                        })
+
                     })
 
                 })
