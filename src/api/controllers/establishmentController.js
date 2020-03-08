@@ -487,7 +487,6 @@ exports.storeEmployee = async function (req, res) {
                     u.cpf = ?
                     OR u.phone = ?
                     OR ua.email = ?
-                    OR ur.role_id = ?  
                 )
         `
 
