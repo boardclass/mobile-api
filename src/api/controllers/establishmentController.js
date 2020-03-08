@@ -1324,7 +1324,11 @@ exports.storeSituation = async function (req, res) {
                                     success: true,
                                     message: "Situação registrada com sucesso!",
                                     verbose: null,
-                                    data: {}
+                                    data: {
+                                        id: result.insertId,
+                                        statusId,
+                                        description
+                                    }
                                 })
 
                             })
