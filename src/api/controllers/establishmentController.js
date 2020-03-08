@@ -146,7 +146,12 @@ exports.store = async function (req, res) {
                                     success: true,
                                     message: "Estabelecimento cadastrado com sucesso!",
                                     verbose: null,
-                                    data: {}
+                                    data: {
+                                        name: establishment.name,
+                                        cnpj: establishment.cnpj,
+                                        cpf: establishment.cpf,
+                                        professor: establishment.professor
+                                    }
                                 })
 
                             })
@@ -208,7 +213,7 @@ exports.login = async function (req, res) {
 
             return res.status(404).json({
                 success: true,
-                message: "Não foi possível realizar o login, senha incorreta!",
+                message: "A senha está incorreta!",
                 verbose: null,
                 data: {}
             })
@@ -222,7 +227,12 @@ exports.login = async function (req, res) {
             success: true,
             message: "Login realizado com sucesso!",
             verbose: null,
-            data: {}
+            data: {
+                name: establishment.name,
+                cnpj: establishment.cnpj,
+                cpf: establishment.cpf,
+                professor: establishment.professor
+            }
         })
 
     } catch (error) {
