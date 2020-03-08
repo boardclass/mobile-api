@@ -1241,12 +1241,19 @@ exports.storeSituation = async function (req, res) {
             WHERE b.establishment_id = ?
             AND s.date = ?
             AND status_id NOT IN (?)
+
+            OR
+
+            SELECT 1
+            FROM establishments_status
+            WHERE date = ?
         `
 
         let queryValues = [
             establishmentId,
             date,
-            SCHEDULE_STATUS.CANCELED
+            SCHEDULE_STATUS.CANCELED,
+            date
         ]
 
         connection.getConnection(function (err, conn) {
