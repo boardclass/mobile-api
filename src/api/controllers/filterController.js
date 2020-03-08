@@ -80,7 +80,7 @@ exports.addresses = async function (req, res) {
 
                 if (err) {
 
-                    logger.register(error, req, _ => {
+                    logger.register(err, req, _ => {
 
                         return res.status(500).json({
                             success: false,
