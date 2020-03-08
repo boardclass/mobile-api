@@ -12,11 +12,12 @@ const { ADDRESS, SCHEDULE_STATUS, USER_TYPE } = require('../classes/constants')
 
 exports.store = async function (req, res) {
 
-    const establishment = {
+    let establishment = {
         name: req.body.name,
         cnpj: req.body.cnpj,
         cpf: req.body.cpf,
         professor: req.body.professor,
+        phone: req.body.phone,
         account: req.body.account
     }
 
@@ -24,6 +25,8 @@ exports.store = async function (req, res) {
     req.assert('cpf', 'O cpf do usuário deve ser informado').notEmpty()
     req.assert('cpf', 'O cpf está em formato inválido').len(11)
     req.assert('professor', 'O nome do professor deve ser informado').notEmpty()
+    //req.assert('phone', 'O telefone do professor deve ser informado').notEmpty()
+    //req.assert('phone', 'O formato do telefone está inválido, exemplo de formato correto: 5511912345678').len(13)
     req.assert('account.email', 'O email deve ser informado').notEmpty()
     req.assert('account.email', 'O email está em formato inválido').isEmail()
     req.assert('account.password', 'A senha deve ser informada').notEmpty()
@@ -32,10 +35,12 @@ exports.store = async function (req, res) {
         return
     }
 
-    if (establishment.cnpj === undefined) {
+    if (establishment.cnpj === undefined) 
         cnpj = null
-    }
 
+    if (establishment.phone === undefined) 
+        establishment.phone = null
+    
     try {
 
         const hashedPassword = await bcrypt.hash(establishment.account.password, 10)
@@ -51,13 +56,16 @@ exports.store = async function (req, res) {
             WHERE 
                 e.name = ? OR 
                 e.cpf = ? OR 
-                ec.email = ?`
+                e.phone = ? OR
+                ec.email = ?
+        `
 
         var queryValues = [
             establishment.name,
             establishment.cpf,
-            establishment.account.email]
-
+            establishment.phone,
+            establishment.account.email
+        ]
 
         connection.getConnection(function (err, conn) {
 
@@ -83,16 +91,17 @@ exports.store = async function (req, res) {
                     } else {
 
                         query = `
-                                INSERT INTO establishments 
-                                    (parent_id, name, cnpj, cpf, professor, created_at, updated_at)
-                                VALUES 
-                                    (null, ?, ?, ?, ?, NOW(), NOW())`
+                            INSERT INTO establishments 
+                                (parent_id, name, cnpj, cpf, professor, phone, created_at, updated_at)
+                            VALUES 
+                                (null, ?, ?, ?, ?, ?,NOW(), NOW())`
 
                         queryValues = [
                             establishment.name,
                             establishment.cnpj,
                             establishment.cpf,
-                            establishment.professor
+                            establishment.professor,
+                            establishment.phone
                         ]
 
                         conn.query(query, queryValues, function (err, results, fields) {
@@ -104,10 +113,10 @@ exports.store = async function (req, res) {
                                 })
 
                             query = `
-                                    INSERT INTO establishment_accounts
-                                        (establishment_id, email, password, created_at, updated_at)
-                                    VALUES 
-                                        (?, ?, ?, NOW(), NOW())`
+                                INSERT INTO establishment_accounts
+                                    (establishment_id, email, password, created_at, updated_at)
+                                VALUES 
+                                    (?, ?, ?, NOW(), NOW())`
 
                             queryValues = [
                                 results.insertId,
@@ -150,6 +159,7 @@ exports.store = async function (req, res) {
                                         name: establishment.name,
                                         cnpj: establishment.cnpj,
                                         cpf: establishment.cpf,
+                                        phone: establishment.phone,
                                         professor: establishment.professor
                                     }
                                 })
@@ -469,7 +479,7 @@ exports.storeEmployee = async function (req, res) {
     req.assert('cpf', 'O CPF está com formato inválido').len(11)
     req.assert('cpf', 'O CPF está deve conter apenas números').isNumeric()
     req.assert('phone', 'O telefone deve ser informado').notEmpty()
-    req.assert('phone', 'O telefone está com formato inválido').len(13)
+    req.assert('phone', 'O formato do telefone está inválido, exemplo de formato correto: 5511912345678').len(13)
     req.assert('phone', 'O telefone deve conter apenas números').isNumeric()
     req.assert('account.email', 'O email deve ser informado').notEmpty()
     req.assert('account.email', 'O email está em formato inválido').isEmail()
