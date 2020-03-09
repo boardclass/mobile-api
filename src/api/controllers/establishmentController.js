@@ -1,5 +1,6 @@
 const Establishment = require('../models/Establishment')
 const mysql = require('../../config/mysql')
+const randomstring = require("randomstring");
 
 const bcrypt = require('bcrypt')
 const validator = require('../classes/validator')
@@ -35,12 +36,12 @@ exports.store = async function (req, res) {
         return
     }
 
-    if (establishment.cnpj === undefined) 
+    if (establishment.cnpj === undefined)
         cnpj = null
 
-    if (establishment.phone === undefined) 
+    if (establishment.phone === undefined)
         establishment.phone = null
-    
+
     try {
 
         const hashedPassword = await bcrypt.hash(establishment.account.password, 10)
@@ -134,34 +135,56 @@ exports.store = async function (req, res) {
                                         handleError(req, res, 500, "Ocorreu um erro ao cadastrar o estabelecimento!", err)
                                     })
 
-                                conn.commit(function (err) {
-                                    if (err) {
+                                query = `
+                                    INSERT INTO establishments_indication 
+                                        (establishment_id, code)
+                                    VALUES
+                                        (?, ?)
+                                `
 
+                                queryValues = [
+                                    newEstablishmentId,
+                                    randomstring.generate(6)
+                                ]
+
+                                conn.query(query, queryValues, function (err, results, fields) {
+
+                                    if (err)
                                         return conn.rollback(function () {
                                             conn.release()
                                             handleError(req, res, 500, "Ocorreu um erro ao cadastrar o estabelecimento!", err)
                                         })
 
-                                    } else {
-                                        conn.release()
-                                    }
+                                    conn.commit(function (err) {
+                                        if (err) {
 
-                                })
+                                            return conn.rollback(function () {
+                                                conn.release()
+                                                handleError(req, res, 500, "Ocorreu um erro ao cadastrar o estabelecimento!", err)
+                                            })
 
-                                res.setHeader('access-token', jwtHandler.generate(null, newEstablishmentId))
-                                res.setHeader('establishment-id', newEstablishmentId)
+                                        } else {
+                                            conn.release()
+                                        }
 
-                                return res.status(200).json({
-                                    success: true,
-                                    message: "Estabelecimento cadastrado com sucesso!",
-                                    verbose: null,
-                                    data: {
-                                        name: establishment.name,
-                                        cnpj: establishment.cnpj,
-                                        cpf: establishment.cpf,
-                                        phone: establishment.phone,
-                                        professor: establishment.professor
-                                    }
+                                    })
+
+                                    res.setHeader('access-token', jwtHandler.generate(null, newEstablishmentId))
+                                    res.setHeader('establishment-id', newEstablishmentId)
+
+                                    return res.status(200).json({
+                                        success: true,
+                                        message: "Estabelecimento cadastrado com sucesso!",
+                                        verbose: null,
+                                        data: {
+                                            name: establishment.name,
+                                            cnpj: establishment.cnpj,
+                                            cpf: establishment.cpf,
+                                            phone: establishment.phone,
+                                            professor: establishment.professor
+                                        }
+                                    })
+
                                 })
 
                             })
@@ -1133,7 +1156,7 @@ exports.storeBattery = async function (req, res) {
                     establishmentId,
                     sportId,
                     addressId,
-                    startHour, 
+                    startHour,
                     startHour,
                     finishHour,
                     finishHour
@@ -1147,7 +1170,7 @@ exports.storeBattery = async function (req, res) {
                             handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
                         })
                     }
-                    
+
                     if (result.length > 0) {
 
                         conn.commit(function (err) {

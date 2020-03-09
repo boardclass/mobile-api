@@ -8,6 +8,7 @@ const jwtHandler = require('../classes/jwt')
 const logger = require('../classes/logger')
 
 const { connection } = require('../../config/database')
+const { handleError } = require('../classes/error-handler')
 const { SCHEDULE_STATUS } = require('../classes/constants')
 
 exports.login = async function (req, res) {
@@ -110,54 +111,175 @@ exports.store = async function (req, res) {
         return
     }
 
+    if (user.indication === undefined) {
+        user.indication = null
+    }
+
     try {
 
         account.password = await bcrypt.hash(account.password, 10)
 
-        const newUser = await User.findOrCreate({
-            where: {
-                cpf: user.cpf
-            },
-            defaults: {
-                name: user.name,
-                phone: user.phone,
-                account: account
-            },
-            include: [
-                { association: 'account' },
-                { association: 'addresses' }
-            ]
-        })
+        const indicationQuery = `
+            SELECT id
+            FROM establishments_indication
+            WHERE code = ?
+        `
 
-        const token = jwtHandler.generate(newUser[0].id, null)
+        connection.getConnection(function (err, conn) {
 
-        res.setHeader('access-token', token)
-        res.setHeader('user-id', newUser[0].id)
+            if (err)
+                return handleError(req, res, 500, "Ocorreu um erro ao cadastrar o usuário!", err)
 
-        return res.status(200).json({
-            success: true,
-            message: "Usuário cadastrado com sucesso!",
-            verbose: null,
-            data: {
-                cpf: user.cpf,
-                name: user.name,
-                phone: user.phone
-            }
-        })
+            conn.query(indicationQuery, user.indication, function (err, result, _) {
 
-    } catch (error) {
+                if (err)
+                    return handleError(req, res, 500, "Ocorreu um erro ao cadastrar o usuário!", err)
 
-        logger.register(error, req, _ => {
+                if (result.length == 0) {
 
-            return res.status(500).json({
-                success: false,
-                message: "Ocorreu um erro ao cadastrar o usuário!",
-                verbose: `${error}`,
-                data: {}
+                    return res.status(404).json({
+                        success: true,
+                        message: "Código de indicação inválido!",
+                        verbose: null,
+                        data: {}
+                    })
+
+                }
+
+                const indicationId = result[0].id
+
+                conn.beginTransaction(function (err) {
+
+                    let userQuery = `
+                       SELECT *
+                       FROM users u
+                       INNER JOIN user_accounts ua
+                       ON ua.user_id = u.id
+                       WHERE 
+                        ua.email = ? 
+                        OR u.phone = ?
+                        OR u.cpf = ?
+                    `
+
+                    let userParams = [
+                        account.email,
+                        user.phone,
+                        user.cpf
+                    ]
+
+                    conn.query(userQuery, userParams, function (err, result, _) {
+
+                        if (err) {
+                            return conn.rollback(function () {
+                                conn.release()
+                                handleError(req, res, 500, "Ocorreu um erro ao cadastrar o usuário!", err)
+                            })
+                        }
+
+                        if (result.length != 0) {
+
+                            return res.status(400).json({
+                                success: true,
+                                message: "Os dados inseridos já estão sendo utilizados!",
+                                verbose: null,
+                                data: {}
+                            })
+
+                        }
+
+                        userQuery = `
+                            INSERT INTO users
+                                (cpf, name, phone, indication_id)
+                            VALUES
+                                (?, ?, ?, ?)
+                        `
+
+                        userParams = [
+                            user.cpf,
+                            user.name,
+                            user.phone,
+                            indicationId
+                        ]
+
+                        conn.query(userQuery, userParams, function (err, result, _) {
+
+                            if (err) {
+                                return conn.rollback(function () {
+                                    conn.release()
+                                    handleError(req, res, 500, "Ocorreu um erro ao cadastrar o usuário!", err)
+                                })
+                            }
+
+                            const insertId = result.insertId
+
+                            const accountQuery = `
+                                INSERT INTO user_accounts
+                                    (user_id, email, password)
+                                VALUES
+                                    (?, ?, ?)
+                            `
+                            const accountParams = [
+                                insertId,
+                                account.email,
+                                account.password
+                            ]
+
+                            conn.query(accountQuery, accountParams, function (err, result, _) {
+
+                                if (err) {
+                                    return conn.rollback(function () {
+                                        conn.release()
+                                        handleError(req, res, 500, "Ocorreu um erro ao cadastrar o usuário!", err)
+                                    })
+                                }
+
+                                conn.commit(function (err) {
+
+                                    if (err) {
+
+                                        return conn.rollback(function () {
+                                            conn.release()
+                                            handleError(req, res, 500, "Ocorreu um erro ao cadastrar o estabelecimento!", err)
+                                        })
+
+                                    } else {
+
+                                        conn.release()
+                                        const token = jwtHandler.generate(insertId, null)
+
+                                        res.setHeader('access-token', token)
+                                        res.setHeader('user-id', insertId)
+
+                                        return res.status(200).json({
+                                            success: true,
+                                            message: "Usuário cadastrado com sucesso!",
+                                            verbose: null,
+                                            data: {
+                                                cpf: user.cpf,
+                                                name: user.name,
+                                                phone: user.phone,
+                                                indication: user.indication
+                                            }
+                                        })
+
+                                    }
+
+                                })
+
+                            })
+
+                        })
+
+                    })
+
+                })
+
             })
 
         })
 
+    } catch (err) {
+        handleError(req, res, 500, "Ocorreu um erro ao cadastrar o usuário!", err)
     }
 
 }
