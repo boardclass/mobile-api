@@ -518,14 +518,10 @@ exports.storeEmployee = async function (req, res) {
         account.password = await bcrypt.hash(account.password, 10)
 
         let query = `
-            SELECT 1
+            SELECT *
             FROM users u
-            INNER JOIN establishment_employees ee 
-                ON ee.user_id = u.id
             INNER JOIN user_accounts ua 
                 ON ua.user_id = u.id
-            INNER JOIN users_roles ur
-                ON ur.user_id = u.id
             WHERE 
                 u.cpf = ?
                 OR u.phone = ?
@@ -533,11 +529,9 @@ exports.storeEmployee = async function (req, res) {
         `
 
         let queryValues = [
-            establishmentId,
             cpf,
             phone,
-            account.email,
-            USER_TYPE.ASSISTANT
+            account.email
         ]
 
         connection.getConnection(function (err, conn) {
