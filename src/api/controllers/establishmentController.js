@@ -44,6 +44,7 @@ exports.store = async function (req, res) {
 
     try {
 
+        const indication = randomstring.generate(6)
         const hashedPassword = await bcrypt.hash(establishment.account.password, 10)
 
         establishment.account.password = hashedPassword
@@ -144,7 +145,7 @@ exports.store = async function (req, res) {
 
                                 queryValues = [
                                     newEstablishmentId,
-                                    randomstring.generate(6)
+                                    indication
                                 ]
 
                                 conn.query(query, queryValues, function (err, results, fields) {
@@ -181,7 +182,8 @@ exports.store = async function (req, res) {
                                             cnpj: establishment.cnpj,
                                             cpf: establishment.cpf,
                                             phone: establishment.phone,
-                                            professor: establishment.professor
+                                            professor: establishment.professor,
+                                            indication: indication
                                         }
                                     })
 
