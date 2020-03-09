@@ -527,7 +527,6 @@ exports.storeEmployee = async function (req, res) {
             INNER JOIN users_roles ur
                 ON ur.user_id = u.id
             WHERE 
-                ee.establishment_id = ?
                 AND (
                     u.cpf = ?
                     OR u.phone = ?
