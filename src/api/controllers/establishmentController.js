@@ -1597,7 +1597,7 @@ exports.situationByDate = async function (req, res) {
                         success: true,
                         message: "Não há situação cadastrada!",
                         verbose: null,
-                        data: result
+                        data: {}
                     })
 
                 }
