@@ -1137,7 +1137,7 @@ exports.storeBattery = async function (req, res) {
                 FROM batteries 
                 WHERE 
                     establishment_id = ?
-                    AND b.deleted = false
+                    AND deleted = false
                     AND sport_id = ?
                     AND address_id = ?
                     AND ((? >= start_hour AND ? < end_hour) OR (? > start_hour AND ? <= end_hour))
