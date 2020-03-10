@@ -836,6 +836,8 @@ exports.getAgenda = async function (req, res) {
             if (err)
                 return handleError(req, res, 500, "Ocorreu um erro ao obter a agenda!", err)
 
+            console.log(establishmentId);
+
             return res.status(200).json({
                 success: true,
                 message: "Agenda obtida com sucesso!",
@@ -886,6 +888,7 @@ exports.getAvailableBatteries = async function (req, res) {
                 ON w.id = ew.weekday_id
             WHERE
                 b.establishment_id = ?
+                AND b.deleted = false
                 AND b.sport_id = ?
                 AND w.day = LOWER(DATE_FORMAT(?, "%W"))
             GROUP BY
@@ -949,6 +952,7 @@ exports.getBatteriesByDate = async function (req, res) {
                 ON w.id = ew.weekday_id
             WHERE
                 b.establishment_id = ?
+                AND b.deleted = false
                 AND w.day = LOWER(DATE_FORMAT(?, "%W"))
             GROUP BY
                 b.start_hour,
@@ -1018,6 +1022,7 @@ exports.batteries = async function (req, res) {
             ON w.id = bw.weekday_id
         WHERE 
             b.establishment_id = ?
+            AND b.deleted = false
         ORDER BY 
             b.start_hour, 
             weekday_id
@@ -1128,14 +1133,15 @@ exports.storeBattery = async function (req, res) {
                 return handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
 
             let fetchQuery = `
-                    SELECT *
-                    FROM batteries 
-                    WHERE 
-                        establishment_id = ?
-                        AND sport_id = ?
-                        AND address_id = ?
-                        AND ((? >= start_hour AND ? < end_hour) OR (? > start_hour AND ? <= end_hour))
-                `
+                SELECT *
+                FROM batteries 
+                WHERE 
+                    establishment_id = ?
+                    AND b.deleted = false
+                    AND sport_id = ?
+                    AND address_id = ?
+                    AND ((? >= start_hour AND ? < end_hour) OR (? > start_hour AND ? <= end_hour))
+            `
 
             let fetchParams = [
                 establishmentId,

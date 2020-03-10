@@ -74,6 +74,7 @@ exports.addresses = async function (req, res) {
                     ea.id = b.address_id
                 WHERE
                     b.sport_id = ?
+                    AND b.deleted = false
                 ORDER BY ea.country, ea.state, ea.city, ea.neighbourhood`
 
             connection.query(query, [sportId], function (err, results, fields) {
