@@ -94,6 +94,7 @@ exports.store = async function (req, res) {
 
     const user = req.body
     const account = req.body.account
+    let indicationId = null
 
     req.assert('name', 'O nome deve ser informado').notEmpty()
     req.assert('cpf', 'O CPF deve ser informado').notEmpty()
@@ -130,27 +131,40 @@ exports.store = async function (req, res) {
             if (err)
                 return handleError(req, res, 500, "Ocorreu um erro ao cadastrar o usuário!", err)
 
-            conn.query(indicationQuery, user.indication, function (err, result, _) {
+            if (user.indication != undefined) {
 
-                if (err)
-                    return handleError(req, res, 500, "Ocorreu um erro ao cadastrar o usuário!", err)
+                conn.query(indicationQuery, user.indication, function (err, result, _) {
 
-                if (result.length == 0) {
+                    if (err)
+                        return handleError(req, res, 500, "Ocorreu um erro ao cadastrar o usuário!", err)
 
-                    return res.status(404).json({
-                        success: true,
-                        message: "Código de indicação inválido!",
-                        verbose: null,
-                        data: {}
+                    if (result.length == 0) {
+
+                        return res.status(404).json({
+                            success: true,
+                            message: "Código de indicação inválido!",
+                            verbose: null,
+                            data: {}
+                        })
+
+                    }
+
+                    indicationId = result[0].id
+
+                })
+
+            }
+
+            conn.beginTransaction(function (err) {
+
+                if (err) {
+                    return conn.rollback(function () {
+                        conn.release()
+                        handleError(req, res, 500, "Ocorreu um erro ao cadastrar o usuário!", err)
                     })
-
                 }
 
-                const indicationId = result[0].id
-
-                conn.beginTransaction(function (err) {
-
-                    let userQuery = `
+                let userQuery = `
                        SELECT *
                        FROM users u
                        INNER JOIN user_accounts ua
@@ -161,10 +175,44 @@ exports.store = async function (req, res) {
                         OR u.cpf = ?
                     `
 
-                    let userParams = [
-                        account.email,
+                let userParams = [
+                    account.email,
+                    user.phone,
+                    user.cpf
+                ]
+
+                conn.query(userQuery, userParams, function (err, result, _) {
+
+                    if (err) {
+                        return conn.rollback(function () {
+                            conn.release()
+                            handleError(req, res, 500, "Ocorreu um erro ao cadastrar o usuário!", err)
+                        })
+                    }
+
+                    if (result.length != 0) {
+
+                        return res.status(400).json({
+                            success: true,
+                            message: "Os dados inseridos já estão sendo utilizados!",
+                            verbose: null,
+                            data: {}
+                        })
+
+                    }
+
+                    userQuery = `
+                            INSERT INTO users
+                                (cpf, name, phone, indication_id)
+                            VALUES
+                                (?, ?, ?, ?)
+                        `
+
+                    userParams = [
+                        user.cpf,
+                        user.name,
                         user.phone,
-                        user.cpf
+                        indicationId
                     ]
 
                     conn.query(userQuery, userParams, function (err, result, _) {
@@ -176,32 +224,21 @@ exports.store = async function (req, res) {
                             })
                         }
 
-                        if (result.length != 0) {
+                        const insertId = result.insertId
 
-                            return res.status(400).json({
-                                success: true,
-                                message: "Os dados inseridos já estão sendo utilizados!",
-                                verbose: null,
-                                data: {}
-                            })
-
-                        }
-
-                        userQuery = `
-                            INSERT INTO users
-                                (cpf, name, phone, indication_id)
-                            VALUES
-                                (?, ?, ?, ?)
-                        `
-
-                        userParams = [
-                            user.cpf,
-                            user.name,
-                            user.phone,
-                            indicationId
+                        const accountQuery = `
+                                INSERT INTO user_accounts
+                                    (user_id, email, password)
+                                VALUES
+                                    (?, ?, ?)
+                            `
+                        const accountParams = [
+                            insertId,
+                            account.email,
+                            account.password
                         ]
 
-                        conn.query(userQuery, userParams, function (err, result, _) {
+                        conn.query(accountQuery, accountParams, function (err, result, _) {
 
                             if (err) {
                                 return conn.rollback(function () {
@@ -210,61 +247,36 @@ exports.store = async function (req, res) {
                                 })
                             }
 
-                            const insertId = result.insertId
-
-                            const accountQuery = `
-                                INSERT INTO user_accounts
-                                    (user_id, email, password)
-                                VALUES
-                                    (?, ?, ?)
-                            `
-                            const accountParams = [
-                                insertId,
-                                account.email,
-                                account.password
-                            ]
-
-                            conn.query(accountQuery, accountParams, function (err, result, _) {
+                            conn.commit(function (err) {
 
                                 if (err) {
+
                                     return conn.rollback(function () {
                                         conn.release()
-                                        handleError(req, res, 500, "Ocorreu um erro ao cadastrar o usuário!", err)
+                                        handleError(req, res, 500, "Ocorreu um erro ao cadastrar o estabelecimento!", err)
                                     })
+
+                                } else {
+
+                                    conn.release()
+                                    const token = jwtHandler.generate(insertId, null)
+
+                                    res.setHeader('access-token', token)
+                                    res.setHeader('user-id', insertId)
+
+                                    return res.status(200).json({
+                                        success: true,
+                                        message: "Usuário cadastrado com sucesso!",
+                                        verbose: null,
+                                        data: {
+                                            cpf: user.cpf,
+                                            name: user.name,
+                                            phone: user.phone,
+                                            indication: user.indication
+                                        }
+                                    })
+
                                 }
-
-                                conn.commit(function (err) {
-
-                                    if (err) {
-
-                                        return conn.rollback(function () {
-                                            conn.release()
-                                            handleError(req, res, 500, "Ocorreu um erro ao cadastrar o estabelecimento!", err)
-                                        })
-
-                                    } else {
-
-                                        conn.release()
-                                        const token = jwtHandler.generate(insertId, null)
-
-                                        res.setHeader('access-token', token)
-                                        res.setHeader('user-id', insertId)
-
-                                        return res.status(200).json({
-                                            success: true,
-                                            message: "Usuário cadastrado com sucesso!",
-                                            verbose: null,
-                                            data: {
-                                                cpf: user.cpf,
-                                                name: user.name,
-                                                phone: user.phone,
-                                                indication: user.indication
-                                            }
-                                        })
-
-                                    }
-
-                                })
 
                             })
 
