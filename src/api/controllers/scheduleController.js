@@ -1,5 +1,5 @@
-const mysql = require('../../config/mysql')
-const logger = require('../classes/logger')
+const { connection } = require('../../config/database')
+const { handleError } = require('../classes/error-handler')
 const { SCHEDULE_STATUS } = require('../classes/constants')
 
 exports.store = async function (req, res) {
@@ -8,13 +8,32 @@ exports.store = async function (req, res) {
     const userId = req.decoded.data.userId
     const batteries = req.body.batteries
 
+    if (userId === undefined) {
+        return res.status(404).json({
+            success: false,
+            message: "Token inválido, favor tentar logar novamente!",
+            verbose: null,
+            data: {}
+        }) 
+    }
+
     try {
 
-        mysql.connect(mysql.uri, connection => {
+        connection.getConnection(function (err, conn) {
+
+            if (err)
+                return handleError(req, res, 500, "Ocorreu um erro no agendamento!", err)
 
             for (let index in batteries) {
 
-                connection.beginTransaction(function (err) {
+                conn.beginTransaction(function (err) {
+
+                    if (err) {
+                        return conn.rollback(function () {
+                            conn.release()
+                            return handleError(req, res, 500, "Ocorreu um erro no agendamento!", err)
+                        })
+                    }
 
                     const query = `
                         SELECT
@@ -36,21 +55,13 @@ exports.store = async function (req, res) {
                         batteries[index].id
                     ]
 
-                    connection.query(query, filters, function (err, results, fields) {
+                    conn.query(query, filters, function (err, results, fields) {
 
                         if (err) {
-
-                            logger.register(error, req, _ => {
-
-                                return res.status(500).json({
-                                    success: false,
-                                    message: "Ocorreu um erro no agendamento!",
-                                    verbose: `${err}`,
-                                    data: {}
-                                })
-
+                            return conn.rollback(function () {
+                                conn.release()
+                                return handleError(req, res, 500, "Ocorreu um erro no agendamento!", err)
                             })
-
                         }
 
                         let available_vacancies = results[0].available_vacancies
@@ -79,29 +90,17 @@ exports.store = async function (req, res) {
                                 const filters = [
                                     batteries[index].id,
                                     userId,
-                                    SCHEDULE_STATUS.SCHEDULED,
+                                    SCHEDULE_STATUS.PENDENT_PAYMENT,
                                     date
                                 ]
 
-                                connection.query(query, filters, function (err, results, fields) {
+                                conn.query(query, filters, function (err, results, fields) {
 
                                     if (err) {
-
-                                        connection.rollback(function () {
-
-                                            logger.register(error, req, _ => {
-
-                                                return res.status(500).json({
-                                                    success: false,
-                                                    message: "Ocorreu um erro no agendamento!",
-                                                    verbose: `${err}`,
-                                                    data: {}
-                                                })
-
-                                            })
-
+                                        return conn.rollback(function () {
+                                            conn.release()
+                                            return handleError(req, res, 500, "Ocorreu um erro no agendamento!", err)
                                         })
-
                                     }
 
                                 })
@@ -110,25 +109,16 @@ exports.store = async function (req, res) {
 
                             if (index == batteries.length - 1) {
 
-                                connection.commit(function (err) {
+                                conn.commit(function (err) {
+
                                     if (err) {
-
                                         connection.rollback(function () {
-
-                                            logger.register(error, req, _ => {
-
-                                                return res.status(500).json({
-                                                    success: false,
-                                                    message: "Ocorreu um erro no agendamento!",
-                                                    verbose: `${err}`,
-                                                    data: {}
-                                                })
-
-                                            })
-
+                                            conn.release()
+                                            return handleError(req, res, 500, "Ocorreu um erro no agendamento!", err)
                                         })
-
                                     }
+
+                                    conn.release()
 
                                 })
 
@@ -158,22 +148,113 @@ exports.store = async function (req, res) {
             }
 
 
-
         })
 
-    } catch (error) {
+    } catch (err) {
+        return handleError(req, res, 500, "Ocorreu um erro no agendamento!", err)
+    }
 
-        logger.register(error, req, _ => {
+}
 
-            return res.status(500).json({
-                success: false,
-                message: "Ocorreu um erro no agendamento!",
-                verbose: `${error}`,
-                data: {}
+exports.pay = async function (req, res) {
+
+    const scheduleId = req.params.schedule_id
+
+    try {
+
+        let sql = ` 
+            SELECT 1
+            FROM schedules
+            WHERE 
+                id = ?
+                AND status_id NOT IN (?)
+        `
+
+        let sqlParams = [
+            scheduleId,
+            SCHEDULE_STATUS.CANCELED
+        ]
+
+        connection.getConnection(function (err, conn) {
+
+            if (err)
+                return handleError(req, res, 500, "Ocorreu um erro ao atualizar o pagamento!", err)
+
+            conn.query(sql, sqlParams, function (err, result, _) {
+
+                if (err)
+                    return handleError(req, res, 500, "Ocorreu um erro ao atualizar o pagamento!", err)
+
+                if (result.length == 0) {
+
+                    return res.status(400).json({
+                        success: false,
+                        message: "Não foi possível registrar o pagamento, pois o agendamento está cancelado!",
+                        verbose: null,
+                        data: {}
+                    })
+
+                }
+
+                conn.beginTransaction(function (err) {
+
+                    if (err)
+                        return handleError(req, res, 500, "Ocorreu um erro ao atualizar o pagamento!", err)
+
+                    sql = ` 
+                        UPDATE 
+                            schedules 
+                        SET 
+                            status_id = ?, 
+                            updated_at = NOW() 
+                        WHERE 
+                            id = ?
+                    `
+
+                    sqlParams = [
+                        SCHEDULE_STATUS.PAID,
+                        scheduleId
+                    ]
+
+                    conn.query(sql, sqlParams, function (err, result, _) {
+
+                        if (err) {
+                            return conn.rollback(function () {
+                                conn.release()
+                                return handleError(req, res, 500, "Ocorreu um erro ao atualizar o pagamento!", err)
+                            })
+                        }
+
+                        conn.commit(function (err) {
+
+                            if (err) {
+                                return conn.rollback(function () {
+                                    conn.release()
+                                    handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
+                                })
+                            }
+
+                            conn.release()
+
+                            return res.status(200).json({
+                                success: true,
+                                message: "Pagamento registrado com sucesso!",
+                                verbose: null,
+                                data: {}
+                            })
+
+                        })
+
+                    })
+
+                })
+
             })
 
         })
 
+    } catch (err) {
+        return handleError(req, res, 500, "Ocorreu um erro ao atualizar o pagamento!", err)
     }
 
 }

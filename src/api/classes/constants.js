@@ -7,7 +7,9 @@ module.exports = {
     SCHEDULE_STATUS: {
         SCHEDULED: 1,
         CANCELED: 2,
-        PAID: 3
+        PAID: 3,
+        PENDENT_PAYMENT: 4,
+        PENDENT_AVALIATION: 5
     },
     ESTABLISHMENT_STATUS: {
         AVAILABLE: 1,
