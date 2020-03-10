@@ -486,8 +486,6 @@ exports.serviceAddresses = async function (req, res) {
 
 }
 
-exports.storeBranch = async function (req, res) { }
-
 exports.storeEmployee = async function (req, res) {
 
     const establishmentId = req.decoded.data.establishmentId
@@ -1126,16 +1124,10 @@ exports.storeBattery = async function (req, res) {
 
         connection.getConnection(function (err, conn) {
 
-            conn.beginTransaction(function (err) {
+            if (err)
+                return handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
 
-                if (err) {
-                    return conn.rollback(function () {
-                        conn.release()
-                        handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
-                    })
-                }
-
-                let fetchQuery = `
+            let fetchQuery = `
                     SELECT *
                     FROM batteries 
                     WHERE 
@@ -1145,48 +1137,37 @@ exports.storeBattery = async function (req, res) {
                         AND ((? >= start_hour AND ? < end_hour) OR (? > start_hour AND ? <= end_hour))
                 `
 
-                let fetchParams = [
-                    establishmentId,
-                    sportId,
-                    addressId,
-                    startHour,
-                    startHour,
-                    finishHour,
-                    finishHour
-                ]
+            let fetchParams = [
+                establishmentId,
+                sportId,
+                addressId,
+                startHour,
+                startHour,
+                finishHour,
+                finishHour
+            ]
 
-                conn.query(fetchQuery, fetchParams, function (err, result, _) {
+            conn.query(fetchQuery, fetchParams, function (err, result, _) {
 
-                    if (err) {
-                        return conn.rollback(function () {
-                            conn.release()
-                            handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
-                        })
-                    }
+                if (err) {
+                    return conn.rollback(function () {
+                        conn.release()
+                        handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
+                    })
+                }
 
-                    if (result.length > 0) {
+                if (result.length > 0) {
 
-                        conn.commit(function (err) {
+                    return res.status(400).json({
+                        success: true,
+                        message: "Não foi possível editar, pois os horários já estão sendo utilizados!",
+                        verbose: null,
+                        data: {}
+                    })
 
-                            if (err) {
-                                return conn.rollback(function () {
-                                    conn.release()
-                                    handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
-                                })
-                            }
+                }
 
-                            conn.release()
-
-                        })
-
-                        return res.status(400).json({
-                            success: true,
-                            message: "Esses horários já estão sendo utilizados!",
-                            verbose: null,
-                            data: {}
-                        })
-
-                    }
+                conn.beginTransaction(function (err) {
 
                     let query = `
                         INSERT INTO batteries 
@@ -1302,6 +1283,238 @@ exports.storeBattery = async function (req, res) {
     } catch (err) {
         return handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
     }
+}
+
+exports.editBattery = async function (req, res) {
+
+    if (req.decoded.data.establishmentId === undefined) {
+        return res.status(401).json({
+            success: true,
+            message: "Você não está autorizado para realizar está operação!",
+            verbose: null,
+            data: {}
+        })
+    }
+
+    const establishmentId = req.decoded.data.establishmentId
+    const batteryId = req.params.battery_id
+    const sportId = req.body.sportId
+    const addressId = req.body.addressId
+    const startHour = req.body.startHour
+    const finishHour = req.body.finishHour
+    const price = req.body.price
+    const peopleAmount = req.body.peopleAmount
+    const weekdays = req.body.weekdays
+
+    req.assert('sportId', 'O id do esporte deve ser informado').notEmpty()
+    req.assert('addressId', 'O id do endereço deve ser informado').notEmpty()
+    req.assert('startHour', 'A hora de início deve ser informada').notEmpty()
+    req.assert('finishHour', 'A hora de fim deve ser informada').notEmpty()
+    req.assert('price', 'O valor deve ser informado').notEmpty()
+    req.assert('peopleAmount', 'O quantidade máxima de pessoas deve ser informada').notEmpty()
+    req.assert('weekdays', 'Os dias da semana devem ser informados').notEmpty()
+
+    if (validator.validateFields(req, res) != null)
+        return
+
+    try {
+
+        connection.getConnection(function (err, conn) {
+
+            if (err)
+                return handleError(req, res, 500, "Ocorreu um erro ao editar a bateria!", err)
+
+            let fetchQuery = `
+                SELECT *
+                FROM batteries 
+                WHERE 
+                    establishment_id = ?
+                    AND id != ?
+                    AND deleted = false
+                    AND sport_id = ?
+                    AND address_id = ?
+                    AND ((? >= start_hour AND ? < end_hour) OR (? > start_hour AND ? <= end_hour))
+            `
+
+            let fetchParams = [
+                establishmentId,
+                batteryId,
+                sportId,
+                addressId,
+                startHour,
+                startHour,
+                finishHour,
+                finishHour
+            ]
+
+            conn.query(fetchQuery, fetchParams, function (err, result, _) {
+
+                if (err)
+                    return handleError(req, res, 500, "Ocorreu um erro ao editar a bateria!", err)
+
+                if (result.length > 0) {
+
+                    return res.status(400).json({
+                        success: true,
+                        message: "Não foi possível editar, pois os horários já estão sendo utilizados!",
+                        verbose: null,
+                        data: {}
+                    })
+
+                }
+
+                conn.beginTransaction(function (err) {
+
+                    if (err) {
+                        return conn.rollback(function () {
+                            conn.release()
+                            handleError(req, res, 500, "Ocorreu um erro ao editar a bateria!", err)
+                        })
+                    }
+
+                    let query = `
+                        UPDATE 
+                            batteries b
+                        SET 
+                            deleted = true,
+                            updated_at = NOW()
+                        WHERE 
+                            id = ?
+                    `
+
+                    let queryValues = [
+                        batteryId
+                    ]
+
+                    conn.query(query, queryValues, function (err, result, _) {
+
+                        if (err) {
+                            return conn.rollback(function () {
+                                conn.release()
+                                handleError(req, res, 500, "Ocorreu um erro ao editar a bateria!", err)
+                            })
+                        }
+
+
+                    })
+
+                    query = `
+                        INSERT INTO batteries 
+                        (
+                            establishment_id, 
+                            address_id, 
+                            sport_id, 
+                            start_hour, 
+                            end_hour, 
+                            session_value, 
+                            people_allowed, 
+                            created_at, 
+                            updated_at
+                        )
+                        VALUES
+                        (
+                            ?, 
+                            ?, 
+                            ?, 
+                            ?, 
+                            ?, 
+                            ?, 
+                            ?, 
+                            NOW(), 
+                            NOW()
+                        )
+                    `
+
+                    queryValues = [
+                        establishmentId,
+                        addressId,
+                        sportId,
+                        startHour,
+                        finishHour,
+                        price,
+                        peopleAmount
+                    ]
+
+                    conn.query(query, queryValues, function (err, result, _) {
+
+                        if (err) {
+                            return conn.rollback(function () {
+                                conn.release()
+                                handleError(req, res, 500, "Ocorreu um erro ao editar a bateria!", err)
+                            })
+                        }
+
+                        console.log(result.insertId);
+
+                        query = `
+                            INSERT INTO battery_weekdays
+                            (
+                                battery_id,
+                                weekday_id
+                            )
+                            VALUES
+                            (
+                                ?,
+                                ?
+                            )
+                        `
+
+                        for (index in weekdays) {
+
+                            queryValues = [
+                                result.insertId,
+                                weekdays[index]
+                            ]
+
+                            conn.query(query, queryValues, function (err, result, fields) {
+
+                                if (err) {
+                                    return conn.rollback(function () {
+                                        conn.release()
+                                        handleError(req, res, 500, "Ocorreu um erro ao editar a bateria!", err)
+                                    })
+                                }
+
+                                if (index == weekdays.length - 1) {
+
+                                    conn.commit(function (err) {
+
+                                        if (err) {
+                                            return conn.rollback(function () {
+                                                conn.release()
+                                                handleError(req, res, 500, "Ocorreu um erro ao editar a bateria!", err)
+                                            })
+                                        }
+
+                                        conn.release()
+
+                                    })
+
+                                }
+
+                            })
+
+                        }
+
+                        return res.status(200).json({
+                            success: true,
+                            message: "Bateria editada com sucesso!",
+                            verbose: null,
+                            data: {}
+                        })
+
+                    })
+
+                })
+
+            })
+
+        })
+
+    } catch (err) {
+        return handleError(req, res, 500, "Ocorreu um erro ao editar a situação!", err)
+    }
+
 }
 
 exports.storeSituation = async function (req, res) {
