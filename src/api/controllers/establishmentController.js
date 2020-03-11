@@ -838,8 +838,6 @@ exports.getAgenda = async function (req, res) {
             if (err)
                 return handleError(req, res, 500, "Ocorreu um erro ao obter a agenda!", err)
 
-            console.log(establishmentId);
-
             return res.status(200).json({
                 success: true,
                 message: "Agenda obtida com sucesso!",
@@ -1136,13 +1134,19 @@ exports.storeBattery = async function (req, res) {
 
             let fetchQuery = `
                 SELECT *
-                FROM batteries 
+                FROM batteries b
+                INNER JOIN battery_weekdays bw
+                    ON bw.battery_id = b.id
                 WHERE 
-                    establishment_id = ?
-                    AND deleted = false
-                    AND sport_id = ?
-                    AND address_id = ?
-                    AND ((? >= start_hour AND ? < end_hour) OR (? > start_hour AND ? <= end_hour))
+                    b.establishment_id = ?
+                    AND b.deleted = false
+                    AND b.sport_id = ?
+                    AND b.address_id = ?
+                    AND (
+                        (? >= b.start_hour AND ? < b.end_hour) 
+                        OR (? > b.start_hour AND ? <= b.end_hour)
+                    )
+                    AND bw.weekday_id IN (?)
             `
 
             let fetchParams = [
@@ -1152,7 +1156,8 @@ exports.storeBattery = async function (req, res) {
                 startHour,
                 startHour,
                 finishHour,
-                finishHour
+                finishHour,
+                weekdays
             ]
 
             conn.query(fetchQuery, fetchParams, function (err, result, _) {
@@ -1334,14 +1339,20 @@ exports.editBattery = async function (req, res) {
 
             let fetchQuery = `
                 SELECT *
-                FROM batteries 
+                FROM batteries b
+                INNER JOIN battery_weekdays bw
+                    ON bw.battery_id = b.id
                 WHERE 
-                    establishment_id = ?
-                    AND id != ?
-                    AND deleted = false
-                    AND sport_id = ?
-                    AND address_id = ?
-                    AND ((? >= start_hour AND ? < end_hour) OR (? > start_hour AND ? <= end_hour))
+                    b.establishment_id = ?
+                    AND b.id != ?
+                    AND b.deleted = false
+                    AND b.sport_id = ?
+                    AND b.address_id = ?
+                    AND (
+                        (? >= b.start_hour AND ? < b.end_hour) 
+                        OR (? > b.start_hour AND ? <= b.end_hour)
+                    )
+                    AND bw.weekday_id IN (?)
             `
 
             let fetchParams = [
@@ -1352,7 +1363,8 @@ exports.editBattery = async function (req, res) {
                 startHour,
                 startHour,
                 finishHour,
-                finishHour
+                finishHour,
+                weekdays
             ]
 
             conn.query(fetchQuery, fetchParams, function (err, result, _) {
