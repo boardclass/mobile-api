@@ -178,6 +178,7 @@ exports.store = async function (req, res) {
                                         message: "Estabelecimento cadastrado com sucesso!",
                                         verbose: null,
                                         data: {
+                                            roleId: USER_TYPE.PROFESSOR,
                                             name: establishment.name,
                                             cnpj: establishment.cnpj,
                                             cpf: establishment.cpf,
@@ -263,6 +264,7 @@ exports.login = async function (req, res) {
             message: "Login realizado com sucesso!",
             verbose: null,
             data: {
+                roleId: USER_TYPE.PROFESSOR,
                 name: establishment.name,
                 cnpj: establishment.cnpj,
                 cpf: establishment.cpf,
@@ -1166,7 +1168,7 @@ exports.storeBattery = async function (req, res) {
 
                     return res.status(400).json({
                         success: true,
-                        message: "Não foi possível editar, pois os horários já estão sendo utilizados!",
+                        message: "Não foi possível adicionar a bateria, pois os horários já estão sendo utilizados!",
                         verbose: null,
                         data: {}
                     })

@@ -9,7 +9,7 @@ const logger = require('../classes/logger')
 
 const { connection } = require('../../config/database')
 const { handleError } = require('../classes/error-handler')
-const { SCHEDULE_STATUS } = require('../classes/constants')
+const { SCHEDULE_STATUS, USER_TYPE } = require('../classes/constants')
 
 exports.login = async function (req, res) {
 
@@ -269,6 +269,7 @@ exports.store = async function (req, res) {
                                         message: "Usuário cadastrado com sucesso!",
                                         verbose: null,
                                         data: {
+                                            roleId: USER_TYPE.USER,
                                             cpf: user.cpf,
                                             name: user.name,
                                             phone: user.phone,

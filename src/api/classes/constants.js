@@ -21,7 +21,8 @@ module.exports = {
     },
     USER_TYPE: {
         USER: 1,
-        ASSISTANT: 2
+        PROFESSOR: 2,
+        ASSISTANT: 3
     }
 
 }
