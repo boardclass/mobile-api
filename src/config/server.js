@@ -1,11 +1,12 @@
 require('../database')
-require('../config/database')
 
+const pool = require('../config/database');
 const express = require('express')
 const validator = require('express-validator')
 const bodyParser = require('body-parser')
 const wakeuper = require('./wakeup-timer')
 const middleware = require('./middleware')
+const connectionMiddleware = require('./connectionMiddleware')
 const excludedRoutes = require('./excludedRoutes')
 const mongodb = require('../config/mongodb')
 
@@ -21,6 +22,8 @@ module.exports = {
 
         app.use(unless(excludedRoutes.excluded,
             middleware.validateToken))
+
+        app.use(connectionMiddleware(pool))
 
         require('./routes')(app)
 

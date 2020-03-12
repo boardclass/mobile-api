@@ -7,7 +7,6 @@ const validator = require('../classes/validator')
 const jwtHandler = require('../classes/jwt')
 const logger = require('../classes/logger')
 
-const { connection } = require('../../config/database')
 const { handleError } = require('../classes/error-handler')
 const { SCHEDULE_STATUS, USER_TYPE } = require('../classes/constants')
 
@@ -51,7 +50,7 @@ exports.login = async function (req, res) {
 
             return res.status(404).json({
                 success: true,
-                message: "A senha está incorreta!",
+                message: "Sua senha está incorreta!",
                 verbose: null,
                 data: {}
             })
@@ -126,45 +125,39 @@ exports.store = async function (req, res) {
             WHERE code = ?
         `
 
-        connection.getConnection(function (err, conn) {
+        if (user.indication != undefined) {
 
-            if (err)
-                return handleError(req, res, 500, "Ocorreu um erro ao cadastrar o usuário!", err)
+            req.connection.query(indicationQuery, user.indication, function (err, result, _) {
 
-            if (user.indication != undefined) {
+                if (err)
+                    return handleError(req, res, 500, "Ocorreu um erro ao cadastrar o usuário!", err)
 
-                conn.query(indicationQuery, user.indication, function (err, result, _) {
+                if (result.length == 0) {
 
-                    if (err)
-                        return handleError(req, res, 500, "Ocorreu um erro ao cadastrar o usuário!", err)
-
-                    if (result.length == 0) {
-
-                        return res.status(404).json({
-                            success: true,
-                            message: "Código de indicação inválido!",
-                            verbose: null,
-                            data: {}
-                        })
-
-                    }
-
-                    indicationId = result[0].id
-
-                })
-
-            }
-
-            conn.beginTransaction(function (err) {
-
-                if (err) {
-                    return conn.rollback(function () {
-                        conn.release()
-                        handleError(req, res, 500, "Ocorreu um erro ao cadastrar o usuário!", err)
+                    return res.status(404).json({
+                        success: true,
+                        message: "Código de indicação inválido!",
+                        verbose: null,
+                        data: {}
                     })
+
                 }
 
-                let userQuery = `
+                indicationId = result[0].id
+
+            })
+
+        }
+
+        req.connection.beginTransaction(function (err) {
+
+            if (err) {
+                return req.connection.rollback(function () {
+                    handleError(req, res, 500, "Ocorreu um erro ao cadastrar o usuário!", err)
+                })
+            }
+
+            let userQuery = `
                        SELECT *
                        FROM users u
                        INNER JOIN user_accounts ua
@@ -175,111 +168,104 @@ exports.store = async function (req, res) {
                         OR u.cpf = ?
                     `
 
-                let userParams = [
-                    account.email,
-                    user.phone,
-                    user.cpf
-                ]
+            let userParams = [
+                account.email,
+                user.phone,
+                user.cpf
+            ]
 
-                conn.query(userQuery, userParams, function (err, result, _) {
+            req.connection.query(userQuery, userParams, function (err, result, _) {
 
-                    if (err) {
-                        return conn.rollback(function () {
-                            conn.release()
-                            handleError(req, res, 500, "Ocorreu um erro ao cadastrar o usuário!", err)
-                        })
-                    }
+                if (err) {
+                    return req.connection.rollback(function () {
+                        handleError(req, res, 500, "Ocorreu um erro ao cadastrar o usuário!", err)
+                    })
+                }
 
-                    if (result.length != 0) {
+                if (result.length != 0) {
 
-                        return res.status(400).json({
-                            success: true,
-                            message: "Os dados inseridos já estão sendo utilizados!",
-                            verbose: null,
-                            data: {}
-                        })
+                    return res.status(400).json({
+                        success: true,
+                        message: "Os dados inseridos já estão sendo utilizados!",
+                        verbose: null,
+                        data: {}
+                    })
 
-                    }
+                }
 
-                    userQuery = `
+                userQuery = `
                             INSERT INTO users
                                 (cpf, name, phone, indication_id)
                             VALUES
                                 (?, ?, ?, ?)
                         `
 
-                    userParams = [
-                        user.cpf,
-                        user.name,
-                        user.phone,
-                        indicationId
-                    ]
+                userParams = [
+                    user.cpf,
+                    user.name,
+                    user.phone,
+                    indicationId
+                ]
 
-                    conn.query(userQuery, userParams, function (err, result, _) {
+                req.connection.query(userQuery, userParams, function (err, result, _) {
 
-                        if (err) {
-                            return conn.rollback(function () {
-                                conn.release()
-                                handleError(req, res, 500, "Ocorreu um erro ao cadastrar o usuário!", err)
-                            })
-                        }
+                    if (err) {
+                        return req.connection.rollback(function () {
+                            handleError(req, res, 500, "Ocorreu um erro ao cadastrar o usuário!", err)
+                        })
+                    }
 
-                        const insertId = result.insertId
+                    const insertId = result.insertId
 
-                        const accountQuery = `
+                    const accountQuery = `
                                 INSERT INTO user_accounts
                                     (user_id, email, password)
                                 VALUES
                                     (?, ?, ?)
                             `
-                        const accountParams = [
-                            insertId,
-                            account.email,
-                            account.password
-                        ]
+                    const accountParams = [
+                        insertId,
+                        account.email,
+                        account.password
+                    ]
 
-                        conn.query(accountQuery, accountParams, function (err, result, _) {
+                    req.connection.query(accountQuery, accountParams, function (err, result, _) {
+
+                        if (err) {
+                            return req.connection.rollback(function () {
+                                handleError(req, res, 500, "Ocorreu um erro ao cadastrar o usuário!", err)
+                            })
+                        }
+
+                        req.connection.commit(function (err) {
 
                             if (err) {
-                                return conn.rollback(function () {
-                                    conn.release()
-                                    handleError(req, res, 500, "Ocorreu um erro ao cadastrar o usuário!", err)
+
+                                return req.connection.rollback(function () {
+                                    handleError(req, res, 500, "Ocorreu um erro ao cadastrar o estabelecimento!", err)
                                 })
+
+                            } else {
+
+                                const token = jwtHandler.generate(insertId, null)
+
+                                res.setHeader('access-token', token)
+                                res.setHeader('user-id', insertId)
+
+                                return res.status(200).json({
+                                    success: true,
+                                    message: "Usuário cadastrado com sucesso!",
+                                    verbose: null,
+                                    data: {
+                                        roleId: USER_TYPE.USER,
+                                        cpf: user.cpf,
+                                        name: user.name,
+                                        phone: user.phone,
+                                        indication: user.indication
+                                    }
+                                })
+
                             }
-
-                            conn.commit(function (err) {
-
-                                if (err) {
-
-                                    return conn.rollback(function () {
-                                        conn.release()
-                                        handleError(req, res, 500, "Ocorreu um erro ao cadastrar o estabelecimento!", err)
-                                    })
-
-                                } else {
-
-                                    conn.release()
-                                    const token = jwtHandler.generate(insertId, null)
-
-                                    res.setHeader('access-token', token)
-                                    res.setHeader('user-id', insertId)
-
-                                    return res.status(200).json({
-                                        success: true,
-                                        message: "Usuário cadastrado com sucesso!",
-                                        verbose: null,
-                                        data: {
-                                            roleId: USER_TYPE.USER,
-                                            cpf: user.cpf,
-                                            name: user.name,
-                                            phone: user.phone,
-                                            indication: user.indication
-                                        }
-                                    })
-
-                                }
-
-                            })
 
                         })
 
@@ -458,7 +444,7 @@ exports.agenda = async function (req, res) {
             SCHEDULE_STATUS.CANCELED
         ]
 
-        connection.query(query, filters,
+        req.connection.query(query, filters,
             function (err, results, fields) {
 
                 if (err) {

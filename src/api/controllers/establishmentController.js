@@ -1,13 +1,10 @@
 const Establishment = require('../models/Establishment')
-const mysql = require('../../config/mysql')
 const randomstring = require("randomstring");
 
 const bcrypt = require('bcrypt')
 const validator = require('../classes/validator')
 const jwtHandler = require('../classes/jwt')
-const logger = require('../classes/logger')
 
-const { connection } = require('../../config/database')
 const { handleError } = require('../classes/error-handler')
 const { ADDRESS, SCHEDULE_STATUS, USER_TYPE } = require('../classes/constants')
 
@@ -69,134 +66,124 @@ exports.store = async function (req, res) {
             establishment.account.email
         ]
 
-        connection.getConnection(function (err, conn) {
+        req.connection.beginTransaction(function (err) {
 
-            conn.beginTransaction(function (err) {
+            if (err)
+                return handleError(req, res, 500, "Ocorreu um erro ao cadastrar o estabelecimento!", err)
+
+            req.connection.query(query, queryValues, function (err, results, fields) {
 
                 if (err)
                     return handleError(req, res, 500, "Ocorreu um erro ao cadastrar o estabelecimento!", err)
 
-                conn.query(query, queryValues, function (err, results, fields) {
+                if (results.length !== 0) {
 
-                    if (err)
-                        return handleError(req, res, 500, "Ocorreu um erro ao cadastrar o estabelecimento!", err)
+                    return res.status(400).json({
+                        success: true,
+                        message: "Este estabelecimento já está cadastrado!",
+                        verbose: null,
+                        data: {}
+                    })
 
-                    if (results.length !== 0) {
+                } else {
 
-                        return res.status(400).json({
-                            success: true,
-                            message: "Este estabelecimento já está cadastrado!",
-                            verbose: null,
-                            data: {}
-                        })
-
-                    } else {
-
-                        query = `
+                    query = `
                             INSERT INTO establishments 
                                 (parent_id, name, cnpj, cpf, professor, phone, created_at, updated_at)
                             VALUES 
                                 (null, ?, ?, ?, ?, ?,NOW(), NOW())`
 
-                        queryValues = [
-                            establishment.name,
-                            establishment.cnpj,
-                            establishment.cpf,
-                            establishment.professor,
-                            establishment.phone
-                        ]
+                    queryValues = [
+                        establishment.name,
+                        establishment.cnpj,
+                        establishment.cpf,
+                        establishment.professor,
+                        establishment.phone
+                    ]
 
-                        conn.query(query, queryValues, function (err, results, fields) {
+                    req.connection.query(query, queryValues, function (err, results, fields) {
 
-                            if (err)
-                                return conn.rollback(function () {
-                                    conn.release()
-                                    handleError(req, res, 500, "Ocorreu um erro ao cadastrar o estabelecimento!", err)
-                                })
+                        if (err)
+                            return req.connection.rollback(function () {
+                                handleError(req, res, 500, "Ocorreu um erro ao cadastrar o estabelecimento!", err)
+                            })
 
-                            query = `
+                        query = `
                                 INSERT INTO establishment_accounts
                                     (establishment_id, email, password, created_at, updated_at)
                                 VALUES 
                                     (?, ?, ?, NOW(), NOW())`
 
-                            queryValues = [
-                                results.insertId,
-                                establishment.account.email,
-                                establishment.account.password
-                            ]
+                        queryValues = [
+                            results.insertId,
+                            establishment.account.email,
+                            establishment.account.password
+                        ]
 
-                            const newEstablishmentId = results.insertId
+                        const newEstablishmentId = results.insertId
 
-                            conn.query(query, queryValues, function (err, results, fields) {
+                        req.connection.query(query, queryValues, function (err, results, fields) {
 
-                                if (err)
-                                    return conn.rollback(function () {
-                                        conn.release()
-                                        handleError(req, res, 500, "Ocorreu um erro ao cadastrar o estabelecimento!", err)
-                                    })
+                            if (err)
+                                return req.connection.rollback(function () {
+                                    handleError(req, res, 500, "Ocorreu um erro ao cadastrar o estabelecimento!", err)
+                                })
 
-                                query = `
+                            query = `
                                     INSERT INTO establishments_indication 
                                         (establishment_id, code)
                                     VALUES
                                         (?, ?)
                                 `
 
-                                queryValues = [
-                                    newEstablishmentId,
-                                    indication
-                                ]
+                            queryValues = [
+                                newEstablishmentId,
+                                indication
+                            ]
 
-                                conn.query(query, queryValues, function (err, results, fields) {
+                            req.connection.query(query, queryValues, function (err, results, fields) {
 
-                                    if (err)
-                                        return conn.rollback(function () {
-                                            conn.release()
+                                if (err)
+                                    return req.connection.rollback(function () {
+                                        handleError(req, res, 500, "Ocorreu um erro ao cadastrar o estabelecimento!", err)
+                                    })
+
+                                req.connection.commit(function (err) {
+                                    if (err) {
+
+                                        return req.connection.rollback(function () {
                                             handleError(req, res, 500, "Ocorreu um erro ao cadastrar o estabelecimento!", err)
                                         })
 
-                                    conn.commit(function (err) {
-                                        if (err) {
+                                    }
 
-                                            return conn.rollback(function () {
-                                                conn.release()
-                                                handleError(req, res, 500, "Ocorreu um erro ao cadastrar o estabelecimento!", err)
-                                            })
+                                })
 
-                                        } else {
-                                            conn.release()
-                                        }
+                                res.setHeader('access-token', jwtHandler.generate(null, newEstablishmentId))
+                                res.setHeader('establishment-id', newEstablishmentId)
 
-                                    })
-
-                                    res.setHeader('access-token', jwtHandler.generate(null, newEstablishmentId))
-                                    res.setHeader('establishment-id', newEstablishmentId)
-
-                                    return res.status(200).json({
-                                        success: true,
-                                        message: "Estabelecimento cadastrado com sucesso!",
-                                        verbose: null,
-                                        data: {
-                                            roleId: USER_TYPE.PROFESSOR,
-                                            name: establishment.name,
-                                            cnpj: establishment.cnpj,
-                                            cpf: establishment.cpf,
-                                            phone: establishment.phone,
-                                            professor: establishment.professor,
-                                            indication: indication
-                                        }
-                                    })
-
+                                return res.status(200).json({
+                                    success: true,
+                                    message: "Estabelecimento cadastrado com sucesso!",
+                                    verbose: null,
+                                    data: {
+                                        roleId: USER_TYPE.PROFESSOR,
+                                        name: establishment.name,
+                                        cnpj: establishment.cnpj,
+                                        cpf: establishment.cpf,
+                                        phone: establishment.phone,
+                                        professor: establishment.professor,
+                                        indication: indication
+                                    }
                                 })
 
                             })
 
                         })
 
-                    }
+                    })
 
-                })
+                }
 
             })
 
@@ -249,7 +236,7 @@ exports.login = async function (req, res) {
 
             return res.status(404).json({
                 success: true,
-                message: "A senha está incorreta!",
+                message: "Sua senha está incorreta!",
                 verbose: null,
                 data: {}
             })
@@ -320,7 +307,7 @@ exports.storeAddress = async function (req, res) {
             typeId
         ]
 
-        connection.query(query, queryValues, function (err, result, _) {
+        req.connection.query(query, queryValues, function (err, result, _) {
 
             if (err)
                 return handleError(req, res, 500, "Ocorreu um erro ao cadastrar o endereço!", err)
@@ -354,7 +341,7 @@ exports.storeAddress = async function (req, res) {
                     establishmentId
                 ]
 
-                connection.query(query, queryValues, function (err, result, _) {
+                req.connection.query(query, queryValues, function (err, result, _) {
 
                     if (err)
                         return handleError(req, res, 500, "Ocorreu um erro ao cadastrar o endereço!", err)
@@ -416,7 +403,7 @@ exports.storeAddress = async function (req, res) {
                     complement
                 ]
 
-                connection.query(query, queryValues, function (err, result, _) {
+                req.connection.query(query, queryValues, function (err, result, _) {
 
                     if (err)
                         return handleError(req, res, 500, "Ocorreu um erro ao cadastrar o endereço!", err)
@@ -468,7 +455,7 @@ exports.serviceAddresses = async function (req, res) {
             ADDRESS.SERVICE_TYPE
         ]
 
-        connection.query(query, queryValues, function (err, result, _) {
+        req.connection.query(query, queryValues, function (err, result, _) {
 
             if (err)
                 return handleError(req, res, 500, "Ocorreu um erro ao cadastrar o endereço!", err)
@@ -484,303 +471,6 @@ exports.serviceAddresses = async function (req, res) {
 
     } catch (err) {
         return handleError(req, res, 500, "Ocorreu um erro ao obter os endereços de atendimento!", err)
-    }
-
-}
-
-exports.storeEmployee = async function (req, res) {
-
-    const establishmentId = req.decoded.data.establishmentId
-    const name = req.body.name
-    const cpf = req.body.cpf
-    const phone = req.body.phone
-    const account = {
-        email: req.body.account.email,
-        password: req.body.account.password
-    }
-
-    req.assert('name', 'O nome deve ser informado').notEmpty()
-    req.assert('cpf', 'O CPF deve ser informado').notEmpty()
-    req.assert('cpf', 'O CPF está com formato inválido').len(11)
-    req.assert('cpf', 'O CPF está deve conter apenas números').isNumeric()
-    req.assert('phone', 'O telefone deve ser informado').notEmpty()
-    req.assert('phone', 'O formato do telefone está inválido, exemplo de formato correto: 5511912345678').len(13)
-    req.assert('phone', 'O telefone deve conter apenas números').isNumeric()
-    req.assert('account.email', 'O email deve ser informado').notEmpty()
-    req.assert('account.email', 'O email está em formato inválido').isEmail()
-    req.assert('account.password', 'A senha deve ser informada').notEmpty()
-
-    if (validator.validateFields(req, res) != null)
-        return
-
-    try {
-
-        account.password = await bcrypt.hash(account.password, 10)
-
-        let query = `
-            SELECT *
-            FROM users u
-            INNER JOIN user_accounts ua 
-                ON ua.user_id = u.id
-            WHERE 
-                u.cpf = ?
-                OR u.phone = ?
-                OR ua.email = ?
-        `
-
-        let queryValues = [
-            cpf,
-            phone,
-            account.email
-        ]
-
-        connection.getConnection(function (err, conn) {
-
-            if (err)
-                return handleError(req, res, 500, "Ocorreu um erro ao cadastrar o professor!", err)
-
-            conn.beginTransaction(function (err) {
-
-                if (err) {
-                    return conn.rollback(function () {
-                        conn.release()
-                        handleError(req, res, 500, "Ocorreu um erro ao cadastrar o professor!", err)
-                    })
-                }
-
-                conn.query(query, queryValues, function (err, result, _) {
-
-                    if (err)
-                        return handleError(req, res, 500, "Ocorreu um erro ao cadastrar o professor!", err)
-
-                    if (result.length != 0) {
-
-                        return res.status(400).json({
-                            success: true,
-                            message: "Os dados inseridos já estão em utilização!",
-                            verbose: null,
-                            data: {}
-                        })
-
-                    } else {
-
-                        query = `
-                            INSERT INTO users
-                            (
-                                cpf,
-                                name,
-                                phone,
-                                created_at,
-                                updated_at
-                            )
-                            VALUES
-                            (
-                                ?,
-                                ?,
-                                ?,
-                                NOW(),
-                                NOW()
-                            )
-                        `
-
-                        queryValues = [
-                            cpf,
-                            name,
-                            phone
-                        ]
-
-                        conn.query(query, queryValues, function (err, result, _) {
-
-                            if (err) {
-                                return conn.rollback(function () {
-                                    conn.release()
-                                    handleError(req, res, 500, "Ocorreu um erro ao cadastrar o professor!", err)
-                                })
-                            }
-
-                            const insertedUserId = result.insertId
-
-                            query = `
-                                INSERT INTO user_accounts
-                                (
-                                    user_id,
-                                    email,
-                                    password,
-                                    created_at,
-                                    updated_at
-                                )
-                                VALUES
-                                (
-                                    ?,
-                                    ?,
-                                    ?,
-                                    NOW(),
-                                    NOW()
-                                )
-                            `
-
-                            queryValues = [
-                                insertedUserId,
-                                account.email,
-                                account.password
-                            ]
-
-                            conn.query(query, queryValues, function (err, result, _) {
-
-                                if (err) {
-                                    return conn.rollback(function () {
-                                        conn.release()
-                                        handleError(req, res, 500, "Ocorreu um erro ao cadastrar o professor!", err)
-                                    })
-                                }
-
-                                query = `
-                                    INSERT INTO users_roles
-                                    (
-                                        user_id,
-                                        role_id,
-                                        created_at,
-                                        updated_at
-                                    )
-                                    VALUES
-                                    (
-                                        ?,
-                                        ?,
-                                        NOW(),
-                                        NOW()
-                                    )
-                                `
-                                queryValues = [
-                                    insertedUserId,
-                                    USER_TYPE.ASSISTANT
-                                ]
-
-                                conn.query(query, queryValues, function (err, result, _) {
-
-                                    if (err) {
-                                        return conn.rollback(function () {
-                                            conn.release()
-                                            handleError(req, res, 500, "Ocorreu um erro ao cadastrar o professor!", err)
-                                        })
-                                    }
-
-                                    query = `
-                                    INSERT INTO establishment_employees
-                                    (
-                                        establishment_id,
-                                        user_id,
-                                        created_at,
-                                        updated_at
-                                    )
-                                    VALUES
-                                    (
-                                        ?,
-                                        ?,
-                                        NOW(),
-                                        NOW()
-                                    )
-                                `
-                                    queryValues = [
-                                        establishmentId,
-                                        insertedUserId
-                                    ]
-
-                                    conn.query(query, queryValues, function (err, result, _) {
-
-                                        if (err) {
-                                            return conn.rollback(function () {
-                                                conn.release()
-                                                handleError(req, res, 500, "Ocorreu um erro ao cadastrar o professor!", err)
-                                            })
-                                        }
-
-                                        conn.commit(function (err) {
-
-                                            if (err) {
-                                                return conn.rollback(function () {
-                                                    conn.release()
-                                                    handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
-                                                })
-                                            } else {
-                                                conn.release()
-                                            }
-
-                                            return res.status(200).json({
-                                                success: true,
-                                                message: "Cadastro realizado com sucesso!",
-                                                verbose: null,
-                                                data: {}
-                                            })
-
-                                        })
-
-                                    })
-
-                                })
-
-                            })
-
-                        })
-
-                    }
-
-                })
-
-            })
-
-        })
-
-    } catch (err) {
-        return handleError(req, res, 500, "Ocorreu um erro ao cadastrar o professor!", err)
-    }
-
-}
-
-exports.employees = async function (req, res) {
-
-    const establishmentId = req.decoded.data.establishmentId
-
-    try {
-
-        const query = `
-            SELECT 
-                u.id,
-                u.name,
-                u.phone,
-                ua.email
-            FROM users u
-            INNER JOIN establishment_employees ee 
-                ON ee.user_id = u.id
-            INNER JOIN user_accounts ua 
-                ON ua.user_id = u.id
-            INNER JOIN users_roles ur
-                ON ur.user_id = u.id
-            WHERE 
-                ee.establishment_id = ?
-                AND ur.role_id = ?
-        `
-
-        const queryValues = [
-            establishmentId,
-            USER_TYPE.ASSISTANT
-        ]
-
-        connection.query(query, queryValues, function (err, result, _) {
-
-            if (err)
-                return handleError(req, res, 500, "Ocorreu um erro ao cadastrar o professor!", err)
-
-            return res.status(200).json({
-                success: true,
-                message: "Dados obtidos com sucesso!",
-                verbose: null,
-                data: { employees: result }
-            })
-
-        })
-
-    } catch (err) {
-        return handleError(req, res, 500, "Ocorreu um erro ao obter os professores!", err)
     }
 
 }
@@ -833,7 +523,7 @@ exports.getAgenda = async function (req, res) {
             establishmentId
         ]
 
-        connection.query(query, queryValues, function (err, results, _) {
+        req.connection.query(query, queryValues, function (err, results, _) {
 
             if (err)
                 return handleError(req, res, 500, "Ocorreu um erro ao obter a agenda!", err)
@@ -904,7 +594,7 @@ exports.getAvailableBatteries = async function (req, res) {
             date
         ]
 
-        connection.query(query, data, function (err, results, fields) {
+        req.connection.query(query, data, function (err, results, fields) {
 
             if (err)
                 return handleError(req, res, 500, "Ocorreu um erro ao obter a bateria!", err)
@@ -966,7 +656,7 @@ exports.getBatteriesByDate = async function (req, res) {
             date
         ]
 
-        connection.query(query, data, function (err, results, fields) {
+        req.connection.query(query, data, function (err, results, fields) {
 
             if (err)
                 return handleError(req, res, 500, "Ocorreu um erro ao obter a bateria!", err)
@@ -1034,7 +724,7 @@ exports.batteries = async function (req, res) {
 
     try {
 
-        connection.query(query, queryValues, function (err, results, _) {
+        req.connection.query(query, queryValues, function (err, results, _) {
 
             if (err)
                 return handleError(req, res, 500, "Ocorreu um erro ao obter as baterias!", err)
@@ -1127,12 +817,7 @@ exports.storeBattery = async function (req, res) {
 
     try {
 
-        connection.getConnection(function (err, conn) {
-
-            if (err)
-                return handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
-
-            let fetchQuery = `
+        let fetchQuery = `
                 SELECT *
                 FROM batteries b
                 INNER JOIN battery_weekdays bw
@@ -1149,40 +834,39 @@ exports.storeBattery = async function (req, res) {
                     AND bw.weekday_id IN (?)
             `
 
-            let fetchParams = [
-                establishmentId,
-                sportId,
-                addressId,
-                startHour,
-                startHour,
-                finishHour,
-                finishHour,
-                weekdays
-            ]
+        let fetchParams = [
+            establishmentId,
+            sportId,
+            addressId,
+            startHour,
+            startHour,
+            finishHour,
+            finishHour,
+            weekdays
+        ]
 
-            conn.query(fetchQuery, fetchParams, function (err, result, _) {
+        req.connection.query(fetchQuery, fetchParams, function (err, result, _) {
 
-                if (err) {
-                    return conn.rollback(function () {
-                        conn.release()
-                        handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
-                    })
-                }
+            if (err) {
+                return req.connection.rollback(function () {
+                    handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
+                })
+            }
 
-                if (result.length > 0) {
+            if (result.length > 0) {
 
-                    return res.status(400).json({
-                        success: true,
-                        message: "Não foi possível adicionar a bateria, pois os horários já estão sendo utilizados!",
-                        verbose: null,
-                        data: {}
-                    })
+                return res.status(400).json({
+                    success: true,
+                    message: "Não foi possível adicionar a bateria, pois os horários já estão sendo utilizados!",
+                    verbose: null,
+                    data: {}
+                })
 
-                }
+            }
 
-                conn.beginTransaction(function (err) {
+            req.connection.beginTransaction(function (err) {
 
-                    let query = `
+                let query = `
                         INSERT INTO batteries 
                         (
                             establishment_id, 
@@ -1209,26 +893,25 @@ exports.storeBattery = async function (req, res) {
                         )
                     `
 
-                    let queryValues = [
-                        establishmentId,
-                        addressId,
-                        sportId,
-                        startHour,
-                        finishHour,
-                        price,
-                        peopleAmount
-                    ]
+                let queryValues = [
+                    establishmentId,
+                    addressId,
+                    sportId,
+                    startHour,
+                    finishHour,
+                    price,
+                    peopleAmount
+                ]
 
-                    conn.query(query, queryValues, function (err, results, fields) {
+                req.connection.query(query, queryValues, function (err, results, fields) {
 
-                        if (err) {
-                            return conn.rollback(function () {
-                                conn.release()
-                                handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
-                            })
-                        }
+                    if (err) {
+                        return req.connection.rollback(function () {
+                            handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
+                        })
+                    }
 
-                        query = `
+                    query = `
                             INSERT INTO battery_weekdays
                             (
                                 battery_id,
@@ -1241,50 +924,44 @@ exports.storeBattery = async function (req, res) {
                             )
                         `
 
-                        for (index in weekdays) {
+                    for (index in weekdays) {
 
-                            queryValues = [
-                                results.insertId,
-                                weekdays[index]
-                            ]
+                        queryValues = [
+                            results.insertId,
+                            weekdays[index]
+                        ]
 
-                            conn.query(query, queryValues, function (err, result, fields) {
+                        req.connection.query(query, queryValues, function (err, result, fields) {
 
-                                if (err) {
-                                    return conn.rollback(function () {
-                                        conn.release()
-                                        handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
-                                    })
-                                }
+                            if (err) {
+                                return req.connection.rollback(function () {
+                                    handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
+                                })
+                            }
 
-                                if (index == weekdays.length - 1) {
+                            if (index == weekdays.length - 1) {
 
-                                    conn.commit(function (err) {
+                                req.connection.commit(function (err) {
 
-                                        if (err) {
-                                            return conn.rollback(function () {
-                                                conn.release()
-                                                handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
-                                            })
-                                        }
+                                    if (err) {
+                                        return req.connection.rollback(function () {
+                                            handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
+                                        })
+                                    }
 
-                                        conn.release()
+                                })
 
-                                    })
+                            }
 
-                                }
-
-                            })
-
-                        }
-
-                        return res.status(200).json({
-                            success: true,
-                            message: "Bateria adicionado com sucesso!",
-                            verbose: null,
-                            data: {}
                         })
 
+                    }
+
+                    return res.status(200).json({
+                        success: true,
+                        message: "Bateria adicionado com sucesso!",
+                        verbose: null,
+                        data: {}
                     })
 
                 })
@@ -1332,12 +1009,7 @@ exports.editBattery = async function (req, res) {
 
     try {
 
-        connection.getConnection(function (err, conn) {
-
-            if (err)
-                return handleError(req, res, 500, "Ocorreu um erro ao editar a bateria!", err)
-
-            let fetchQuery = `
+        let fetchQuery = `
                 SELECT *
                 FROM batteries b
                 INNER JOIN battery_weekdays bw
@@ -1355,44 +1027,43 @@ exports.editBattery = async function (req, res) {
                     AND bw.weekday_id IN (?)
             `
 
-            let fetchParams = [
-                establishmentId,
-                batteryId,
-                sportId,
-                addressId,
-                startHour,
-                startHour,
-                finishHour,
-                finishHour,
-                weekdays
-            ]
+        let fetchParams = [
+            establishmentId,
+            batteryId,
+            sportId,
+            addressId,
+            startHour,
+            startHour,
+            finishHour,
+            finishHour,
+            weekdays
+        ]
 
-            conn.query(fetchQuery, fetchParams, function (err, result, _) {
+        req.connection.query(fetchQuery, fetchParams, function (err, result, _) {
 
-                if (err)
-                    return handleError(req, res, 500, "Ocorreu um erro ao editar a bateria!", err)
+            if (err)
+                return handleError(req, res, 500, "Ocorreu um erro ao editar a bateria!", err)
 
-                if (result.length > 0) {
+            if (result.length > 0) {
 
-                    return res.status(400).json({
-                        success: true,
-                        message: "Não foi possível editar, pois os horários já estão sendo utilizados!",
-                        verbose: null,
-                        data: {}
+                return res.status(400).json({
+                    success: true,
+                    message: "Não foi possível editar, pois os horários já estão sendo utilizados!",
+                    verbose: null,
+                    data: {}
+                })
+
+            }
+
+            req.connection.beginTransaction(function (err) {
+
+                if (err) {
+                    return req.connection.rollback(function () {
+                        handleError(req, res, 500, "Ocorreu um erro ao editar a bateria!", err)
                     })
-
                 }
 
-                conn.beginTransaction(function (err) {
-
-                    if (err) {
-                        return conn.rollback(function () {
-                            conn.release()
-                            handleError(req, res, 500, "Ocorreu um erro ao editar a bateria!", err)
-                        })
-                    }
-
-                    let query = `
+                let query = `
                         UPDATE 
                             batteries b
                         SET 
@@ -1402,23 +1073,22 @@ exports.editBattery = async function (req, res) {
                             id = ?
                     `
 
-                    let queryValues = [
-                        batteryId
-                    ]
+                let queryValues = [
+                    batteryId
+                ]
 
-                    conn.query(query, queryValues, function (err, result, _) {
+                req.connection.query(query, queryValues, function (err, result, _) {
 
-                        if (err) {
-                            return conn.rollback(function () {
-                                conn.release()
-                                handleError(req, res, 500, "Ocorreu um erro ao editar a bateria!", err)
-                            })
-                        }
+                    if (err) {
+                        return req.connection.rollback(function () {
+                            handleError(req, res, 500, "Ocorreu um erro ao editar a bateria!", err)
+                        })
+                    }
 
 
-                    })
+                })
 
-                    query = `
+                query = `
                         INSERT INTO batteries 
                         (
                             establishment_id, 
@@ -1445,28 +1115,25 @@ exports.editBattery = async function (req, res) {
                         )
                     `
 
-                    queryValues = [
-                        establishmentId,
-                        addressId,
-                        sportId,
-                        startHour,
-                        finishHour,
-                        price,
-                        peopleAmount
-                    ]
+                queryValues = [
+                    establishmentId,
+                    addressId,
+                    sportId,
+                    startHour,
+                    finishHour,
+                    price,
+                    peopleAmount
+                ]
 
-                    conn.query(query, queryValues, function (err, result, _) {
+                req.connection.query(query, queryValues, function (err, result, _) {
 
-                        if (err) {
-                            return conn.rollback(function () {
-                                conn.release()
-                                handleError(req, res, 500, "Ocorreu um erro ao editar a bateria!", err)
-                            })
-                        }
+                    if (err) {
+                        return req.connection.rollback(function () {
+                            handleError(req, res, 500, "Ocorreu um erro ao editar a bateria!", err)
+                        })
+                    }
 
-                        console.log(result.insertId);
-
-                        query = `
+                    query = `
                             INSERT INTO battery_weekdays
                             (
                                 battery_id,
@@ -1479,50 +1146,44 @@ exports.editBattery = async function (req, res) {
                             )
                         `
 
-                        for (index in weekdays) {
+                    for (index in weekdays) {
 
-                            queryValues = [
-                                result.insertId,
-                                weekdays[index]
-                            ]
+                        queryValues = [
+                            result.insertId,
+                            weekdays[index]
+                        ]
 
-                            conn.query(query, queryValues, function (err, result, fields) {
+                        req.connection.query(query, queryValues, function (err, result, fields) {
 
-                                if (err) {
-                                    return conn.rollback(function () {
-                                        conn.release()
-                                        handleError(req, res, 500, "Ocorreu um erro ao editar a bateria!", err)
-                                    })
-                                }
+                            if (err) {
+                                return req.connection.rollback(function () {
+                                    handleError(req, res, 500, "Ocorreu um erro ao editar a bateria!", err)
+                                })
+                            }
 
-                                if (index == weekdays.length - 1) {
+                            if (index == weekdays.length - 1) {
 
-                                    conn.commit(function (err) {
+                                req.connection.commit(function (err) {
 
-                                        if (err) {
-                                            return conn.rollback(function () {
-                                                conn.release()
-                                                handleError(req, res, 500, "Ocorreu um erro ao editar a bateria!", err)
-                                            })
-                                        }
+                                    if (err) {
+                                        return req.connection.rollback(function () {
+                                            handleError(req, res, 500, "Ocorreu um erro ao editar a bateria!", err)
+                                        })
+                                    }
 
-                                        conn.release()
+                                })
 
-                                    })
+                            }
 
-                                }
-
-                            })
-
-                        }
-
-                        return res.status(200).json({
-                            success: true,
-                            message: "Bateria editada com sucesso!",
-                            verbose: null,
-                            data: {}
                         })
 
+                    }
+
+                    return res.status(200).json({
+                        success: true,
+                        message: "Bateria editada com sucesso!",
+                        verbose: null,
+                        data: {}
                     })
 
                 })
@@ -1572,34 +1233,31 @@ exports.storeSituation = async function (req, res) {
             SCHEDULE_STATUS.CANCELED
         ]
 
-        connection.getConnection(function (err, conn) {
+        req.connection.beginTransaction(function (err) {
 
-            conn.beginTransaction(function (err) {
+            if (err) {
+                return req.connection.rollback(function () {
+                    handleError(req, res, 500, "Ocorreu um erro ao adicionar a situação!", err)
+                })
+            }
 
-                if (err) {
-                    return conn.rollback(function () {
-                        conn.release()
-                        handleError(req, res, 500, "Ocorreu um erro ao adicionar a situação!", err)
+            req.connection.query(query, queryValues, function (err, result, _) {
+
+                if (err)
+                    return handleError(req, res, 500, "Ocorreu um erro ao registrar a situação!", err)
+
+                if (result.length != 0) {
+
+                    return res.status(400).json({
+                        success: true,
+                        message: "Não foi possível registrar a situação, existem agendamentos pendentes na data selecionada!",
+                        verbose: null,
+                        data: {}
                     })
-                }
 
-                conn.query(query, queryValues, function (err, result, _) {
+                } else {
 
-                    if (err)
-                        return handleError(req, res, 500, "Ocorreu um erro ao registrar a situação!", err)
-
-                    if (result.length != 0) {
-
-                        return res.status(400).json({
-                            success: true,
-                            message: "Não foi possível registrar a situação, existem agendamentos pendentes na data selecionada!",
-                            verbose: null,
-                            data: {}
-                        })
-
-                    } else {
-
-                        query = `
+                    query = `
                             INSERT INTO establishments_status
                             (
                                 establishment_id,
@@ -1616,51 +1274,45 @@ exports.storeSituation = async function (req, res) {
                             )
                         `
 
-                        queryValues = [
-                            establishmentId,
-                            statusId,
-                            date,
-                            description
-                        ]
+                    queryValues = [
+                        establishmentId,
+                        statusId,
+                        date,
+                        description
+                    ]
 
-                        conn.query(query, queryValues, function (err, result, _) {
+                    req.connection.query(query, queryValues, function (err, result, _) {
+
+                        if (err) {
+                            return req.connection.rollback(function () {
+                                handleError(req, res, 500, "Ocorreu um erro ao registrar a situação!", err)
+                            })
+                        }
+
+                        req.connection.commit(function (err) {
 
                             if (err) {
-                                return conn.rollback(function () {
-                                    conn.release()
+                                return req.connection.rollback(function () {
                                     handleError(req, res, 500, "Ocorreu um erro ao registrar a situação!", err)
                                 })
                             }
 
-                            conn.commit(function (err) {
-
-                                if (err) {
-                                    return conn.rollback(function () {
-                                        conn.release()
-                                        handleError(req, res, 500, "Ocorreu um erro ao registrar a situação!", err)
-                                    })
+                            return res.status(200).json({
+                                success: true,
+                                message: "Situação registrada com sucesso!",
+                                verbose: null,
+                                data: {
+                                    id: result.insertId,
+                                    statusId,
+                                    description
                                 }
-
-                                conn.release()
-
-                                return res.status(200).json({
-                                    success: true,
-                                    message: "Situação registrada com sucesso!",
-                                    verbose: null,
-                                    data: {
-                                        id: result.insertId,
-                                        statusId,
-                                        description
-                                    }
-                                })
-
                             })
 
                         })
 
-                    }
+                    })
 
-                })
+                }
 
             })
 
@@ -1706,66 +1358,54 @@ exports.editSituation = async function (req, res) {
             id
         ]
 
-        connection.getConnection(function (err, conn) {
+        req.connection.beginTransaction(function (err) {
 
-            if (err)
-                return handleError(req, res, 500, "Ocorreu um erro ao editar a situação!", err)
+            if (err) {
+                return req.connection.rollback(function () {
+                    handleError(req, res, 500, "Ocorreu um erro ao editar a situação!", err)
+                })
+            }
 
-            conn.beginTransaction(function (err) {
+            req.connection.query(query, queryValues, function (err, result, _) {
 
                 if (err) {
-                    return conn.rollback(function () {
-                        conn.release()
+                    return req.connection.rollback(function () {
                         handleError(req, res, 500, "Ocorreu um erro ao editar a situação!", err)
                     })
                 }
 
-                conn.query(query, queryValues, function (err, result, _) {
-
+                req.connection.commit(function (err) {
                     if (err) {
-                        return conn.rollback(function () {
-                            conn.release()
+
+                        return req.connection.rollback(function () {
                             handleError(req, res, 500, "Ocorreu um erro ao editar a situação!", err)
                         })
-                    }
 
-                    conn.commit(function (err) {
-                        if (err) {
+                    } else {
 
-                            return conn.rollback(function () {
-                                conn.release()
-                                handleError(req, res, 500, "Ocorreu um erro ao editar a situação!", err)
-                            })
+                        if (result.affectedRows == 0) {
 
-                        } else {
-
-                            conn.release()
-
-                            if (result.affectedRows == 0) {
-
-                                return res.status(400).json({
-                                    success: true,
-                                    message: "Não foi possível editar a situação!",
-                                    verbose: null,
-                                    data: {}
-                                })
-
-                            }
-
-                            return res.status(200).json({
+                            return res.status(400).json({
                                 success: true,
-                                message: "Situação editada com sucesso!",
+                                message: "Não foi possível editar a situação!",
                                 verbose: null,
-                                data: {
-                                    id,
-                                    statusId,
-                                    description
-                                }
+                                data: {}
                             })
 
                         }
 
-                    })
+                        return res.status(200).json({
+                            success: true,
+                            message: "Situação editada com sucesso!",
+                            verbose: null,
+                            data: {
+                                id,
+                                statusId,
+                                description
+                            }
+                        })
+
+                    }
 
                 })
 
@@ -1803,36 +1443,28 @@ exports.situationByDate = async function (req, res) {
             date
         ]
 
-        connection.getConnection(function (err, conn) {
+
+        req.connection.query(query, queryValues, function (err, result, _) {
 
             if (err)
                 return handleError(req, res, 500, "Ocorreu um erro ao recuperar a situação!", err)
 
-            conn.query(query, queryValues, function (err, result, _) {
+            if (result.length === 0) {
 
-                if (err)
-                    return handleError(req, res, 500, "Ocorreu um erro ao recuperar a situação!", err)
-
-                conn.release()
-
-                if (result.length === 0) {
-
-                    return res.status(404).json({
-                        success: true,
-                        message: "Não há situação cadastrada!",
-                        verbose: null,
-                        data: {}
-                    })
-
-                }
-
-                return res.status(200).json({
+                return res.status(404).json({
                     success: true,
-                    message: "Situação recuperada com sucesso!",
+                    message: "Não há situação cadastrada!",
                     verbose: null,
-                    data: result[0]
+                    data: {}
                 })
 
+            }
+
+            return res.status(200).json({
+                success: true,
+                message: "Situação recuperada com sucesso!",
+                verbose: null,
+                data: result[0]
             })
 
         })
@@ -1875,27 +1507,18 @@ exports.getSchedulesByBattery = async function (req, res) {
             SCHEDULE_STATUS.CANCELED
         ]
 
-        connection.getConnection(function (err, conn) {
+        req.connection.query(query, queryValues, function (err, results, _) {
 
             if (err)
                 return handleError(req, res, 500, "Ocorreu um erro ao obter os agendamentos!", err)
 
-            conn.query(query, queryValues, function (err, results, _) {
-
-                if (err)
-                    return handleError(req, res, 500, "Ocorreu um erro ao obter os agendamentos!", err)
-
-                conn.release()
-
-                return res.status(200).json({
-                    success: true,
-                    message: "Busca realizada com sucesso!",
-                    verbose: null,
-                    data: {
-                        schedules: results
-                    }
-                })
-
+            return res.status(200).json({
+                success: true,
+                message: "Busca realizada com sucesso!",
+                verbose: null,
+                data: {
+                    schedules: results
+                }
             })
 
         })
@@ -1929,50 +1552,39 @@ exports.deleteSchedules = async function (req, res) {
             schedulesId
         ]
 
-        connection.getConnection(function (err, conn) {
+        req.connection.beginTransaction(function (err) {
 
-            if (err)
-                return handleError(req, res, 500, "Ocorreu um erro ao obter cancelar os agendamentos!", err)
+            if (err) {
+                return req.connection.rollback(function () {
+                    handleError(req, res, 500, "Ocorreu um erro ao obter cancelar os agendamentos!", err)
+                })
+            }
 
-            conn.beginTransaction(function (err) {
+            req.connection.query(query, queryValues, function (err, results, _) {
 
                 if (err) {
-                    return conn.rollback(function () {
-                        conn.release()
+                    return req.connection.rollback(function () {
                         handleError(req, res, 500, "Ocorreu um erro ao obter cancelar os agendamentos!", err)
                     })
                 }
 
-                conn.query(query, queryValues, function (err, results, _) {
+                req.connection.commit(function (err) {
 
                     if (err) {
-                        return conn.rollback(function () {
-                            conn.release()
+
+                        return req.connection.rollback(function () {
                             handleError(req, res, 500, "Ocorreu um erro ao obter cancelar os agendamentos!", err)
                         })
+
                     }
 
-                    conn.commit(function (err) {
-                        if (err) {
+                })
 
-                            return conn.rollback(function () {
-                                conn.release()
-                                handleError(req, res, 500, "Ocorreu um erro ao obter cancelar os agendamentos!", err)
-                            })
-
-                        } else {
-                            conn.release()
-                        }
-
-                    })
-
-                    return res.status(200).json({
-                        success: true,
-                        message: "Os agendamentos foram cancelados com sucesso!",
-                        verbose: null,
-                        data: {}
-                    })
-
+                return res.status(200).json({
+                    success: true,
+                    message: "Os agendamentos foram cancelados com sucesso!",
+                    verbose: null,
+                    data: {}
                 })
 
             })

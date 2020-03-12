@@ -1,7 +1,7 @@
 const mysql = require('mysql2')
 const connectionData = require('../config/mysql')
 
-const connection = mysql.createPool({
+const pool = mysql.createPool({
     host: connectionData.host,
     user: connectionData.username,
     password: connectionData.password,
@@ -12,15 +12,12 @@ const connection = mysql.createPool({
     queueLimit: 0
 })
 
-// TODO: CHECK IF NEED CONNECTION INSTEAD POOL
-// connection.connect((error => {
-//     if (!error) {
-//         console.log(`Database connected successfully on ${connectionData.uri}`)
-//     } else {
-//         console.log(error)
-//     }
-// }))
+process.on('SIGINT', () =>
+    pool.end(err => {
+        if (err) return console.log(err)
+        console.log('pool => fechado')
+        process.exit(0)
+    })
+);
 
-module.exports = {
-    connection
-}
+module.exports = pool

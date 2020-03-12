@@ -4,7 +4,7 @@ const jwtHandler = require('../api/classes/jwt')
 module.exports = {
 
   validateToken: function (req, res, next) {
-    
+
     let token = req.headers['access-token'] || req.headers['Authorization']
 
     if (token) {

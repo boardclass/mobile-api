@@ -7,8 +7,6 @@ const logger = require('../classes/logger')
 const mailer = require('../classes/mailer')
 const jwtHandler = require('../classes/jwt')
 
-const { connection } = require('../../config/database')
-
 exports.sendSMS = function (req, res) {
 
     let userId = req.body.userId
@@ -154,7 +152,7 @@ exports.tokenPassword = function (req, res) {
                     ON ac.user_id = u.id 
                 WHERE ac.email = ?`
 
-        connection.query(query, email,
+        req.connection.query(query, email,
             function (err, results, fields) {
 
                 if (err) {
@@ -174,7 +172,7 @@ exports.tokenPassword = function (req, res) {
 
                 const userId = results[0].id
 
-                connection.query(`UPDATE user_accounts 
+                req.connection.query(`UPDATE user_accounts 
                                     SET verification_code = ?, 
                                     code_expiration = DATE_ADD(NOW(), INTERVAL 5 MINUTE)
                                     WHERE user_id = ?`, [verificationCode, userId],
@@ -249,7 +247,7 @@ exports.validatePassword = async function (req, res) {
                 AND verification_code = ? 
                 AND code_expiration > NOW()`
 
-        connection.query(query, [email, code],
+        req.connection.query(query, [email, code],
             function (err, results, fields) {
 
                 if (err) {
@@ -300,7 +298,7 @@ exports.resetPassword = async function (req, res) {
 
         const cryptedPassword = await bcrypt.hash(password, 10)
 
-        connection.query(`UPDATE user_accounts SET password = '${cryptedPassword}' WHERE user_id = ?`, [userId],
+        req.connection.query(`UPDATE user_accounts SET password = '${cryptedPassword}' WHERE user_id = ?`, [userId],
             function (err, results, fields) {
 
                 if (err) {

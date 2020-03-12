@@ -1,55 +1,39 @@
-const mysql = require('../../config/mysql')
-const logger = require('../classes/logger')
+const { handleError } = require('../classes/error-handler')
 
 exports.sports = async function (req, res) {
 
     try {
 
-        mysql.connect(mysql.uri, connection => {
-
-            const query = `
+        const query = `
                 SELECT 
                     id, display_name AS name
                 FROM sports
                 ORDER BY name`
 
-            connection.query(query, function (err, results, fields) {
+        req.connection.query(query, function (err, results, fields) {
 
-                if (err) {
-                    return res.status(500).json({
-                        success: false,
-                        message: "Ocorreu um erro ao obter os esportes!",
-                        verbose: `${err}`,
-                        data: {}
-                    })
-                }
-
-                return res.status(200).json({
-                    success: true,
-                    message: "Consulta realizada com sucesso!",
-                    verbose: null,
-                    data: {
-                        sports: results
-                    }
+            if (err) {
+                return res.status(500).json({
+                    success: false,
+                    message: "Ocorreu um erro ao obter os esportes!",
+                    verbose: `${err}`,
+                    data: {}
                 })
+            }
 
+            return res.status(200).json({
+                success: true,
+                message: "Consulta realizada com sucesso!",
+                verbose: null,
+                data: {
+                    sports: results
+                }
             })
 
         })
 
     } catch (error) {
-
-        logger.register(error, req, _ => {
-
-            return res.status(500).json({
-                success: false,
-                message: "Ocorreu um erro ao obter os esportes!",
-                verbose: `${error}`,
-                data: {}
-            })
-
-        })
-
+        handleError(req, res, 500, "Ocorreu um erro ao obter os esportes!", error)
     }
 
 }
@@ -60,9 +44,7 @@ exports.addresses = async function (req, res) {
 
     try {
 
-        mysql.connect(mysql.uri, connection => {
-
-            const query = `
+        const query = `
                 SELECT DISTINCT
                     ea.country,
                     ea.state,
@@ -77,49 +59,25 @@ exports.addresses = async function (req, res) {
                     AND b.deleted = false
                 ORDER BY ea.country, ea.state, ea.city, ea.neighbourhood`
 
-            connection.query(query, [sportId], function (err, results, fields) {
+        req.connection.query(query, [sportId], function (err, results, fields) {
 
-                if (err) {
+            if (err) {
+                return handleError(req, res, 500, "Ocorreu um erro ao obter o endereço!", err)
+            }
 
-                    logger.register(err, req, _ => {
-
-                        return res.status(500).json({
-                            success: false,
-                            message: "Ocorreu um erro ao obter o endereço!",
-                            verbose: `${err}`,
-                            data: {}
-                        })
-
-                    })
-
+            return res.status(200).json({
+                success: true,
+                message: "Consulta realizada com sucesso!",
+                verbose: null,
+                data: {
+                    addresses: results
                 }
-
-                return res.status(200).json({
-                    success: true,
-                    message: "Consulta realizada com sucesso!",
-                    verbose: null,
-                    data: {
-                        addresses: results
-                    }
-                })
-
             })
 
         })
 
     } catch (error) {
-
-        logger.register(error, req, _ => {
-
-            return res.status(500).json({
-                success: false,
-                message: "Ocorreu um erro ao obter o endereço!",
-                verbose: `${error}`,
-                data: {}
-            })
-
-        })
-
+        handleError(req, res, 500, "Ocorreu um erro ao obter o endereço!", err)
     }
 
 }
@@ -137,9 +95,7 @@ exports.establishments = async function (req, res) {
 
     try {
 
-        mysql.connect(mysql.uri, connection => {
-
-            const query = `
+        const query = `
                 SELECT DISTINCT
                     e.id, 
                     e.name
@@ -158,57 +114,33 @@ exports.establishments = async function (req, res) {
                 ORDER BY 
                     e.name`
 
-            const fiters = [
-                sportId,
-                address.country,
-                address.state,
-                address.city,
-                address.neighbourhood
-            ]
+        const fiters = [
+            sportId,
+            address.country,
+            address.state,
+            address.city,
+            address.neighbourhood
+        ]
 
-            connection.query(query, fiters, function (err, results, fields) {
+        req.connection.query(query, fiters, function (err, results, fields) {
 
-                if (err) {
+            if (err) {
+                handleError(req, res, 500, "Ocorreu um erro ao filtrar o estabelecimento!", err)
+            }
 
-                    logger.register(error, req, _ => {
-
-                        return res.status(500).json({
-                            success: false,
-                            message: "Ocorreu um erro ao filtrar o estabelecimento!",
-                            verbose: `${err}`,
-                            data: {}
-                        })
-
-                    })
-
+            return res.status(200).json({
+                success: true,
+                message: "Filtro realizado com sucesso!",
+                verbose: null,
+                data: {
+                    establishments: results
                 }
-
-                return res.status(200).json({
-                    success: true,
-                    message: "Filtro realizado com sucesso!",
-                    verbose: null,
-                    data: {
-                        establishments: results
-                    }
-                })
-
             })
 
         })
 
     } catch (error) {
-
-        logger.register(error, req, _ => {
-
-            return res.status(500).json({
-                success: false,
-                message: "Ocorreu um erro ao filtrar o estabelecimento!",
-                verbose: `${error}`,
-                data: {}
-            })
-
-        })
-
+        handleError(req, res, 500, "Ocorreu um erro ao filtrar o estabelecimento!", err)
     }
 
 }

@@ -9,4 +9,5 @@ module.exports = function (app) {
     require('../api/routes/userAccount')(app)
     require('../api/routes/establishmentAccount')(app)
     require('../api/routes/sport')(app)
+    require('../api/routes/employee')(app)
 } 

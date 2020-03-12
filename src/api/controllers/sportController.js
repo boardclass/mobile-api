@@ -1,4 +1,3 @@
-const { connection } = require('../../config/database')
 const { handleError } = require('../classes/error-handler')
 
 exports.all = async function (req, res) {
@@ -13,7 +12,7 @@ exports.all = async function (req, res) {
             ORDER BY name
         `
 
-        connection.query(query, [], function (err, result, _) {
+        req.connection.query(query, [], function (err, result, _) {
 
             if (err)
                 return handleError(req, res, 500, "Ocorreu um erro ao obter os esportes!", err)

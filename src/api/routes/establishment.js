@@ -1,3 +1,4 @@
+const employeeController = require('../controllers/employeeController')
 const establishmentController = require('../controllers/establishmentController')
 
 module.exports = (app) => {
@@ -23,11 +24,11 @@ module.exports = (app) => {
     })
 
     app.post('/api/establishment/employee', (req, res) => {
-        establishmentController.storeEmployee(req, res)
+        employeeController.storeEmployee(req, res)
     })
 
     app.get('/api/establishment/employees', (req, res) => {
-        establishmentController.employees(req, res)
+        employeeController.employees(req, res)
     })
 
     app.get('/api/establishment/:establishment_id/agenda', (req, res) => {

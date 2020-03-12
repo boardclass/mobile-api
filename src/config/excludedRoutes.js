@@ -9,7 +9,8 @@ module.exports = {
         '/api/user/password/token', 
         '/api/user/password/validate',
         '/api/establishment/password/token',
-        '/api/establishment/password/validate'
+        '/api/establishment/password/validate',
+        '/api/employee/login'
     ]
 
 }

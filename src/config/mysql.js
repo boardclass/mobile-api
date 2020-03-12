@@ -11,14 +11,5 @@ module.exports = {
     define: {
         timestamps: true,
         underscored: true
-    },
-
-    connect: function (uri, callback) {
-
-        var connection = mysql.createConnection(uri)
-
-        connection.connect()
-        callback(connection)
-
     }
 }

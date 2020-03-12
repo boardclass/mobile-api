@@ -4,7 +4,6 @@ const math = require('../classes/math')
 const validator = require("../classes/validator")
 const jwtHandler = require("../classes/jwt")
 
-const { connection } = require("../../config/database")
 const { handleError } = require('../classes/error-handler')
 
 exports.tokenPassword = function (req, res) {
@@ -30,8 +29,8 @@ exports.tokenPassword = function (req, res) {
                     ON ea.establishment_id = e.id
                 WHERE ea.email = ?`
 
-        connection.query(query, email,
-            function (err, results, fields) {
+        req.connection.query(query, email,
+            function (err, results, _) {
 
                 if (err) {
                     return handleError(req, res, 500, "Ocorreu um erro na recuperação de senha!", err)
@@ -50,11 +49,11 @@ exports.tokenPassword = function (req, res) {
 
                 const establishmentId = results[0].id
 
-                connection.query(`UPDATE establishment_accounts 
+                req.connection.query(`UPDATE establishment_accounts 
                                 SET verification_code = ?, 
                                 code_expiration = DATE_ADD(NOW(), INTERVAL 5 MINUTE)
                                 WHERE establishment_id = ?`, [verificationCode, establishmentId],
-                    function (err, results, fields) {
+                    function (err, results, _) {
 
                         if (err) {
                             return handleError(req, res, 500, "Ocorreu um erro na recuperação de senha!", err)
@@ -132,7 +131,7 @@ exports.validatePassword = function (req, res) {
                 AND verification_code = ? 
                 AND code_expiration > NOW()`
 
-        connection.query(query, [email, code],
+        req.connection.query(query, [email, code],
             function (err, results, fields) {
 
                 if (err) {
@@ -183,7 +182,7 @@ exports.resetPassword = async function (req, res) {
 
         const cryptedPassword = await bcrypt.hash(password, 10)
 
-        connection.query(`UPDATE establishment_accounts 
+        req.connection.query(`UPDATE establishment_accounts 
                         SET password = '${cryptedPassword}' 
                         WHERE establishment_id = ?`, [establishmentId],
             function (err, results, fields) {
