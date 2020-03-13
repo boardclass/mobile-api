@@ -159,6 +159,7 @@ exports.store = async function (req, res) {
 
                                 })
 
+                                res.setHeader('role-id', USER_TYPE.PROFESSOR)
                                 res.setHeader('access-token', jwtHandler.generate(null, newEstablishmentId))
                                 res.setHeader('establishment-id', newEstablishmentId)
 
@@ -243,6 +244,7 @@ exports.login = async function (req, res) {
 
         }
 
+        res.setHeader('role-id', USER_TYPE.PROFESSOR)
         res.setHeader('establishment-id', establishment.id)
         res.setHeader('access-token', jwtHandler.generate(null, establishment.id))
 
@@ -251,7 +253,7 @@ exports.login = async function (req, res) {
             message: "Login realizado com sucesso!",
             verbose: null,
             data: {
-                roleId: USER_TYPE.PROFESSOR,
+                id: establishment.id,
                 name: establishment.name,
                 cnpj: establishment.cnpj,
                 cpf: establishment.cpf,

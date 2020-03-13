@@ -339,7 +339,9 @@ exports.login = async function (req, res) {
 
             }
 
+            res.setHeader('role-id', USER_TYPE.ASSISTANT)
             res.setHeader('user-id', users[0].id)
+            res.setHeader('establishment-id', users[0].establishments[0].id)
             res.setHeader('access-token', jwtHandler.generate(users[0].id, null))
 
             return res.status(200).json({

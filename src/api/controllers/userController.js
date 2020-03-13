@@ -59,13 +59,15 @@ exports.login = async function (req, res) {
 
         const token = jwtHandler.generate(user.id, null)
 
+        res.setHeader('role-id', USER_TYPE.USER)
         res.setHeader('access-token', token)
-
+    
         return res.status(200).json({
             success: true,
             message: "Login realizado com sucesso!",
             verbose: null,
             data: {
+                id: user.id,
                 cpf: user.cpf,
                 name: user.name,
                 phone: user.phone
@@ -249,9 +251,10 @@ exports.store = async function (req, res) {
 
                                 const token = jwtHandler.generate(insertId, null)
 
-                                res.setHeader('access-token', token)
+                                res.setHeader('role-id', USER_TYPE.USER)
                                 res.setHeader('user-id', insertId)
-
+                                res.setHeader('access-token', token)
+                                
                                 return res.status(200).json({
                                     success: true,
                                     message: "Usuário cadastrado com sucesso!",
