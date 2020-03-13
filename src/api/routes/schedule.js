@@ -6,7 +6,7 @@ module.exports = (app) => {
         scheduleController.store(req, res)
     })
 
-    app.post('/api/schedule/pay/:schedule_id', (req, res) => {
+    app.post('/api/schedules/pay', (req, res) => {
         scheduleController.pay(req, res)
     })
 
