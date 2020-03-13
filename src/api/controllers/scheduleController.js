@@ -144,7 +144,7 @@ exports.store = async function (req, res) {
 
 exports.pay = async function (req, res) {
 
-    const scheduleId = req.params.schedule_id
+    const schedulesId = req.body.schedulesId
 
     try {
 
@@ -152,25 +152,25 @@ exports.pay = async function (req, res) {
             SELECT 1
             FROM schedules
             WHERE 
-                id = ?
+                id IN (?)
                 AND status_id NOT IN (?)
         `
 
         let sqlParams = [
-            scheduleId,
+            schedulesId,
             SCHEDULE_STATUS.CANCELED
         ]
 
         req.connection.query(sql, sqlParams, function (err, result, _) {
 
             if (err)
-                return handleError(req, res, 500, "Ocorreu um erro ao atualizar o pagamento!", err)
+                return handleError(req, res, 500, "Ocorreu um erro ao registrar o pagamento!", err)
 
             if (result.length == 0) {
 
                 return res.status(400).json({
                     success: false,
-                    message: "Não foi possível registrar o pagamento, pois o agendamento está cancelado!",
+                    message: "Não foi possível registrar o pagamento, existem agendamentos cancelados!",
                     verbose: null,
                     data: {}
                 })
@@ -180,7 +180,7 @@ exports.pay = async function (req, res) {
             req.connection.beginTransaction(function (err) {
 
                 if (err)
-                    return handleError(req, res, 500, "Ocorreu um erro ao atualizar o pagamento!", err)
+                    return handleError(req, res, 500, "Ocorreu um erro ao registrar o pagamento!", err)
 
                 sql = ` 
                         UPDATE 
@@ -189,19 +189,19 @@ exports.pay = async function (req, res) {
                             status_id = ?, 
                             updated_at = NOW() 
                         WHERE 
-                            id = ?
+                            id IN (?)
                     `
 
                 sqlParams = [
                     SCHEDULE_STATUS.PAID,
-                    scheduleId
+                    schedulesId
                 ]
 
                 req.connection.query(sql, sqlParams, function (err, result, _) {
 
                     if (err) {
                         return req.connection.rollback(function () {
-                            return handleError(req, res, 500, "Ocorreu um erro ao atualizar o pagamento!", err)
+                            return handleError(req, res, 500, "Ocorreu um erro ao registrar o pagamento!", err)
                         })
                     }
 
@@ -209,7 +209,7 @@ exports.pay = async function (req, res) {
 
                         if (err) {
                             return req.connection.rollback(function () {
-                                handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
+                                handleError(req, res, 500, "Ocorreu um erro ao registrar o pagamento!", err)
                             })
                         }
 
