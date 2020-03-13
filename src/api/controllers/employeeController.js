@@ -339,10 +339,12 @@ exports.login = async function (req, res) {
 
             }
 
+            const firstEstablishmentId = users[0].establishments[0].id
+
             res.setHeader('role-id', USER_TYPE.ASSISTANT)
             res.setHeader('user-id', users[0].id)
-            res.setHeader('establishment-id', users[0].establishments[0].id)
-            res.setHeader('access-token', jwtHandler.generate(users[0].id, null))
+            res.setHeader('establishment-id', firstEstablishmentId)
+            res.setHeader('access-token', jwtHandler.generate(users[0].id, firstEstablishmentId))
 
             return res.status(200).json({
                 success: true,
