@@ -1,5 +1,6 @@
-module.exports = function (app) {
+const file = require('../../.well-known/apple-app-site-association')
 
+module.exports = function (app) {
     require('../api/routes/user')(app)
     require('../api/routes/address')(app)
     require('../api/routes/establishment')(app)
@@ -10,4 +11,9 @@ module.exports = function (app) {
     require('../api/routes/establishmentAccount')(app)
     require('../api/routes/sport')(app)
     require('../api/routes/employee')(app)
+
+    app.get('/.well-known/apple-app-site-association', (req, res) => {
+        res.json(file)
+    })
+
 } 
