@@ -1488,7 +1488,8 @@ exports.getSchedulesByBattery = async function (req, res) {
             SELECT
                 s.id,
                 u.id AS userId,
-                u.name AS user
+                u.name AS user,
+                ss.name AS status
             FROM schedules s
             INNER JOIN batteries b
                 ON b.id = s.battery_id
@@ -1496,6 +1497,8 @@ exports.getSchedulesByBattery = async function (req, res) {
                 ON e.id = b.establishment_id
             INNER JOIN users u
                 ON u.id = s.user_id
+            INNER JOIN schedule_status ss
+                ON ss.id = s.status_id
             WHERE 
                 b.id = ?
                 AND s.date = ?
