@@ -10,7 +10,8 @@ module.exports = {
         '/api/user/password/validate',
         '/api/establishment/password/token',
         '/api/establishment/password/validate',
-        '/api/employee/login'
+        '/api/employee/login',
+        '/.well-known/apple-app-site-association'
     ]
 
 }
