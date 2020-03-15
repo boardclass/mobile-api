@@ -404,6 +404,59 @@ exports.storeEmployee = async function (req, res) {
 
 }
 
+exports.getEmployeeByCPF = async function (req, res) {
+
+    let cpf = req.params.cpf
+
+    try {
+
+        let query = `
+            SELECT  
+                u.id,
+                u.name,
+                u.cpf,
+                u.phone,
+                uc.email
+            FROM users u
+            INNER JOIN user_accounts uc
+                ON uc.user_id = u.id
+            WHERE 
+                u.cpf = ?
+        `
+
+        let params = [
+            cpf
+        ]
+
+        req.connection.query(query, params, function(err, result, _) {
+
+            if (err) {
+                return handleError(req, res, 500, "Ocorreu um erro ao recuperar usuário", err)
+            }
+
+            let user = result
+
+            if (result.length == 0) {
+                user = null
+            } else {
+                user = result[0]
+            }
+
+            return res.status(200).json({
+                success: true,
+                message: "Dados recuperado com sucesso!",
+                verbose: null,
+                data: user
+            })
+
+        })
+
+    } catch (error) {
+        handleError(req, res, 500, "Ocorreu um erro ao recuperar usuário", error)
+    }
+
+}
+
 exports.login = async function (req, res) {
 
     const users = []

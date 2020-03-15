@@ -52,8 +52,6 @@ exports.login = async function (req, res) {
                 return handleError(req, res, 500, "Ocorreu um erro ao realizar o login!")
             }
 
-            console.log(result);
-
             if (result == 0) {
 
                 return res.status(404).json({
