@@ -436,11 +436,15 @@ exports.login = async function (req, res) {
                 ee.user_id = u.id
             INNER JOIN establishments e ON
                 e.id = ee.establishment_id
+            INNER JOIN users_roles ur
+                ON ur.user_id = u.id
+                AND ur.role_id = ?
             WHERE
                 ua.email = ?
         `
 
         let params = [
+            USER_TYPE.ASSISTANT,
             email
         ]
 

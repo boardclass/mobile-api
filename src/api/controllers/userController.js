@@ -1,4 +1,3 @@
-const User = require('../models/User')
 const UserAddress = require('../models/UserAddress')
 const UsersRoles = require('../models/UsersRoles')
 
@@ -24,69 +23,85 @@ exports.login = async function (req, res) {
 
     try {
 
-        const user = await User.findOne({
-            include: {
-                association: 'account',
-                where: {
-                    email
+        let query = `
+            SELECT 
+                u.id,
+                u.cpf,
+                u.name,
+                u.phone,
+                uc.password,
+                ur.role_id
+            FROM users u
+            INNER JOIN user_accounts uc
+                ON uc.user_id = u.id
+            INNER JOIN users_roles ur
+                ON ur.user_id = u.id
+                AND ur.role_id = ?
+            WHERE 
+                uc.email = ?
+        `
+
+        let params = [
+            USER_TYPE.USER,
+            email
+        ]
+
+        req.connection.query(query, params, async function (err, result, _) {
+
+            if (err) {
+                return handleError(req, res, 500, "Ocorreu um erro ao realizar o login!")
+            }
+
+            console.log(result);
+
+            if (result == 0) {
+
+                return res.status(404).json({
+                    success: true,
+                    message: "Este email não está cadastrado em nossa base de clientes!",
+                    verbose: null,
+                    data: {}
+                })
+
+            } else {
+
+                const user = result[0]
+                const matchPassword = await bcrypt.compare(password, user.password)
+
+                if (!matchPassword) {
+
+                    return res.status(404).json({
+                        success: true,
+                        message: "A senha está incorreta!",
+                        verbose: null,
+                        data: {}
+                    })
+
                 }
+
+                const token = jwtHandler.generate(user.id, null)
+
+                res.setHeader('role-id', USER_TYPE.USER)
+                res.setHeader('access-token', token)
+
+                return res.status(200).json({
+                    success: true,
+                    message: "Login realizado com sucesso!",
+                    verbose: null,
+                    data: {
+                        id: user.id,
+                        cpf: user.cpf,
+                        name: user.name,
+                        phone: user.phone
+                    }
+                })
+
             }
-        })
 
-        if (!user) {
-
-            return res.status(404).json({
-                success: true,
-                message: "Este email não está cadastrado em nossa base!",
-                verbose: null,
-                data: {}
-            })
-
-        }
-
-        const matchPassword = await bcrypt.compare(password, user.account.password)
-
-        if (!matchPassword) {
-
-            return res.status(404).json({
-                success: true,
-                message: "Sua senha está incorreta!",
-                verbose: null,
-                data: {}
-            })
-
-        }
-
-        const token = jwtHandler.generate(user.id, null)
-
-        res.setHeader('role-id', USER_TYPE.USER)
-        res.setHeader('access-token', token)
-
-        return res.status(200).json({
-            success: true,
-            message: "Login realizado com sucesso!",
-            verbose: null,
-            data: {
-                id: user.id,
-                cpf: user.cpf,
-                name: user.name,
-                phone: user.phone
-            }
         })
 
     } catch (error) {
-
-        logger.register(error, req, _ => {
-
-            return res.status(500).json({
-                success: false,
-                message: "Ocorreu um erro ao realizar o login!",
-                verbose: `${error}`,
-                data: {}
-            })
-
-        })
-
+        handleError(req, res, 500, "Ocorreu um erro ao realizar o login!", error)
     }
 
 }
@@ -187,8 +202,6 @@ exports.store = async function (req, res) {
                         handleError(req, res, 500, "Ocorreu um erro ao cadastrar o usuário!", err)
                     })
                 }
-
-                const userId = result[0].id
 
                 if (result.length == 0) {
 
@@ -306,6 +319,8 @@ exports.store = async function (req, res) {
                     })
 
                 } else if (result[0].roleId === USER_TYPE.ASSISTANT) {
+
+                    const userId = result[0].id
 
                     userQuery = `
                         INSERT INTO users_roles
