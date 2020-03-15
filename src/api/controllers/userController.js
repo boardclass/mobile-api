@@ -61,7 +61,7 @@ exports.login = async function (req, res) {
 
         res.setHeader('role-id', USER_TYPE.USER)
         res.setHeader('access-token', token)
-    
+
         return res.status(200).json({
             success: true,
             message: "Login realizado com sucesso!",
@@ -104,7 +104,6 @@ exports.store = async function (req, res) {
     req.assert('phone', 'O telefone deve ser informado').notEmpty()
     req.assert('phone', 'O telefone está com formato inválido').len(13)
     req.assert('phone', 'O telefone deve conter apenas números').isNumeric()
-    req.assert('account.roleId', 'A permissão do usuário deve ser informada').notEmpty()
     req.assert('account.email', 'O email deve ser informado').notEmpty()
     req.assert('account.email', 'O email está em formato inválido').isEmail()
     req.assert('account.password', 'A senha deve ser informada').notEmpty()
@@ -160,15 +159,20 @@ exports.store = async function (req, res) {
             }
 
             let userQuery = `
-                       SELECT *
-                       FROM users u
-                       INNER JOIN user_accounts ua
-                       ON ua.user_id = u.id
-                       WHERE 
-                        ua.email = ? 
-                        OR u.phone = ?
-                        OR u.cpf = ?
-                    `
+                SELECT
+                    u.id,
+                    ur.role_id AS roleId
+                FROM users u
+                INNER JOIN user_accounts ua
+                    ON ua.user_id = u.id
+                INNER JOIN users_roles ur 
+                    ON ur.user_id = u.id
+                WHERE 
+                    ua.email = ? 
+                    OR u.phone = ?
+                    OR u.cpf = ?
+                ORDER BY ur.role_id
+            `
 
             let userParams = [
                 account.email,
@@ -184,7 +188,115 @@ exports.store = async function (req, res) {
                     })
                 }
 
-                if (result.length != 0) {
+                const userId = result[0].id
+
+                if (result.length == 0) {
+
+                    userQuery = `
+                        INSERT INTO users
+                            (cpf, name, phone, indication_id)
+                        VALUES
+                            (?, ?, ?, ?)
+                    `
+
+                    userParams = [
+                        user.cpf,
+                        user.name,
+                        user.phone,
+                        indicationId
+                    ]
+
+                    req.connection.query(userQuery, userParams, function (err, result, _) {
+
+                        if (err) {
+                            return req.connection.rollback(function () {
+                                handleError(req, res, 500, "Ocorreu um erro ao cadastrar o usuário!", err)
+                            })
+                        }
+
+                        const insertId = result.insertId
+
+                        const accountQuery = `
+                            INSERT INTO user_accounts
+                                (user_id, email, password)
+                            VALUES
+                                (?, ?, ?)
+                        `
+                        const accountParams = [
+                            insertId,
+                            account.email,
+                            account.password
+                        ]
+
+                        req.connection.query(accountQuery, accountParams, function (err, result, _) {
+
+                            if (err) {
+                                return req.connection.rollback(function () {
+                                    handleError(req, res, 500, "Ocorreu um erro ao cadastrar o usuário!", err)
+                                })
+                            }
+
+                            userQuery = `
+                                INSERT INTO users_roles
+                                    (user_id, role_id)
+                                VALUES
+                                    (?, ?)
+                            `
+
+                            userParams = [
+                                insertId,
+                                USER_TYPE.USER
+                            ]
+
+                            req.connection.query(userQuery, userParams, function (err, result, _) {
+
+                                if (err) {
+                                    return req.connection.rollback(function () {
+                                        handleError(req, res, 500, "Ocorreu um erro ao cadastrar o usuário!", err)
+                                    })
+                                }
+
+                                req.connection.commit(function (err) {
+
+                                    if (err) {
+
+                                        return req.connection.rollback(function () {
+                                            handleError(req, res, 500, "Ocorreu um erro ao cadastrar o estabelecimento!", err)
+                                        })
+
+                                    } else {
+
+                                        const token = jwtHandler.generate(insertId, null)
+
+                                        res.setHeader('role-id', USER_TYPE.USER)
+                                        res.setHeader('user-id', insertId)
+                                        res.setHeader('access-token', token)
+
+                                        return res.status(200).json({
+                                            success: true,
+                                            message: "Usuário cadastrado com sucesso!",
+                                            verbose: null,
+                                            data: {
+                                                roleId: USER_TYPE.USER,
+                                                id: insertId,
+                                                cpf: user.cpf,
+                                                name: user.name,
+                                                phone: user.phone,
+                                                indication: user.indication
+                                            }
+                                        })
+
+                                    }
+
+                                })
+
+                            })
+
+                        })
+
+                    })
+
+                } else if (result[0].roleId === USER_TYPE.USER) {
 
                     return res.status(400).json({
                         success: true,
@@ -193,45 +305,21 @@ exports.store = async function (req, res) {
                         data: {}
                     })
 
-                }
+                } else if (result[0].roleId === USER_TYPE.ASSISTANT) {
 
-                userQuery = `
-                            INSERT INTO users
-                                (cpf, name, phone, indication_id)
-                            VALUES
-                                (?, ?, ?, ?)
-                        `
+                    userQuery = `
+                        INSERT INTO users_roles
+                            (user_id, role_id)
+                        VALUES
+                            (?, ?)
+                    `
 
-                userParams = [
-                    user.cpf,
-                    user.name,
-                    user.phone,
-                    indicationId
-                ]
-
-                req.connection.query(userQuery, userParams, function (err, result, _) {
-
-                    if (err) {
-                        return req.connection.rollback(function () {
-                            handleError(req, res, 500, "Ocorreu um erro ao cadastrar o usuário!", err)
-                        })
-                    }
-
-                    const insertId = result.insertId
-
-                    const accountQuery = `
-                                INSERT INTO user_accounts
-                                    (user_id, email, password)
-                                VALUES
-                                    (?, ?, ?)
-                            `
-                    const accountParams = [
-                        insertId,
-                        account.email,
-                        account.password
+                    userParams = [
+                        userId,
+                        USER_TYPE.USER
                     ]
 
-                    req.connection.query(accountQuery, accountParams, function (err, result, _) {
+                    req.connection.query(userQuery, userParams, function (err, result, _) {
 
                         if (err) {
                             return req.connection.rollback(function () {
@@ -249,18 +337,19 @@ exports.store = async function (req, res) {
 
                             } else {
 
-                                const token = jwtHandler.generate(insertId, null)
+                                const token = jwtHandler.generate(userId, null)
 
                                 res.setHeader('role-id', USER_TYPE.USER)
-                                res.setHeader('user-id', insertId)
+                                res.setHeader('user-id', userId)
                                 res.setHeader('access-token', token)
-                                
+
                                 return res.status(200).json({
                                     success: true,
                                     message: "Usuário cadastrado com sucesso!",
                                     verbose: null,
                                     data: {
                                         roleId: USER_TYPE.USER,
+                                        id: userId,
                                         cpf: user.cpf,
                                         name: user.name,
                                         phone: user.phone,
@@ -274,7 +363,7 @@ exports.store = async function (req, res) {
 
                     })
 
-                })
+                }
 
             })
 

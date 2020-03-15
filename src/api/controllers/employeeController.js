@@ -35,14 +35,19 @@ exports.storeEmployee = async function (req, res) {
         account.password = await bcrypt.hash(account.password, 10)
 
         let query = `
-            SELECT *
+            SELECT 
+                u.id,
+                ur.role_id AS roleId
             FROM users u
             INNER JOIN user_accounts ua 
                 ON ua.user_id = u.id
+            INNER JOIN users_roles ur
+                ON ur.user_id = u.id
             WHERE 
                 u.cpf = ?
                 OR u.phone = ?
                 OR ua.email = ?
+            ORDER BY ur.role_id DESC
         `
 
         let queryValues = [
@@ -50,8 +55,6 @@ exports.storeEmployee = async function (req, res) {
             phone,
             account.email
         ]
-
-
 
         req.connection.beginTransaction(function (err) {
 
@@ -65,36 +68,27 @@ exports.storeEmployee = async function (req, res) {
 
                 if (err)
                     return handleError(req, res, 500, "Ocorreu um erro ao cadastrar o professor!", err)
-
-                if (result.length != 0) {
-
-                    return res.status(400).json({
-                        success: true,
-                        message: "Os dados inseridos já estão em utilização!",
-                        verbose: null,
-                        data: {}
-                    })
-
-                } else {
+                
+                if (result.length == 0) {
 
                     query = `
-                            INSERT INTO users
-                            (
-                                cpf,
-                                name,
-                                phone,
-                                created_at,
-                                updated_at
-                            )
-                            VALUES
-                            (
-                                ?,
-                                ?,
-                                ?,
-                                NOW(),
-                                NOW()
-                            )
-                        `
+                        INSERT INTO users
+                        (
+                            cpf,
+                            name,
+                            phone,
+                            created_at,
+                            updated_at
+                        )
+                        VALUES
+                        (
+                            ?,
+                            ?,
+                            ?,
+                            NOW(),
+                            NOW()
+                        )
+                    `
 
                     queryValues = [
                         cpf,
@@ -113,23 +107,23 @@ exports.storeEmployee = async function (req, res) {
                         const insertedUserId = result.insertId
 
                         query = `
-                                INSERT INTO user_accounts
-                                (
-                                    user_id,
-                                    email,
-                                    password,
-                                    created_at,
-                                    updated_at
-                                )
-                                VALUES
-                                (
-                                    ?,
-                                    ?,
-                                    ?,
-                                    NOW(),
-                                    NOW()
-                                )
-                            `
+                            INSERT INTO user_accounts
+                            (
+                                user_id,
+                                email,
+                                password,
+                                created_at,
+                                updated_at
+                            )
+                            VALUES
+                            (
+                                ?,
+                                ?,
+                                ?,
+                                NOW(),
+                                NOW()
+                            )
+                        `
 
                         queryValues = [
                             insertedUserId,
@@ -146,21 +140,21 @@ exports.storeEmployee = async function (req, res) {
                             }
 
                             query = `
-                                    INSERT INTO users_roles
-                                    (
-                                        user_id,
-                                        role_id,
-                                        created_at,
-                                        updated_at
-                                    )
-                                    VALUES
-                                    (
-                                        ?,
-                                        ?,
-                                        NOW(),
-                                        NOW()
-                                    )
-                                `
+                                INSERT INTO users_roles
+                                (
+                                    user_id,
+                                    role_id,
+                                    created_at,
+                                    updated_at
+                                )
+                                VALUES
+                                (
+                                    ?,
+                                    ?,
+                                    NOW(),
+                                    NOW()
+                                )
+                            `
                             queryValues = [
                                 insertedUserId,
                                 USER_TYPE.ASSISTANT
@@ -227,6 +221,176 @@ exports.storeEmployee = async function (req, res) {
                         })
 
                     })
+
+                } else {
+
+                    const userId = result[0].id
+
+                    if (result[0].roleId === USER_TYPE.ASSISTANT) {
+
+                        query = `
+                            SELECT * 
+                            FROM establishment_employees
+                            WHERE 
+                                user_id = ? 
+                                AND establishment_id = ?
+                        `
+
+                        queryValues = [
+                            userId,
+                            establishmentId
+                        ]
+
+                        req.connection.query(query, queryValues, function (err, result, _) {
+
+                            if (err) {
+                                return req.connection.rollback(function () {
+                                    handleError(req, res, 500, "Ocorreu um erro ao cadastrar o professor!", err)
+                                })
+                            }
+
+                            if (result.length != 0) {
+
+                                return res.status(400).json({
+                                    success: true,
+                                    message: "Auxiliar já está cadastrado para este estabelecimento!",
+                                    verbose: null,
+                                    data: {}
+                                })
+
+                            } else {
+
+                                query = `
+                                INSERT INTO establishment_employees
+                                (
+                                    establishment_id,
+                                    user_id,
+                                    created_at,
+                                    updated_at
+                                )
+                                VALUES
+                                (
+                                    ?,
+                                    ?,
+                                    NOW(),
+                                    NOW()
+                                )
+                            `
+                                queryValues = [
+                                    establishmentId,
+                                    userId
+                                ]
+
+                                req.connection.query(query, queryValues, function (err, result, _) {
+
+                                    if (err) {
+                                        return req.connection.rollback(function () {
+                                            handleError(req, res, 500, "Ocorreu um erro ao cadastrar o professor!", err)
+                                        })
+                                    }
+
+                                    req.connection.commit(function (err) {
+
+                                        if (err) {
+                                            return conn.rollback(function () {
+                                                handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
+                                            })
+                                        }
+
+                                        return res.status(200).json({
+                                            success: true,
+                                            message: "Cadastro realizado com sucesso!",
+                                            verbose: null,
+                                            data: {}
+                                        })
+
+                                    })
+
+                                })
+
+                            }
+
+                        })
+
+                    } else if (result[0].roleId === USER_TYPE.USER) {
+
+                        query = `
+                        INSERT INTO users_roles
+                        (
+                            user_id,
+                            role_id
+                        )
+                        VALUES
+                        (
+                            ?,
+                            ?
+                        )
+                    `
+
+                        queryValues = [
+                            userId,
+                            USER_TYPE.ASSISTANT
+                        ]
+
+                        req.connection.query(query, queryValues, function (err, result, _) {
+
+                            if (err) {
+                                return req.connection.rollback(function () {
+                                    handleError(req, res, 500, "Ocorreu um erro ao cadastrar o professor!", err)
+                                })
+                            }
+
+                            query = `
+                            INSERT INTO establishment_employees
+                            (
+                                establishment_id,
+                                user_id,
+                                created_at,
+                                updated_at
+                            )
+                            VALUES
+                            (
+                                ?,
+                                ?,
+                                NOW(),
+                                NOW()
+                            )
+                        `
+                            queryValues = [
+                                establishmentId,
+                                userId
+                            ]
+
+                            req.connection.query(query, queryValues, function (err, result, _) {
+
+                                if (err) {
+                                    return req.connection.rollback(function () {
+                                        handleError(req, res, 500, "Ocorreu um erro ao cadastrar o professor!", err)
+                                    })
+                                }
+
+                                req.connection.commit(function (err) {
+
+                                    if (err) {
+                                        return conn.rollback(function () {
+                                            handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
+                                        })
+                                    }
+
+                                    return res.status(200).json({
+                                        success: true,
+                                        message: "Cadastro realizado com sucesso!",
+                                        verbose: null,
+                                        data: {}
+                                    })
+
+                                })
+
+                            })
+
+                        })
+
+                    }
 
                 }
 
