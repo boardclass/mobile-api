@@ -544,7 +544,7 @@ exports.agenda = async function (req, res) {
                 WHERE 
                     s.user_id = ?
                     AND s.status_id NOT IN (?)
-                ORDER BY date DESC, sport, start_hour`
+                ORDER BY date DESC, sport, establishment, start_hour`
 
         const filters = [
             userId,
