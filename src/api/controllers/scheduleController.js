@@ -59,7 +59,6 @@ exports.store = async function (req, res) {
 
                     let available_vacancies = results[0].available_vacancies
 
-                    //  TODO: Handle canceled batteries
                     if (available_vacancies != 0 && available_vacancies >= batteries[index].selectedVacancies) {
 
                         for (i = 0; i < batteries[index].selectedVacancies; i++) {

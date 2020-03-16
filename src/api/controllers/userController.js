@@ -536,11 +536,13 @@ exports.agenda = async function (req, res) {
                 FROM schedules s
                 INNER JOIN batteries b
                     ON b.id = s.battery_id
+                    AND b.deleted = false
                 INNER JOIN establishments e
                     ON e.id = b.establishment_id
                 INNER JOIN sports sp
                     ON sp.id = b.sport_id
-                WHERE s.user_id = ?
+                WHERE 
+                    s.user_id = ?
                     AND s.status_id NOT IN (?)
                 ORDER BY date DESC, sport, start_hour`
 
@@ -571,7 +573,7 @@ exports.agenda = async function (req, res) {
                 for (row of results) {
 
                     let filtered = agenda.findIndex(value => {
-                        return value.date === row.date
+                        return value.date === row.date && value.id === row.id 
                     })
 
                     if (filtered >= 0) {
@@ -612,6 +614,8 @@ exports.agenda = async function (req, res) {
 
                 }
 
+                console.log(agenda);
+                
                 return res.status(200).json({
                     success: true,
                     message: "Agenda obtida com sucesso!",
