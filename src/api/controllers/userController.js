@@ -574,7 +574,6 @@ exports.agenda = async function (req, res) {
 
                     let filtered = agenda.findIndex(value => {
                         return value.date === row.date
-                            && value.establishment.id === row.establishment.id
                     })
 
                     if (filtered >= 0) {
@@ -614,8 +613,6 @@ exports.agenda = async function (req, res) {
                     }
 
                 }
-
-                console.log(agenda);
 
                 return res.status(200).json({
                     success: true,
