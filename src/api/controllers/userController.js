@@ -573,7 +573,8 @@ exports.agenda = async function (req, res) {
                 for (row of results) {
 
                     let filtered = agenda.findIndex(value => {
-                        return value.date === row.date && value.id === row.id 
+                        return value.date === row.date
+                            && value.establishment.id === row.establishment.id
                     })
 
                     if (filtered >= 0) {
@@ -615,7 +616,7 @@ exports.agenda = async function (req, res) {
                 }
 
                 console.log(agenda);
-                
+
                 return res.status(200).json({
                     success: true,
                     message: "Agenda obtida com sucesso!",
