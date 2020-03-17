@@ -492,13 +492,13 @@ exports.getAgenda = async function (req, res) {
                     (SELECT short_name FROM establishment_status WHERE id = IF(COUNT(s.id) < b.people_allowed, 5, 4)) as short_status
                 FROM
                     schedules s
-                INNER JOIN batteries b ON
-                    b.id = s.battery_id
+                INNER JOIN batteries b 
+                    ON b.id = s.battery_id
                 INNER JOIN battery_weekdays bw
                     ON bw.battery_id = b.id
                 INNER JOIN weekday w
                     ON w.id = bw.weekday_id
-                    AND w.day = LOWER(DATE_FORMAT(?, "%W")
+                    AND w.day = LOWER(DATE_FORMAT(?, "%W"))
                 WHERE
                     b.establishment_id = ? 
                     AND b.deleted = false
