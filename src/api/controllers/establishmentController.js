@@ -494,8 +494,14 @@ exports.getAgenda = async function (req, res) {
                     schedules s
                 INNER JOIN batteries b ON
                     b.id = s.battery_id
+                INNER JOIN battery_weekdays bw
+                    ON bw.battery_id = b.id
+                INNER JOIN weekday w
+                    ON w.id = bw.weekday_id
+                    AND w.day = LOWER(DATE_FORMAT(?, "%W"))
                 WHERE
                     b.establishment_id = ? 
+                    AND b.deleted = false
                     AND s.status_id NOT IN(?)
                 GROUP BY s.date
             )
