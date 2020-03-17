@@ -504,7 +504,6 @@ exports.getAgenda = async function (req, res) {
                     AND b.deleted = false
                     AND s.status_id NOT IN(?)
                 GROUP BY s.date
-                ORDER BY s.date
             )
             
             Union 
@@ -521,7 +520,6 @@ exports.getAgenda = async function (req, res) {
                     es.id = ess.status_id
                 WHERE
                     ess.establishment_id = ?
-                ORDER BY ess.date
             )
             
             ORDER BY date
