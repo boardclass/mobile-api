@@ -510,7 +510,7 @@ exports.getAgenda = async function (req, res) {
             
             (
                 SELECT
-                    DATE_FORMAT(ess.date, "%Y-%m-%d") AS date,
+                  1  DATE_FORMAT(ess.date, "%Y-%m-%d") AS date,
                     es.id AS status_id,
                     es.name AS status,
                     es.short_name AS short_status
