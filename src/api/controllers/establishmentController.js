@@ -504,13 +504,14 @@ exports.getAgenda = async function (req, res) {
                     AND b.deleted = false
                     AND s.status_id NOT IN(?)
                 GROUP BY s.date
+                ORDER BY s.date
             )
             
             Union 
             
             (
                 SELECT
-                  1  DATE_FORMAT(ess.date, "%Y-%m-%d") AS date,
+                  DATE_FORMAT(ess.date, "%Y-%m-%d") AS date,
                     es.id AS status_id,
                     es.name AS status,
                     es.short_name AS short_status
@@ -520,6 +521,7 @@ exports.getAgenda = async function (req, res) {
                     es.id = ess.status_id
                 WHERE
                     ess.establishment_id = ?
+                ORDER BY ess.date
             )
             
             ORDER BY date
