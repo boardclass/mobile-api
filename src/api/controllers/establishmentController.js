@@ -487,9 +487,9 @@ exports.getAgenda = async function (req, res) {
             (
                 SELECT
                     DATE_FORMAT(s.date, "%Y-%m-%d") AS date,
-                    (SELECT id FROM establishment_status WHERE id = IF(COUNT(s.id) < b.people_allowed, 5, 4)) as status_id,
-                    (SELECT name FROM establishment_status WHERE id = IF(COUNT(s.id) < b.people_allowed, 5, 4)) as status,
-                    (SELECT short_name FROM establishment_status WHERE id = IF(COUNT(s.id) < b.people_allowed, 5, 4)) as short_status
+                    (SELECT id FROM establishment_status WHERE id = IF(COUNT(s.id) < SUM(b.people_allowed), 5, 4)) as status_id,
+                    (SELECT name FROM establishment_status WHERE id = IF(COUNT(s.id) < SUM(b.people_allowed), 5, 4)) as status,
+                    (SELECT short_name FROM establishment_status WHERE id = IF(COUNT(s.id) < SUM(b.people_allowed), 5, 4)) as short_status
                 FROM
                     schedules s
                 INNER JOIN batteries b 
@@ -500,10 +500,10 @@ exports.getAgenda = async function (req, res) {
                     ON w.id = bw.weekday_id
                     AND w.day = LOWER(DATE_FORMAT(s.date, "%W"))
                 WHERE
-                    b.establishment_id = ? 
+                    b.establishment_id = ?
                     AND b.deleted = false
                     AND s.status_id NOT IN(?)
-                GROUP BY s.date
+                GROUP BY s.date, b.establishment_id
             )
             
             Union 
