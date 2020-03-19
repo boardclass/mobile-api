@@ -493,7 +493,9 @@ exports.getAgenda = async function (req, res) {
                         INNER JOIN weekday w1 ON w1.id = bw1.weekday_id
                         WHERE b1.establishment_id = b.establishment_id AND w1.Day = LOWER(DATE_FORMAT(s.date, "%W"))
                         GROUP BY w1.day), 5, 4)
-                    ) AS status_id
+                    ) AS status_id,
+                    "" AS status,
+                    "" AS short_status
                 FROM schedules s
                 INNER JOIN batteries AS b ON b.id = s.battery_id
                 INNER JOIN battery_weekdays AS bw ON bw.battery_id = b.id
@@ -513,7 +515,9 @@ exports.getAgenda = async function (req, res) {
             (
                 SELECT
                   DATE_FORMAT(ess.date, "%Y-%m-%d") AS date,
-                    es.id AS status_id
+                    es.id AS status_id,
+                    "" AS status,
+                    "" AS short_status
                 FROM
                     establishments_status ess
                 INNER JOIN establishment_status es ON
