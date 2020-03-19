@@ -485,25 +485,27 @@ exports.getAgenda = async function (req, res) {
 
         const query = `
             (
-                SELECT
-                    DATE_FORMAT(s.date, "%Y-%m-%d") AS date,
-                    (SELECT id FROM establishment_status WHERE id = IF(COUNT(s.id) < SUM(b.people_allowed), 5, 4)) as status_id,
-                    (SELECT name FROM establishment_status WHERE id = IF(COUNT(s.id) < SUM(b.people_allowed), 5, 4)) as status,
-                    (SELECT short_name FROM establishment_status WHERE id = IF(COUNT(s.id) < SUM(b.people_allowed), 5, 4)) as short_status
-                FROM
-                    schedules s
-                INNER JOIN batteries b 
-                    ON b.id = s.battery_id
-                INNER JOIN battery_weekdays bw
-                    ON bw.battery_id = b.id
-                INNER JOIN weekday w
-                    ON w.id = bw.weekday_id
-                    AND w.day = LOWER(DATE_FORMAT(s.date, "%W"))
+                SELECT DATE_FORMAT(s.date, "%Y-%m-%d") AS date,
+                    (IF (COUNT(*) >= (
+                        SELECT SUM(people_allowed)
+                        FROM batteries AS b1
+                        INNER JOIN battery_weekdays AS bw1 ON bw1.battery_id = b1.id
+                        INNER JOIN weekday w1 ON w1.id = bw1.weekday_id
+                        WHERE b1.establishment_id = b.establishment_id AND w1.Day = LOWER(DATE_FORMAT(s.date, "%W"))
+                        GROUP BY w1.day), 5, 4)
+                    ) AS status_id
+                FROM schedules s
+                INNER JOIN batteries AS b ON b.id = s.battery_id
+                INNER JOIN battery_weekdays AS bw ON bw.battery_id = b.id
+                INNER JOIN weekday AS w ON w.id = bw.weekday_id
                 WHERE
-                    b.establishment_id = ?
-                    AND b.deleted = false
-                    AND s.status_id NOT IN(?)
-                GROUP BY s.date, b.establishment_id
+                    b.establishment_id = ? 
+                    AND b.deleted = false 
+                    AND w.day = LOWER(DATE_FORMAT(s.date, "%W"))
+                    AND s.status_id NOT IN (?)
+                GROUP 
+                    BY s.date, 
+                    b.establishment_id
             )
             
             Union 
