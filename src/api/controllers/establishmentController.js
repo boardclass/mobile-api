@@ -6,7 +6,7 @@ const validator = require('../classes/validator')
 const jwtHandler = require('../classes/jwt')
 
 const { handleError } = require('../classes/error-handler')
-const { ADDRESS, SCHEDULE_STATUS, USER_TYPE } = require('../classes/constants')
+const { ADDRESS, SCHEDULE_STATUS, USER_TYPE, ESTABLISHMENT_STATUS } = require('../classes/constants')
 
 exports.store = async function (req, res) {
 
@@ -480,34 +480,93 @@ exports.serviceAddresses = async function (req, res) {
 exports.getAgenda = async function (req, res) {
 
     const establishmentId = req.params.establishment_id
+    const sportId = req.params.sport_id
+    const addressId = req.params.address_id
 
     try {
 
         const query = `
             (
-                SELECT DATE_FORMAT(s.date, "%Y-%m-%d") AS date,
-                    (IF (COUNT(*) >= (
-                        SELECT SUM(people_allowed)
+                SELECT
+                    query_table.date,
+                    query_table.id AS status_id,
+                    query_table.display_name AS STATUS,
+                    query_table.short_name AS short_status
+                    
+                FROM (
+
+                    SELECT
+                        schedule_table.date,
+                        schedule_table.establishment_id,
+                        schedule_table.sport_id,
+                        schedule_table.schedules_amount,
+                        available_vacancies.total_vacancies,
+                        establishment_status_table.id,
+                        establishment_status_table.display_name,
+                        establishment_status_table.short_name
+                    FROM (
+                    
+                        SELECT
+                            DATE_FORMAT(s.date, "%Y-%m-%d") AS date,
+                            b.establishment_id,
+                            b.sport_id,
+                            COUNT(*) AS schedules_amount
+                        FROM schedules s
+                        INNER JOIN batteries AS b 
+                            ON b.id = s.battery_id
+                        INNER JOIN battery_weekdays AS bw 
+                            ON bw.battery_id = b.id
+                        INNER JOIN weekday AS w 
+                            ON w.id = bw.weekday_id
+                        WHERE
+                            b.establishment_id = ?
+                            AND b.sport_id = ?
+                            AND b.address_id = ?
+                            AND s.status_id NOT IN (?)
+                            AND b.deleted = false
+                            AND w.day = LOWER(DATE_FORMAT(s.date, "%W"))
+                        GROUP BY 
+                            s.date, 
+                            b.establishment_id
+                    
+                    ) AS schedule_table
+                    INNER JOIN 
+                    (
+                    
+                        SELECT
+                            b1.establishment_id,
+                            b1.sport_id,
+                            w1.day,
+                            SUM(b1.people_allowed) AS total_vacancies
                         FROM batteries AS b1
-                        INNER JOIN battery_weekdays AS bw1 ON bw1.battery_id = b1.id
-                        INNER JOIN weekday w1 ON w1.id = bw1.weekday_id
-                        WHERE b1.establishment_id = b.establishment_id AND w1.Day = LOWER(DATE_FORMAT(s.date, "%W"))
-                        GROUP BY w1.day), 4, 5)
-                    ) AS status_id,
-                    IF(status_id = 4, "Lotado", "Agendamento") AS status,
-                    IF(status_id = 4, "Lotado", "Agendam") AS short_status
-                FROM schedules s
-                INNER JOIN batteries AS b ON b.id = s.battery_id
-                INNER JOIN battery_weekdays AS bw ON bw.battery_id = b.id
-                INNER JOIN weekday AS w ON w.id = bw.weekday_id
-                WHERE
-                    b.establishment_id = ? 
-                    AND b.deleted = false 
-                    AND w.day = LOWER(DATE_FORMAT(s.date, "%W"))
-                    AND s.status_id NOT IN (?)
-                GROUP 
-                    BY s.date, 
-                    b.establishment_id
+                        INNER JOIN battery_weekdays bw1 
+                            ON bw1.battery_id = b1.id
+                        INNER JOIN weekday w1 
+                            ON w1.id = bw1.weekday_id
+                        WHERE
+                            b1.deleted = FALSE
+                            AND b1.establishment_id = ?
+                            AND b1.sport_id = ?
+                            AND b1.address_id = ?
+                        GROUP BY w1.day
+                    
+                    ) AS available_vacancies
+                        ON available_vacancies.day = LOWER(DATE_FORMAT(schedule_table.date, "%W"))
+                        
+                    INNER JOIN (
+                    
+                        SELECT
+                            id,
+                            display_name,
+                            short_name
+                        FROM establishment_status
+                        
+                    ) AS establishment_status_table 
+                    ON establishment_status_table.id = IF (schedule_table.schedules_amount >= available_vacancies.total_vacancies, ?, ?)
+
+                ) AS query_table
+
+                ORDER BY query_table.date
             )
             
             Union 
@@ -531,14 +590,25 @@ exports.getAgenda = async function (req, res) {
 
         const queryValues = [
             establishmentId,
+            sportId,
+            addressId,
             SCHEDULE_STATUS.CANCELED,
+            establishmentId,
+            sportId,
+            addressId,
+            ESTABLISHMENT_STATUS.FULL,
+            ESTABLISHMENT_STATUS.SCHEDULES,
             establishmentId
         ]
+
+        console.log(queryValues);
 
         req.connection.query(query, queryValues, function (err, results, _) {
 
             if (err)
                 return handleError(req, res, 500, "Ocorreu um erro ao obter a agenda!", err)
+
+                console.log(results.length);
 
             return res.status(200).json({
                 success: true,
