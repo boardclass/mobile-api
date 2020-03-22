@@ -61,15 +61,13 @@ exports.store = async function (req, res) {
 
                     if (restrictions.isRestricted(results[0].start_hour)) {
 
-                        return req.connection.rollback(function () {
-                            
-                            return res.status(400).json({
-                                success: false,
-                                message: "Não foi possível realizar o agendamento, é necessário agendar com até duas horas de antecedência.",
-                                verbose: null,
-                                data: {}
-                            })
+                        req.connection.rollback(function () {})
 
+                        return res.status(400).json({
+                            success: false,
+                            message: "Não foi possível realizar o agendamento, é necessário agendar com até duas horas de antecedência.",
+                            verbose: null,
+                            data: {}
                         })
 
                     }
