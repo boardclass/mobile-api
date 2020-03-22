@@ -575,8 +575,8 @@ exports.getAgenda = async function (req, res) {
                 SELECT
                   DATE_FORMAT(ess.date, "%Y-%m-%d") AS date,
                     es.id AS status_id,
-                    es.name AS status,
-                    es.display_name AS short_status
+                    es.display_name AS status,
+                    es.short_name AS short_status
                 FROM
                     establishments_status ess
                 INNER JOIN establishment_status es ON
