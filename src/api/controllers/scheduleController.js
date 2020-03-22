@@ -1,3 +1,4 @@
+const restrictions = require('../classes/time-restriction')
 const { handleError } = require('../classes/error-handler')
 const { SCHEDULE_STATUS } = require('../classes/constants')
 
@@ -30,7 +31,8 @@ exports.store = async function (req, res) {
 
                 const query = `
                         SELECT
-                            ABS(COUNT(s.id) - b.people_allowed) AS available_vacancies
+                            b.start_hour,
+                            b.people_allowed - COUNT(s.id) AS available_vacancies
                         FROM
                             batteries b
                         LEFT JOIN schedules s ON
@@ -49,12 +51,27 @@ exports.store = async function (req, res) {
                     batteries[index].id
                 ]
 
-                req.connection.query(query, filters, function (err, results, fields) {
+                req.connection.query(query, filters, function (err, results, _) {
 
                     if (err) {
                         return req.connection.rollback(function () {
                             return handleError(req, res, 500, "Ocorreu um erro no agendamento!", err)
                         })
+                    }
+
+                    if (restrictions.isRestricted(results[0].start_hour)) {
+
+                        return req.connection.rollback(function () {
+                            
+                            return res.status(400).json({
+                                success: false,
+                                message: "Não foi possível realizar o agendamento, é necessário agendar com até duas horas de antecedência.",
+                                verbose: null,
+                                data: {}
+                            })
+
+                        })
+
                     }
 
                     let available_vacancies = results[0].available_vacancies
