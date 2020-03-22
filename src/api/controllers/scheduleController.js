@@ -51,7 +51,7 @@ exports.store = async function (req, res) {
                     batteries[index].id
                 ]
 
-                req.connection.query(query, filters, function (err, results, _) {
+                req.connection.query(query, filters, async function (err, results, _) {
 
                     if (err) {
                         return req.connection.rollback(function () {
@@ -61,7 +61,7 @@ exports.store = async function (req, res) {
 
                     if (restrictions.isRestricted(results[0].start_hour)) {
 
-                        req.connection.rollback(function () {})
+                        await req.connection.rollback(function () {})
 
                         return res.status(400).json({
                             success: false,
