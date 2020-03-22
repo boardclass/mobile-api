@@ -98,7 +98,8 @@ exports.establishments = async function (req, res) {
         const query = `
                 SELECT DISTINCT
                     e.id, 
-                    e.name
+                    e.name,
+                    ea.id AS addressId
                 FROM
                     establishments e
                 INNER JOIN batteries b ON
@@ -111,6 +112,7 @@ exports.establishments = async function (req, res) {
                     AND ea.state = ?
                     AND ea.city =  ?
                     AND ea.neighbourhood = ?
+                    AND ea.type_id = 2
                 ORDER BY 
                     e.name`
 

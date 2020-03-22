@@ -631,10 +631,15 @@ exports.getAvailableBatteries = async function (req, res) {
 
     const date = req.body.date
     const sportId = req.body.sportId
+    const address = req.body.address
     const establishmentId = req.params.establishment_id
 
     req.assert('date', 'A data deve ser informado').notEmpty()
     req.assert('sportId', 'O id do esporte deve ser informado').notEmpty()
+    req.assert('address.country', 'O país deve ser informado').notEmpty()
+    req.assert('address.state', 'O estado deve ser informado').notEmpty()
+    req.assert('address.city', 'A cidade deve ser informado').notEmpty()
+    req.assert('address.neighbourhood', 'O bairro deve ser informado').notEmpty()
 
     if (validator.validateFields(req, res) != null)
         return
@@ -647,22 +652,35 @@ exports.getAvailableBatteries = async function (req, res) {
                 TIME_FORMAT(b.start_hour, "%H:%i") AS startHour,
                 TIME_FORMAT(b.end_hour, "%H:%i") AS endHour,
                 b.session_value AS price,
-                ABS(COUNT(s.id) - b.people_allowed) AS availableVacancies
+                IFNULL((
+                    SELECT             
+                        (b.people_allowed - COUNT(s.id)) 
+                    FROM schedules s
+                    WHERE 
+                        s.battery_id = b.id
+                        AND s.date = ?
+                        AND s.status_id NOT IN (?)
+                    GROUP BY s.battery_id
+                    ), b.people_allowed
+               ) AS availableVacancies
             FROM
                 batteries b
-            LEFT JOIN schedules s ON
-                s.battery_id = b.id 
-                AND s.date = ?
-                AND s.status_id NOT IN(?)
             INNER JOIN battery_weekdays ew
                 ON ew.battery_id = b.id
             INNER JOIN weekday w
                 ON w.id = ew.weekday_id
+            INNER JOIN establishment_addresses ea  
+                ON ea.id = b.address_id
+                AND ea.type_id = ?
             WHERE
                 b.establishment_id = ?
                 AND b.deleted = false
                 AND b.sport_id = ?
                 AND w.day = LOWER(DATE_FORMAT(?, "%W"))
+                AND ea.country = ?
+                AND ea.state = ?
+                AND ea.city = ?
+                AND ea.neighbourhood = ?
             GROUP BY
                 b.start_hour,
                 b.id
@@ -671,12 +689,17 @@ exports.getAvailableBatteries = async function (req, res) {
         const data = [
             date,
             SCHEDULE_STATUS.CANCELED,
+            ADDRESS.SERVICE_TYPE,
             establishmentId,
             sportId,
-            date
+            date,
+            address.country,
+            address.state,
+            address.city,
+            address.neighbourhood
         ]
 
-        req.connection.query(query, data, function (err, results, fields) {
+        req.connection.query(query, data, function (err, results, _) {
 
             if (err)
                 return handleError(req, res, 500, "Ocorreu um erro ao obter a bateria!", err)
