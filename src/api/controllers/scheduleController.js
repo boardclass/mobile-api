@@ -21,7 +21,7 @@ exports.store = async function (req, res) {
 
         // TODO: fix battery_weekdays excluded, maybe insert isdelete on database
         let query = `
-            SELECT 1
+            SELECT b.*
             FROM batteries b
             INNER JOIN battery_weekdays bw 
                 ON bw.battery_id = b.id
@@ -32,7 +32,7 @@ exports.store = async function (req, res) {
                 AND b.deleted = false
                 AND w.day = LOWER(DATE_FORMAT(?, "%W"))
                 AND DATE_ADD(NOW(), INTERVAL ? MINUTE) > b.start_hour
-                GROUP By b.id  
+                GROUP By b.id
         `
 
         const batteriesIds = batteries.map(battery => battery.id);
@@ -61,6 +61,8 @@ exports.store = async function (req, res) {
                 })
 
             }
+
+            console.log(result);
 
             req.connection.beginTransaction(function (err) {
 
