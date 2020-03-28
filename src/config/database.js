@@ -9,7 +9,8 @@ const pool = mysql.createPool({
     port: connectionData.port,
     waitForConnections: true,
     connectionLimit: connectionData.connectionLimit,
-    queueLimit: 0
+    queueLimit: 0,
+    multipleStatements: true
 })
 
 process.on('SIGINT', () =>
