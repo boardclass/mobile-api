@@ -21,6 +21,8 @@ exports.store = async function (req, res) {
 
         // TODO: fix battery_weekdays excluded, maybe insert isdelete on database
         let query = `
+            SET @@session.time_zone='-03:00';
+
             SELECT b.*
             FROM batteries b
             INNER JOIN battery_weekdays bw 
