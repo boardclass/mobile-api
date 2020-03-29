@@ -14,16 +14,23 @@ exports.findByCEP = function (req, res) {
 
     addressRequest.findByCEP(cep, function (address) {
 
-        if (address) {
+        if (address.cep === undefined) {
 
-            return res.status(200).json({
+            return res.status(404).json({
                 success: true,
-                message: "Endereço encontrado com sucesso!",
+                message: "Endereço não encontrado!",
                 verbose: null,
-                data: { address }
+                data: {}
             })
 
         }
+
+        return res.status(200).json({
+            success: true,
+            message: "Endereço encontrado com sucesso!",
+            verbose: null,
+            data: { address }
+        })
 
     })
 
