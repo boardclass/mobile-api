@@ -18,7 +18,7 @@ exports.findByCEP = function (req, res) {
 
             return res.status(404).json({
                 success: true,
-                message: "Endereço não encontrado!",
+                message: "CEP não encontrado, necessário inserir o endereço manualmente!",
                 verbose: null,
                 data: {}
             })
@@ -27,7 +27,7 @@ exports.findByCEP = function (req, res) {
 
         return res.status(200).json({
             success: true,
-            message: "Endereço encontrado com sucesso!",
+            message: "CEP encontrado com sucesso!",
             verbose: null,
             data: { address }
         })
