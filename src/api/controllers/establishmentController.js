@@ -477,7 +477,7 @@ exports.serviceAddresses = async function (req, res) {
 
 }
 
-exports.getAgenda = async function (req, res) {
+exports.getFilteredAgenda = async function (req, res) {
 
     const establishmentId = req.params.establishment_id
     const sportId = req.params.sport_id
@@ -610,6 +610,77 @@ exports.getAgenda = async function (req, res) {
 
                 console.log(results.length);
 
+            return res.status(200).json({
+                success: true,
+                message: "Agenda obtida com sucesso!",
+                verbose: null,
+                data: {
+                    agenda: results
+                }
+            })
+
+        })
+
+    } catch (err) {
+        return handleError(req, res, 500, "Ocorreu um erro ao obter a agenda!", err)
+    }
+
+}
+
+exports.getAgenda = async function (req, res) {
+
+    const establishmentId = req.decoded.data.establishmentId
+
+    try {
+
+        const query = `
+        (
+            SELECT 
+                DATE_FORMAT(s.date, "%Y-%m-%d") AS date,
+                es.id AS status_id,
+                es.display_name AS status,
+                es.short_name AS short_status
+            FROM schedules s
+            INNER JOIN batteries b 
+                ON b.id = s.battery_id
+            INNER JOIN establishment_status es 
+                ON es.id = ?
+            WHERE
+                b.establishment_id = ?
+                AND b.deleted = false
+            GROUP BY s.date
+        )
+        
+        Union 
+
+        (
+            SELECT
+              DATE_FORMAT(ess.date, "%Y-%m-%d") AS date,
+                es.id AS status_id,
+                es.display_name AS status,
+                es.short_name AS short_status
+            FROM
+                establishments_status ess
+            INNER JOIN establishment_status es ON
+                es.id = ess.status_id
+            WHERE
+                ess.establishment_id = ?
+        )
+        
+        ORDER BY date
+        `
+
+        const queryValues = [
+            ESTABLISHMENT_STATUS.SCHEDULES,
+            establishmentId,
+            establishmentId
+        ]
+
+        req.connection.query(query, queryValues, function (err, results, _) {
+
+            if (err)
+                return handleError(req, res, 500, "Ocorreu um erro ao obter a agenda!", err)
+            
             return res.status(200).json({
                 success: true,
                 message: "Agenda obtida com sucesso!",

@@ -31,8 +31,12 @@ module.exports = (app) => {
         employeeController.employees(req, res)
     })
 
-    app.get('/api/establishment/:establishment_id/:sport_id/:address_id/agenda', (req, res) => {
+    app.get('/api/establishment/agenda', (req, res) => {
         establishmentController.getAgenda(req, res)
+    })
+
+    app.get('/api/establishment/:establishment_id/:sport_id/:address_id/agenda', (req, res) => {
+        establishmentController.getFilteredAgenda(req, res)
     })
 
     app.post('/api/establishment/:establishment_id/available_batteries', (req, res) => {
