@@ -1674,14 +1674,12 @@ exports.getSchedulesByBattery = async function (req, res) {
             WHERE 
                 b.id = ?
                 AND s.date = ?
-                AND s.status_id NOT IN (?)
             ORDER BY user
         `
 
         const queryValues = [
             batteryId,
-            date,
-            SCHEDULE_STATUS.CANCELED
+            date
         ]
 
         req.connection.query(query, queryValues, function (err, results, _) {
