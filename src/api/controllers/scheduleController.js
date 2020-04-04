@@ -23,7 +23,7 @@ exports.store = async function (req, res) {
         let query = `
             SET @@session.time_zone = '-03:00';
 
-            SELECT *
+            SELECT b.*
             FROM batteries b
             INNER JOIN battery_weekdays bw 
                 ON bw.battery_id = b.id
@@ -59,7 +59,7 @@ exports.store = async function (req, res) {
             
             console.log(batteriesIds);
             console.log(date);
-            console.log(result);
+            console.log(result.id);
 
             if (result.length !== 0) {
 
