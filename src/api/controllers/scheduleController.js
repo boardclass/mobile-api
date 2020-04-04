@@ -23,6 +23,8 @@ exports.store = async function (req, res) {
         let query = `
             SET @@session.time_zone = '-03:00';
             
+            SET @date = ?
+
             SELECT 1
             FROM batteries b
             INNER JOIN battery_weekdays bw 
@@ -32,16 +34,16 @@ exports.store = async function (req, res) {
             WHERE 
                 b.id IN (?)
                 AND b.deleted = false
-                AND w.day = LOWER(DATE_FORMAT(?, "%W"))
-                AND (DATE_ADD(NOW(), INTERVAL ? MINUTE) > b.start_hour)
+                AND w.day = LOWER(DATE_FORMAT(@date, "%W"))
+                AND (DATE_ADD(NOW(), INTERVAL ? MINUTE) > b.start_hour AND @date = NOW())
                 GROUP By b.id;
         `
 
         const batteriesIds = batteries.map(battery => battery.id);
 
         let queryParams = [
-            batteriesIds,
             date,
+            batteriesIds,
             minutesRestriction
         ]
 
