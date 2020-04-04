@@ -33,7 +33,7 @@ exports.store = async function (req, res) {
                 b.id IN (?)
                 AND b.deleted = false
                 AND w.day = LOWER(DATE_FORMAT(?, "%W"))
-                AND DATE_ADD(NOW(), INTERVAL ? MINUTE) > b.start_hour
+                AND (DATE_ADD(NOW(), INTERVAL ? MINUTE) > b.start_hour AND b.date <= ?)
                 GROUP By b.id;
         `
 
@@ -42,7 +42,8 @@ exports.store = async function (req, res) {
         let queryParams = [
             batteriesIds,
             date,
-            minutesRestriction
+            minutesRestriction,
+            date
         ]
 
         req.connection.query(query, queryParams, function (err, result, _) {
