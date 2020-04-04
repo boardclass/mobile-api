@@ -7,7 +7,7 @@ exports.store = async function (req, res) {
     const date = req.body.date
     const userId = req.decoded.data.userId
     const batteries = req.body.batteries
-    
+
     if (userId === undefined) {
         return res.status(404).json({
             success: false,
@@ -50,25 +50,32 @@ exports.store = async function (req, res) {
             date
         ]
 
-        console.log(queryParams);
-        
-        req.connection.query(query, queryParams, function (err, result, fields) {
+        req.connection.beginTransaction(function (err) {
 
-            if (err)
-                return handleError(req, res, 500, "Ocorreu um erro no agendamento!", err)
-
-            if (result.length !== 0) {
-
-                return res.status(404).json({
-                    success: false,
-                    message: "Não foi possível realizar o agendamento, é preciso agendar com até duas horas de antecência.",
-                    verbose: null,
-                    data: {}
+            if (err) {
+                return req.connection.rollback(function () {
+                    return handleError(req, res, 500, "Ocorreu um erro no agendamento!", err)
                 })
-
             }
 
-            req.connection.beginTransaction(function (err) {
+            req.connection.query(query, queryParams, function (err, result, _) {
+
+                if (err) {
+                    return req.connection.rollback(function () {
+                        return handleError(req, res, 500, "Ocorreu um erro no agendamento!", err)
+                    })
+                }
+
+                if (result.length !== 0) {
+
+                    return res.status(404).json({
+                        success: false,
+                        message: "Não foi possível realizar o agendamento, é preciso agendar com até duas horas de antecência.",
+                        verbose: null,
+                        data: {}
+                    })
+
+                }
 
                 for (let index in batteries) {
 
