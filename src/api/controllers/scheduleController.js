@@ -60,7 +60,7 @@ exports.store = async function (req, res) {
             console.log(batteriesIds);
             console.log(date);
             console.log(result);
-            console.log(result.length);
+            console.log('lenght', result.length);
 
             if (result.length != 0) {
 
