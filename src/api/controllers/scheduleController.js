@@ -62,7 +62,7 @@ exports.store = async function (req, res) {
             console.log(result);
             console.log('lenght', result.length);
 
-            if (result.length != 0) {
+            if (result) {
 
                 return res.status(404).json({
                     success: false,
