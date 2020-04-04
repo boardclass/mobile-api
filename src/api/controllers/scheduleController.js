@@ -58,13 +58,10 @@ exports.store = async function (req, res) {
                 })
             }
             
-            console.log(batteriesIds);
-            console.log(date);
-            console.log(result[0]);
-            console.log('lenght', result.length);
-            console.log('hasresult', result.id);
+            console.log(result[0].id);
+            console.log('hasresult', result[0].id !== undefined);
 
-            if (result.id != undefined) {
+            if (result[0].id !== undefined) {
 
                 return res.status(404).json({
                     success: false,
