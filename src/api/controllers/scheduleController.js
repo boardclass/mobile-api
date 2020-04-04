@@ -60,7 +60,8 @@ exports.store = async function (req, res) {
             if (err)
                 return handleError(req, res, 500, "Ocorreu um erro no agendamento!", err)
             
-            console.log(result);
+            console.log(result[0]);
+            console.log(result[1]);
             console.log(result.length);
             console.log(fields);
 
@@ -85,7 +86,7 @@ exports.store = async function (req, res) {
                         })
                     }
 
-                    const query = `
+                    query = `
                         SELECT
                             b.start_hour,
                             b.people_allowed - COUNT(s.id) AS available_vacancies
