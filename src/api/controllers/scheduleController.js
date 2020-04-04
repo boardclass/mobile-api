@@ -8,6 +8,10 @@ exports.store = async function (req, res) {
     const userId = req.decoded.data.userId
     const batteries = req.body.batteries
 
+    console.log(date);
+    console.log(userId);
+    console.log(batteries);
+    
     if (userId === undefined) {
         return res.status(404).json({
             success: false,
@@ -21,7 +25,7 @@ exports.store = async function (req, res) {
 
         // TODO: fix battery_weekdays excluded, maybe insert isdelete on database
         let query = `
-            #SET @@session.time_zone = '-03:00';
+            SET @@session.time_zone = '-03:00';
 
             SELECT 
                 b.id
@@ -50,20 +54,10 @@ exports.store = async function (req, res) {
             date
         ]
 
-        console.log('date', date);
-        console.log('batteriesIds', batteriesIds);
-        console.log('minutesRestriction', minutesRestriction);
-        
-
         req.connection.query(query, queryParams, function (err, result, fields) {
 
             if (err)
                 return handleError(req, res, 500, "Ocorreu um erro no agendamento!", err)
-            
-            console.log(result[0]);
-            console.log(result[1]);
-            console.log(result.length);
-            console.log(fields);
 
             if (result.length !== 0) {
 
