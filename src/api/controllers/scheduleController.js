@@ -22,8 +22,7 @@ exports.store = async function (req, res) {
         // TODO: fix battery_weekdays excluded, maybe insert isdelete on database
         let query = `
             SET @@session.time_zone = '-03:00';
-            
-            SET @date = ?
+            SET @date = ?;
 
             SELECT 1
             FROM batteries b
