@@ -22,7 +22,6 @@ exports.store = async function (req, res) {
         // TODO: fix battery_weekdays excluded, maybe insert isdelete on database
         let query = `
             SET @@session.time_zone = '-03:00';
-            SET @date = ?;
 
             SELECT 1
             FROM batteries b
@@ -33,17 +32,18 @@ exports.store = async function (req, res) {
             WHERE 
                 b.id IN (?)
                 AND b.deleted = false
-                AND w.day = LOWER(DATE_FORMAT(@date, "%W"))
-                AND (DATE_ADD(NOW(), INTERVAL ? MINUTE) > b.start_hour AND @date = NOW())
+                AND w.day = LOWER(DATE_FORMAT(?, "%W"))
+                AND (DATE_ADD(NOW(), INTERVAL ? MINUTE) > b.start_hour AND ? = NOW())
                 GROUP By b.id;
         `
 
         const batteriesIds = batteries.map(battery => battery.id);
 
         let queryParams = [
-            date,
             batteriesIds,
-            minutesRestriction
+            date,
+            minutesRestriction,
+            date
         ]
 
         req.connection.query(query, queryParams, function (err, result, _) {
