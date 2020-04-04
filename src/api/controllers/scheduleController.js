@@ -52,6 +52,10 @@ exports.store = async function (req, res) {
                     return handleError(req, res, 500, "Ocorreu um erro no agendamento!", err)
                 })
             }
+            
+            console.log(batteriesIds);
+            console.log(date);
+            console.log(result);
 
             if (result.length !== 0) {
 
@@ -63,8 +67,6 @@ exports.store = async function (req, res) {
                 })
 
             }
-
-            console.log(result);
 
             req.connection.beginTransaction(function (err) {
 
