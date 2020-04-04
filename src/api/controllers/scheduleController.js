@@ -58,13 +58,9 @@ exports.store = async function (req, res) {
                 })
             }
             
-            console.log(result);
-            console.log('hasresult', result[0].id != undefined);
-            console.log('hasresult', !result[0].id);
-            console.log('hasresult', result);
-            console.log('hasresult', !result);
+            console.log(result && result.length !== 0);
 
-            if (!result[0].id) {
+            if (result && result.length !== 0) {
 
                 return res.status(404).json({
                     success: false,
