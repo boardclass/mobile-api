@@ -55,16 +55,14 @@ exports.store = async function (req, res) {
         console.log('minutesRestriction', minutesRestriction);
         
 
-        req.connection.query(query, queryParams, function (err, result, _) {
+        req.connection.query(query, queryParams, function (err, result, fields) {
 
-            if (err) {
-                return req.connection.rollback(function () {
-                    return handleError(req, res, 500, "Ocorreu um erro no agendamento!", err)
-                })
-            }
+            if (err)
+                return handleError(req, res, 500, "Ocorreu um erro no agendamento!", err)
             
-            console.log(result.id);
+            console.log(result);
             console.log(result.length);
+            console.log(fields);
 
             if (result.length !== 0) {
 
