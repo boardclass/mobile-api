@@ -59,10 +59,10 @@ exports.store = async function (req, res) {
             
             console.log(batteriesIds);
             console.log(date);
-            console.log(result);
+            console.log(result[0]);
             console.log('lenght', result.length);
 
-            if (result) {
+            if (result.length != 0) {
 
                 return res.status(404).json({
                     success: false,
@@ -72,8 +72,6 @@ exports.store = async function (req, res) {
                 })
 
             }
-
-            console.log('continue');
 
             req.connection.beginTransaction(function (err) {
 
