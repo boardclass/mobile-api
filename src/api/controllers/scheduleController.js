@@ -7,10 +7,6 @@ exports.store = async function (req, res) {
     const date = req.body.date
     const userId = req.decoded.data.userId
     const batteries = req.body.batteries
-
-    console.log(date);
-    console.log(userId);
-    console.log(batteries);
     
     if (userId === undefined) {
         return res.status(404).json({
@@ -54,6 +50,8 @@ exports.store = async function (req, res) {
             date
         ]
 
+        console.log(queryParams);
+        
         req.connection.query(query, queryParams, function (err, result, fields) {
 
             if (err)
