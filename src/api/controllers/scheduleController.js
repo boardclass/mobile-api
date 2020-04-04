@@ -50,6 +50,11 @@ exports.store = async function (req, res) {
             date
         ]
 
+        console.log('date', date);
+        console.log('batteriesIds', batteriesIds);
+        console.log('minutesRestriction', minutesRestriction);
+        
+
         req.connection.query(query, queryParams, function (err, result, _) {
 
             if (err) {
@@ -58,10 +63,10 @@ exports.store = async function (req, res) {
                 })
             }
             
-            console.log(result[0].id);
-            console.log(result && result.length !== 0);
+            console.log(result);
+            console.log(result.length);
 
-            if (result && result.length !== 0) {
+            if (result.length !== 0) {
 
                 return res.status(404).json({
                     success: false,
