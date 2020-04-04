@@ -73,6 +73,8 @@ exports.store = async function (req, res) {
 
             }
 
+            console.log('continue');
+
             req.connection.beginTransaction(function (err) {
 
                 for (let index in batteries) {
