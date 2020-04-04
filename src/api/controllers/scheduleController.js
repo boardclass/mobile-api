@@ -63,7 +63,7 @@ exports.store = async function (req, res) {
                 })
             }
             
-            console.log(result);
+            console.log(result[0].id);
             console.log(result.length);
 
             if (result.length !== 0) {
