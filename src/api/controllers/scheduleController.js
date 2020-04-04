@@ -67,7 +67,7 @@ exports.store = async function (req, res) {
                 }
 
                 console.log(result);
-                console.log('result.length', result.length);
+                console.log('result.length', result[1]);
 
                 if (result) {
 
