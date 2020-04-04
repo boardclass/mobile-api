@@ -5,10 +5,16 @@ exports.sports = async function (req, res) {
     try {
 
         const query = `
-                SELECT 
-                    id, display_name AS name
-                FROM sports
-                ORDER BY name`
+            SELECT
+                s.id,
+                s.display_name AS name
+            FROM
+                sports s
+            INNER JOIN batteries b 
+                ON b.sport_id = s.id
+            ORDER BY
+                name
+        `
 
         req.connection.query(query, function (err, results, fields) {
 
