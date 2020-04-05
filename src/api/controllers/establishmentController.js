@@ -237,7 +237,7 @@ exports.login = async function (req, res) {
         req.connection.query(query, params, async function (err, result, _) {
 
             if (err) {
-                return handleError(req, res, 500, "Ocorreu um erro ao realizar o login!")
+                return handleError(req, res, 500, "Ocorreu um erro ao realizar o login!", err)
             }
 
             if (result == 0) {
@@ -252,6 +252,9 @@ exports.login = async function (req, res) {
             } else {
 
                 const matchPassword = await bcrypt.compare(password, result.password)
+                    .catch(err => {
+                        return handleError(req, res, 500, "Ocorreu um erro ao realizar o login!", err)
+                    })
 
                 if (!matchPassword) {
 
