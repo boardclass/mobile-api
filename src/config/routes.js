@@ -21,4 +21,8 @@ module.exports = function (app) {
         res.send(content)
     })
 
+    app.get('/establishment', (req, res) => { 
+        res.send('Hello')
+    })
+
 } 

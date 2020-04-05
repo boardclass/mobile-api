@@ -11,7 +11,8 @@ module.exports = {
         '/api/establishment/password/token',
         '/api/establishment/password/validate',
         '/api/employee/login',
-        '/apple-app-site-association'
+        '/apple-app-site-association',
+        '/establishment/'
     ]
 
 }
