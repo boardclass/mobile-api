@@ -1,0 +1,19 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": [
+          "F4P53579F9.br.com.boardclass.boardclass",
+          "F4P53579F9.br.com.boardclass.boardclassProvider"
+        ],
+        "components": []
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": [
+      "F4P53579F9.br.com.boardclass.boardclass",
+      "F4P53579F9.br.com.boardclass.boardclassProvider"
+    ]
+  }
+}
