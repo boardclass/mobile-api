@@ -10,13 +10,13 @@ module.exports = function (app) {
     require('../api/routes/sport')(app)
     require('../api/routes/employee')(app)
 
-    app.get('/.well-known/user/apple-app-site-association', (req, res) => {
-        const file = require('../../.well-known/user/apple-app-site-association')
+    app.get('/user/.well-known/apple-app-site-association', (req, res) => {
+        const file = require('../../domains/user/.well-known/apple-app-site-association')
         res.json(file)
     })
 
-    app.get('/.well-known/establishment/apple-app-site-association', (req, res) => {
-        const file = require('../../.well-known/establishment/apple-app-site-association')
+    app.get('/establishment/.well-known/apple-app-site-association', (req, res) => {
+        const file = require('../../domains/establishment/.well-known/apple-app-site-association')
         res.json(file)
     })
 
