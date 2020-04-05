@@ -251,7 +251,10 @@ exports.login = async function (req, res) {
 
             } else {
 
-                const matchPassword = await bcrypt.compare(password, result.password)
+                const establishment = result[0]
+                console.log(result[0]);
+
+                const matchPassword = await bcrypt.compare(password, establishment.password)
                     .catch(err => {
                         return handleError(req, res, 500, "Ocorreu um erro ao realizar o login!", err)
                     })
@@ -268,21 +271,21 @@ exports.login = async function (req, res) {
                 }
 
                 res.setHeader('role-id', USER_TYPE.PROFESSOR)
-                res.setHeader('establishment-id', result.id)
-                res.setHeader('access-token', jwtHandler.generate(null, result.id))
+                res.setHeader('establishment-id', establishment.id)
+                res.setHeader('access-token', jwtHandler.generate(null, establishment.id))
 
                 return res.status(200).json({
                     success: true,
                     message: "Login realizado com sucesso!",
                     verbose: null,
                     data: {
-                        id: result.id,
-                        name: result.name,
-                        cnpj: result.cnpj,
-                        cpf: result.cpf,
-                        professor: result.professor,
-                        phone: result.phone,
-                        indication: result.code
+                        id: establishment.id,
+                        name: establishment.name,
+                        cnpj: establishment.cnpj,
+                        cpf: establishment.cpf,
+                        professor: establishment.professor,
+                        phone: establishment.phone,
+                        indication: establishment.code
                     }
                 })
 
