@@ -1,23 +1,84 @@
 {
+  "activitycontinuation": {
+    "apps": [
+      "2TDUX39LX8.com.reddit.Reddit",
+      "6X3B423LNC.com.reddit.inhouse.dev",
+      "6X3B423LNC.com.reddit.inhouse.qa"
+    ]
+  },
   "webcredentials": {
     "apps": [
-      "F4P53579F9.br.com.boardclass.boardclass",
-      "F4P53579F9.br.com.boardclass.boardclassProvider"
+      "2TDUX39LX8.com.reddit.Reddit",
+      "6X3B423LNC.com.reddit.inhouse.dev",
+      "6X3B423LNC.com.reddit.inhouse.qa"
     ]
   },
   "applinks": {
-    "apps": [],
+    "apps": [
+      
+    ],
     "details": [
       {
-        "appID": "F4P53579F9.br.com.boardclass.boardclass",
+        "appID": "2TDUX39LX8.com.reddit.Reddit",
         "paths": [
-          "/user/*"
+          "/",
+          "/r/*",
+          "/u/*",
+          "/user/*",
+          "/comments/*",
+          "/live/*",
+          "/message/*",
+          "/chat/*",
+          "/channel/*",
+          "/prefs/update",
+          "/coins",
+          "/premium",
+          "/verification/*",
+          "/rpan/*",
+          "/layer",
+          "/search/*"
         ]
       },
       {
-        "appID": "F4P53579F9.br.com.boardclass.boardclassProvider",
+        "appID": "6X3B423LNC.com.reddit.inhouse.dev",
         "paths": [
-          "/establishment/*"
+          "/",
+          "/r/*",
+          "/u/*",
+          "/user/*",
+          "/comments/*",
+          "/live/*",
+          "/message/*",
+          "/chat/*",
+          "/channel/*",
+          "/prefs/update",
+          "/coins",
+          "/premium",
+          "/verification/*",
+          "/rpan/*",
+          "/layer",
+          "/search/*"
+        ]
+      },
+      {
+        "appID": "6X3B423LNC.com.reddit.inhouse.qa",
+        "paths": [
+          "/",
+          "/r/*",
+          "/u/*",
+          "/user/*",
+          "/comments/*",
+          "/live/*",
+          "/message/*",
+          "/chat/*",
+          "/channel/*",
+          "/prefs/update",
+          "/coins",
+          "/premium",
+          "/verification/*",
+          "/rpan/*",
+          "/layer",
+          "/search/*"
         ]
       }
     ]
