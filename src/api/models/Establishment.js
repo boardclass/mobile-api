@@ -6,7 +6,8 @@ class Establishment extends Model {
             name: DataTypes.STRING,
             cnpj: DataTypes.STRING,
             cpf: DataTypes.STRING,
-            professor: DataTypes.STRING
+            professor: DataTypes.STRING,
+            indication: DataTypes.STRING
         }, {
             sequelize
         })

@@ -205,60 +205,86 @@ exports.login = async function (req, res) {
     req.assert('email', 'O email está em formato inválido').isEmail()
     req.assert('password', 'A senha deve ser informado').notEmpty()
 
-    if (validator.validateFields(req, res)) {
+    if (validator.validateFields(req, res))
         return
-    }
 
     try {
 
-        const establishment = await Establishment.findOne({
-            include: {
-                association: 'account',
-                where: {
-                    email
+        const query = `
+            SELECT DISTINCT
+                e.id,
+                e.name,
+                e.cnpj,
+                e.cpf,
+                e.professor,
+                e.phone,
+                ei.code,
+                ea.password
+            FROM establishments e
+            INNER JOIN establishment_accounts ea
+                ON ea.establishment_id = e.id
+            INNER JOIN establishments_indication ei
+                ON ei.establishment_id = e.id
+                AND ei.deleted = false
+            WHERE 
+                ea.email = ?
+        `
+
+        const params = [
+            email
+        ]
+
+        req.connection.query(query, params, async function (err, result, _) {
+
+            if (err) {
+                return handleError(req, res, 500, "Ocorreu um erro ao realizar o login!")
+            }
+
+            if (result == 0) {
+
+                return res.status(404).json({
+                    success: true,
+                    message: "Este email não está cadastrado em nossa base!",
+                    verbose: null,
+                    data: {}
+                })
+
+            } else {
+
+                const matchPassword = await bcrypt.compare(password, result.password)
+
+                if (!matchPassword) {
+
+                    return res.status(404).json({
+                        success: true,
+                        message: "A senha está incorreta!",
+                        verbose: null,
+                        data: {}
+                    })
+
                 }
+
+                res.setHeader('role-id', USER_TYPE.PROFESSOR)
+                res.setHeader('establishment-id', result.id)
+                res.setHeader('access-token', jwtHandler.generate(null, result.id))
+
+                return res.status(200).json({
+                    success: true,
+                    message: "Login realizado com sucesso!",
+                    verbose: null,
+                    data: {
+                        id: result.id,
+                        name: result.name,
+                        cnpj: result.cnpj,
+                        cpf: result.cpf,
+                        professor: result.professor,
+                        phone: result.phone,
+                        indication: result.code
+                    }
+                })
+
             }
-        })
 
-        if (!establishment) {
-
-            return res.status(404).json({
-                success: true,
-                message: "Este email não está cadastrado em nossa base!",
-                verbose: null,
-                data: {}
-            })
-
-        }
-
-        const matchPassword = await bcrypt.compare(password, establishment.account.password)
-
-        if (!matchPassword) {
-
-            return res.status(404).json({
-                success: true,
-                message: "Sua senha está incorreta!",
-                verbose: null,
-                data: {}
-            })
-
-        }
-
-        res.setHeader('role-id', USER_TYPE.PROFESSOR)
-        res.setHeader('establishment-id', establishment.id)
-        res.setHeader('access-token', jwtHandler.generate(null, establishment.id))
-
-        return res.status(200).json({
-            success: true,
-            message: "Login realizado com sucesso!",
-            verbose: null,
-            data: {
-                id: establishment.id,
-                name: establishment.name,
-                cnpj: establishment.cnpj,
-                cpf: establishment.cpf,
-                professor: establishment.professor
-            }
         })
 
     } catch (error) {
@@ -608,7 +634,7 @@ exports.getFilteredAgenda = async function (req, res) {
             if (err)
                 return handleError(req, res, 500, "Ocorreu um erro ao obter a agenda!", err)
 
-                console.log(results.length);
+            console.log(results.length);
 
             return res.status(200).json({
                 success: true,
@@ -680,7 +706,7 @@ exports.getAgenda = async function (req, res) {
 
             if (err)
                 return handleError(req, res, 500, "Ocorreu um erro ao obter a agenda!", err)
-            
+
             return res.status(200).json({
                 success: true,
                 message: "Agenda obtida com sucesso!",
