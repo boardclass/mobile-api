@@ -1,4 +1,5 @@
-const file = require('../../.well-known/apple-app-site-association')
+const fs = require('fs');
+const path = require('path');
 
 module.exports = function (app) {
     require('../api/routes/user')(app)
@@ -12,8 +13,12 @@ module.exports = function (app) {
     require('../api/routes/sport')(app)
     require('../api/routes/employee')(app)
 
-    app.get('/.well-known/apple-app-site-association', (req, res) => {  
-        res.json(file)
+    app.get('/apple-app-site-association', (req, res) => { 
+        var pathh = path.resolve(__dirname, '../../', 'apple-app-site-association')
+        var content = fs.readFileSync(pathh, 'utf8');
+        res.set('Content-Type', 'application/json')
+        res.status(200)
+        res.send(content)
     })
 
 } 
