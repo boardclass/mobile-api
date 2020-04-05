@@ -4,9 +4,15 @@
     "details": [
       {
         "appID": [
+          "F4P53579F9.br.com.boardclass.boardclass"
+        ],
+        "paths": ["/user/*"]
+      },
+      {
+        "appID": [
           "F4P53579F9.br.com.boardclass.boardclassProvider"
         ],
-        "paths": ["*"]
+        "paths": ["/establishment/*"]
       }
     ]
   },
