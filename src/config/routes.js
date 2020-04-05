@@ -10,12 +10,12 @@ module.exports = function (app) {
     require('../api/routes/sport')(app)
     require('../api/routes/employee')(app)
 
-    app.get('/user/.well-known/apple-app-site-association', (req, res) => {
+    app.get('/user/apple-app-site-association', (req, res) => {
         const file = require('../../domains/user/.well-known/apple-app-site-association')
         res.json(file)
     })
 
-    app.get('/establishment/.well-known/apple-app-site-association', (req, res) => {
+    app.get('/establishment/apple-app-site-association', (req, res) => {
         const file = require('../../domains/establishment/.well-known/apple-app-site-association')
         res.json(file)
     })
