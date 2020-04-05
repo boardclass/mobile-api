@@ -5,7 +5,7 @@ exports.sports = async function (req, res) {
     try {
 
         const query = `
-            SELECT
+            SELECT DISTINCT
                 s.id,
                 s.display_name AS name
             FROM
