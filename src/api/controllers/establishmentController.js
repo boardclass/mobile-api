@@ -1706,7 +1706,7 @@ exports.getSchedulesByBattery = async function (req, res) {
             WHERE 
                 b.id = ?
                 AND s.date = ?
-            ORDER BY user
+            ORDER BY s.id, userId
         `
 
         const queryValues = [
