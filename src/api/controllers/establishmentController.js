@@ -6,7 +6,7 @@ const validator = require('../classes/validator')
 const jwtHandler = require('../classes/jwt')
 
 const { handleError } = require('../classes/error-handler')
-const { ADDRESS, SCHEDULE_STATUS, USER_TYPE, ESTABLISHMENT_STATUS } = require('../classes/constants')
+const { ADDRESS, SCHEDULE_STATUS, USER_TYPE, ESTABLISHMENT_STATUS, SCHEDULE_ACTION } = require('../classes/constants')
 
 exports.store = async function (req, res) {
 
@@ -228,6 +228,7 @@ exports.login = async function (req, res) {
                 AND ei.deleted = false
             WHERE 
                 ea.email = ?
+            ORDER BY ei.id DESC
         `
 
         const params = [
@@ -1736,11 +1737,13 @@ exports.getSchedulesByBattery = async function (req, res) {
 
 }
 
-exports.deleteSchedules = async function (req, res) {
+exports.editSchedules = async function (req, res) {
 
     const schedulesId = req.body.schedulesId
+    const action = req.body.action
 
-    req.assert('schedulesId', 'Os ids dos agendamentos devem ser informados').notEmpty()
+    req.assert('schedulesId', 'O id dos agendamentos devem ser informado').notEmpty()
+    req.assert('action', 'A ação do agendamento deve ser informada').notEmpty()
 
     if (validator.validateFields(req, res) != null)
         return
@@ -1750,12 +1753,37 @@ exports.deleteSchedules = async function (req, res) {
         const query = `
             UPDATE
                 schedules
-            SET status_id = ?
+            SET 
+                status_id = ?,
+                updated_at = NOW()
             WHERE id IN (?)
         `
 
+        let scheduleAction = null
+
+        switch (action) {
+            case SCHEDULE_ACTION.CANCEL:
+                scheduleAction = SCHEDULE_STATUS.CANCELED
+                break
+            case SCHEDULE_ACTION.PAY:
+                scheduleAction = SCHEDULE_STATUS.PAID
+                break
+            case SCHEDULE_ACTION.CHECKIN:
+                scheduleAction = SCHEDULE_STATUS.CHECKIN
+                break
+        }
+
+        if (scheduleAction == null) {
+            return res.status(503).json({
+                success: false,
+                message: "Ocorreu um erro. Tente novamente!",
+                verbose: "Essa ação não é válida!",
+                data: {}
+            })
+        }
+
         const queryValues = [
-            SCHEDULE_STATUS.CANCELED,
+            scheduleAction,
             schedulesId
         ]
 
@@ -1763,15 +1791,15 @@ exports.deleteSchedules = async function (req, res) {
 
             if (err) {
                 return req.connection.rollback(function () {
-                    handleError(req, res, 500, "Ocorreu um erro ao obter cancelar os agendamentos!", err)
+                    handleError(req, res, 500, "Ocorreu um erro. Tente novamente!", err)
                 })
             }
 
-            req.connection.query(query, queryValues, function (err, results, _) {
+            req.connection.query(query, queryValues, function (err, result, _) {
 
                 if (err) {
                     return req.connection.rollback(function () {
-                        handleError(req, res, 500, "Ocorreu um erro ao obter cancelar os agendamentos!", err)
+                        handleError(req, res, 500, "Ocorreu um erro. Tente novamente!", err)
                     })
                 }
 
@@ -1780,16 +1808,27 @@ exports.deleteSchedules = async function (req, res) {
                     if (err) {
 
                         return req.connection.rollback(function () {
-                            handleError(req, res, 500, "Ocorreu um erro ao obter cancelar os agendamentos!", err)
+                            handleError(req, res, 500, "Ocorreu um erro. Tente novamente!", err)
                         })
 
                     }
 
                 })
 
+                if (result.affectedRows == 0) {
+
+                    return res.status(404).json({
+                        success: true,
+                        message: "Ocorreu um erro. Tenve novamente!",
+                        verbose: "Agendamento não foi encontrado!",
+                        data: {}
+                    })
+
+                }
+
                 return res.status(200).json({
                     success: true,
-                    message: "Os agendamentos foram cancelados com sucesso!",
+                    message: "Ação realizada com sucesso!",
                     verbose: null,
                     data: {}
                 })
@@ -1799,7 +1838,7 @@ exports.deleteSchedules = async function (req, res) {
         })
 
     } catch (err) {
-        return handleError(req, res, 500, "Ocorreu um erro ao obter cancelar os agendamentos!", err)
+        return handleError(req, res, 500, "Ocorreu um erro. Tenve novamente!", err)
     }
 
 }
