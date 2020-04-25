@@ -675,16 +675,12 @@ exports.getAgenda = async function (req, res) {
                 es.id AS status_id,
                 es.display_name AS status,
                 es.short_name AS short_status,
-                ess.description AS status_message
+                NULL AS status_message
             FROM schedules s
             INNER JOIN batteries b 
                 ON b.id = s.battery_id
             INNER JOIN establishment_status es 
                 ON es.id = ?
-            INNER JOIN establishments_status ess
-                ON ess.status_id = es.id
-                AND ess.establishment_id = b.establishment_id
-                AND ess.date = s.date
             WHERE
                 b.establishment_id = ?
                 AND b.deleted = false
