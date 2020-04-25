@@ -532,7 +532,15 @@ exports.agenda = async function (req, res) {
                     b.id AS battery_id,
                     TIME_FORMAT(b.start_hour, "%H:%i") AS start_hour,
                     TIME_FORMAT(b.end_hour, "%H:%i") AS end_hour,
-                    b.session_value AS price
+                    b.session_value AS price,
+                    ea.zipcode,
+                    ea.country,
+                    ea.state,
+                    ea.city,
+                    ea.neighbourhood,
+                    ea.street,
+                    ea.number,
+                    ea.complement
                 FROM schedules s
                 INNER JOIN batteries b
                     ON b.id = s.battery_id
@@ -541,6 +549,8 @@ exports.agenda = async function (req, res) {
                     ON e.id = b.establishment_id
                 INNER JOIN sports sp
                     ON sp.id = b.sport_id
+                INNER JOIN establishment_addresses ea
+                    ON ea.id = b.address_id
                 WHERE 
                     s.user_id = ?
                     AND s.status_id NOT IN (?)
@@ -587,6 +597,16 @@ exports.agenda = async function (req, res) {
                             sport: {
                                 id: row.sport_id,
                                 name: row.sport
+                            },
+                            address: {
+                                cep: row.zipcode,
+                                country: row.country,
+                                state: row.state,
+                                city: row.city,
+                                neighbourhood: row.neighbourhood,
+                                street: row.street,
+                                number: row.number,
+                                complement: row.complement
                             }
                         })
 
@@ -607,6 +627,16 @@ exports.agenda = async function (req, res) {
                                 sport: {
                                     id: row.sport_id,
                                     name: row.sport
+                                },
+                                address: {
+                                    cep: row.zipcode,
+                                    country: row.country,
+                                    state: row.state,
+                                    city: row.city,
+                                    neighbourhood: row.neighbourhood,
+                                    street: row.street,
+                                    number: row.number,
+                                    complement: row.complement
                                 }
                             }]
                         })
