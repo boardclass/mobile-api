@@ -672,7 +672,8 @@ exports.getAgenda = async function (req, res) {
                 DATE_FORMAT(s.date, "%Y-%m-%d") AS date,
                 es.id AS status_id,
                 es.display_name AS status,
-                es.short_name AS short_status
+                es.short_name AS short_status,
+                es.description AS status_message
             FROM schedules s
             INNER JOIN batteries b 
                 ON b.id = s.battery_id
@@ -691,7 +692,8 @@ exports.getAgenda = async function (req, res) {
               DATE_FORMAT(ess.date, "%Y-%m-%d") AS date,
                 es.id AS status_id,
                 es.display_name AS status,
-                es.short_name AS short_status
+                es.short_name AS short_status,
+                es.description AS status_message
             FROM
                 establishments_status ess
             INNER JOIN establishment_status es ON
