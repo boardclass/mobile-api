@@ -609,7 +609,8 @@ exports.getFilteredAgenda = async function (req, res) {
                   DATE_FORMAT(ess.date, "%Y-%m-%d") AS date,
                     es.id AS status_id,
                     es.display_name AS status,
-                    es.short_name AS short_status
+                    es.short_name AS short_status,
+                    ess.description AS status_message
                 FROM
                     establishments_status ess
                 INNER JOIN establishment_status es ON
