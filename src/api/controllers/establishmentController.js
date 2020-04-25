@@ -523,7 +523,7 @@ exports.getFilteredAgenda = async function (req, res) {
                 SELECT
                     query_table.date,
                     query_table.id AS status_id,
-                    query_table.display_name AS STATUS,
+                    query_table.display_name AS status,
                     query_table.short_name AS short_status,
                     NULL AS status_message
                     
