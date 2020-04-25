@@ -682,7 +682,7 @@ exports.getAgenda = async function (req, res) {
             INNER JOIN establishment_status es 
                 ON es.id = ?
             INNER JOIN establishments_status ess
-                ON ess.id = es.status_id 
+                ON ess.status_id = es.id
                 AND ess.establishment_id = b.establishment_id
                 AND ess.date = s.date
             WHERE
