@@ -525,12 +525,12 @@ exports.agenda = async function (req, res) {
                 SELECT 
                     s.id, 
                     DATE_FORMAT(s.date,'%Y-%m-%d') as date, 
-                    COUNT(s.id) AS booking,
                     sp.id AS sport_id, 
                     sp.display_name AS sport, 
                     e.id AS establishment_id, 
                     e.name AS establishment,
                     b.id AS battery_id,
+                    COUNT(b.id) AS booking,
                     TIME_FORMAT(b.start_hour, "%H:%i") AS start_hour,
                     TIME_FORMAT(b.end_hour, "%H:%i") AS end_hour,
                     b.session_value AS price,
