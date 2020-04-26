@@ -593,6 +593,7 @@ exports.agenda = async function (req, res) {
 
                         agenda[filtered].batteries.push({
                             id: row.battery_id,
+                            booking: row.booking,
                             startHour: row.start_hour,
                             endHour: row.end_hour,
                             price: row.price,
@@ -617,13 +618,13 @@ exports.agenda = async function (req, res) {
                         agenda.push({
                             id: row.id,
                             date: row.date,
-                            booking: row.booking,
                             establishment: {
                                 id: row.establishment_id,
                                 name: row.establishment
                             },
                             batteries: [{
                                 id: row.battery_id,
+                                booking: row.booking,
                                 startHour: row.start_hour,
                                 endHour: row.end_hour,
                                 price: row.price,
