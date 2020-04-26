@@ -555,8 +555,9 @@ exports.agenda = async function (req, res) {
                 WHERE 
                     s.user_id = ?
                     AND s.status_id NOT IN (?)
+                GROUP BY s.id
                 ORDER BY date, sport, establishment, start_hour
-                GROUP BY s.id`
+                `
 
         const filters = [
             userId,
