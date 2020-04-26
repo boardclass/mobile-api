@@ -525,6 +525,7 @@ exports.agenda = async function (req, res) {
                 SELECT 
                     s.id, 
                     DATE_FORMAT(s.date,'%Y-%m-%d') as date, 
+                    COUNT(s.id) AS booking,
                     sp.id AS sport_id, 
                     sp.display_name AS sport, 
                     e.id AS establishment_id, 
@@ -554,7 +555,8 @@ exports.agenda = async function (req, res) {
                 WHERE 
                     s.user_id = ?
                     AND s.status_id NOT IN (?)
-                ORDER BY date, sport, establishment, start_hour`
+                ORDER BY date, sport, establishment, start_hour
+                GROUP BY s.id`
 
         const filters = [
             userId,
@@ -615,6 +617,7 @@ exports.agenda = async function (req, res) {
                         agenda.push({
                             id: row.id,
                             date: row.date,
+                            booking: row.booking,
                             establishment: {
                                 id: row.establishment_id,
                                 name: row.establishment
