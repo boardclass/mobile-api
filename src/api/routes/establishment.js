@@ -75,7 +75,7 @@ module.exports = (app) => {
         establishmentController.getSchedulesByBattery(req, res)
     })
 
-    app.put('/api/establishment/schedules', (req, res) => {
+    app.put('/api/establishment/schedule', (req, res) => {
         establishmentController.editSchedules(req, res)
     })
 

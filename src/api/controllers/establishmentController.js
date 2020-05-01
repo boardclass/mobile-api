@@ -1743,11 +1743,11 @@ exports.getSchedulesByBattery = async function (req, res) {
 
 exports.editSchedules = async function (req, res) {
 
-    const schedulesId = req.body.schedulesId
     const action = req.body.action
+    const scheduleId = req.body.scheduleId
 
-    req.assert('schedulesId', 'O id dos agendamentos devem ser informado').notEmpty()
     req.assert('action', 'A ação do agendamento deve ser informada').notEmpty()
+    req.assert('scheduleId', 'O id dos agendamentos devem ser informado').notEmpty()
 
     if (validator.validateFields(req, res) != null)
         return
@@ -1760,7 +1760,7 @@ exports.editSchedules = async function (req, res) {
             SET 
                 status_id = ?,
                 updated_at = NOW()
-            WHERE id IN (?)
+            WHERE id = ?
         `
 
         let scheduleAction = null
@@ -1788,7 +1788,7 @@ exports.editSchedules = async function (req, res) {
 
         const queryValues = [
             scheduleAction,
-            schedulesId
+            scheduleId
         ]
 
         req.connection.beginTransaction(function (err) {
