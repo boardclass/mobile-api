@@ -457,18 +457,7 @@ exports.storeAddress = async function (req, res) {
             })
 
     } catch (error) {
-
-        logger.register(error, req, _ => {
-
-            return res.status(500).json({
-                success: false,
-                message: "Ocorreu um erro ao cadastrar o endereço!",
-                verbose: `${error}`,
-                data: {}
-            })
-
-        })
-
+        handleError(req, res, 500, "Ocorreu um erro ao cadastrar o endereço!", error)
     }
 
 }
@@ -499,18 +488,7 @@ exports.storeRole = async function (req, res) {
         })
 
     } catch (error) {
-
-        logger.register(error, req, _ => {
-
-            return res.status(500).json({
-                success: false,
-                message: "Ocorreu um erro ao cadastrar esse usuário!",
-                verbose: `${error}`,
-                data: {}
-            })
-
-        })
-
+        handleError(req, res, 500, "Ocorreu um erro ao cadastrar esse usuário!", error)
     }
 
 }
@@ -662,18 +640,56 @@ exports.agenda = async function (req, res) {
             })
 
     } catch (error) {
+        handleError(req, res, 500, "Ocorreu um erro ao obter a agenda!", error)
+    }
 
-        logger.register(error, req, _ => {
+}
 
-            return res.status(500).json({
-                success: false,
-                message: "Ocorreu um erro ao obter a agenda!",
-                verbose: `${error}`,
-                data: {}
-            })
+exports.favoriteEstablishments = async function (req, res) {
 
-        })
+    const userId = req.decoded.data.userId
 
+    try {
+
+        const query = `
+            (
+            
+                SELECT 
+                    e.id,
+                    e.name,
+                    e.professor,
+                    TRUE AS isIndicated
+                FROM establishments e
+                INNER JOIN establishments_indication ei
+                    ON ei.establishment_id = e.id
+                INNER JOIN users u
+                    ON u.indication_id = ei.id
+                WHERE 
+                    u.user_id = ?
+            
+            )
+
+            UNION
+
+            (
+                
+                SELECT DISTINCT
+                    e.id,
+                    e.name,
+                    e.professor,
+                    FALSE AS isIndicated
+                FROM establishments e
+                INNER JOIN user_favorite_establishments ufe
+                    ON ufe.establishment_id = e.id
+                INNER JOIN users u
+                    ON u.id = ufe.user_id
+                WHERE u.id = ?
+                
+            )
+        `
+
+    } catch (err) {
+        handleError(req, res, 500, "Ocorreu um erro ao cadastrar o usuário!", err)
     }
 
 }

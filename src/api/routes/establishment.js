@@ -76,7 +76,7 @@ module.exports = (app) => {
     })
 
     app.put('/api/establishment/schedule', (req, res) => {
-        establishmentController.editSchedules(req, res)
+        establishmentController.editSchedule(req, res)
     })
 
 }

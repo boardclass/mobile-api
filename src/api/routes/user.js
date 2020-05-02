@@ -21,5 +21,17 @@ module.exports = (app) => {
     app.get('/api/user/agenda', (req, res) => {
         userController.agenda(req, res)
     })
-    
+
+    app.get('/api/user/establishment/favorite', (req, res) => {
+        userController.favoriteEstablishments(req, res)
+    })
+
+    app.post('/api/user/establishment/favorite', (req, res) => {
+        userController.saveFavoriteEstablishment(req, res)
+    })
+
+    app.delete('/api/user/establishment/favorite', (req, res) => {
+        userController.deleteFavoriteEstablishment(req, res)
+    })
+
 }

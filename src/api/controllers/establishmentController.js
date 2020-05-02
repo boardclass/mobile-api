@@ -1741,7 +1741,7 @@ exports.getSchedulesByBattery = async function (req, res) {
 
 }
 
-exports.editSchedules = async function (req, res) {
+exports.editSchedule = async function (req, res) {
 
     const action = req.body.action
     const scheduleId = req.body.scheduleId
