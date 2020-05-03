@@ -665,7 +665,7 @@ exports.favoriteEstablishments = async function (req, res) {
                 INNER JOIN users u
                     ON u.indication_id = ei.id
                 WHERE 
-                    u.user_id = ?
+                    u.id = ?
             
             )
 
@@ -679,17 +679,160 @@ exports.favoriteEstablishments = async function (req, res) {
                     e.professor,
                     FALSE AS isIndicated
                 FROM establishments e
-                INNER JOIN user_favorite_establishments ufe
-                    ON ufe.establishment_id = e.id
+                INNER JOIN establishments_favorites ef
+                    ON ef.establishment_id = e.id
                 INNER JOIN users u
-                    ON u.id = ufe.user_id
+                    ON u.id = ef.user_id
                 WHERE u.id = ?
                 
             )
         `
 
+        const queryParams = [
+            userId,
+            userId
+        ]
+
+        req.connection.query(query, queryParams, function (err, results, _) {
+
+            if (err) {
+                return handleError(req, res, 500, "Ocorreu um erro ao cadastrar o usuário!", err)
+            }
+
+            return res.status(200).json({
+                success: true,
+                message: "Estabelecimentos favoritos listado com successo!",
+                verbose: null,
+                data: results
+            })
+
+        })
+
     } catch (err) {
         handleError(req, res, 500, "Ocorreu um erro ao cadastrar o usuário!", err)
+    }
+
+}
+
+exports.saveFavoriteEstablishment = async function (req, res) {
+
+    const userId = req.decoded.data.userId
+    const establishmentId = req.body.establishmentId
+
+    req.assert('establishmentId', 'O id do estabelecimento deve ser informado!').notEmpty()
+
+    try {
+
+        if (validator.validateFields(req, res) != null)
+            return
+
+        let query = `
+            SELECT 1
+            FROM 
+                establishments_favorites ef
+            WHERE 
+                ef.user_id = ?
+                AND ef.establishment_id = ?
+        `
+
+        let queryParams = [
+            userId,
+            establishmentId
+        ]
+
+        req.connection.query(query, queryParams, function (err, results, _) {
+
+            if (err) {
+                return handleError(req, res, 500, "Ocorreu um erro ao salvar!", err)
+            }
+
+            query = `
+                INSERT INTO establishments_favorites
+                (
+                    user_id, 
+                    establishment_id
+                )
+                VALUES 
+                (
+                    ?, 
+                    ?
+                )
+            `
+
+            if (results.length != 0) {
+                return res.status(200).json({
+                    success: true,
+                    message: "Estabelecimento salvo com sucesso!",
+                    verbose: null,
+                    data: null
+                })
+            }
+
+            req.connection.query(query, queryParams, function (err, results, _) {
+
+                if (err) {
+                    return handleError(req, res, 500, "Ocorreu um erro ao salvar!", err)
+                }
+
+                return res.status(200).json({
+                    success: true,
+                    message: "Estabelecimento salvo com sucesso!",
+                    verbose: null,
+                    data: null
+                })
+
+            })
+
+        })
+
+    } catch (err) {
+        handleError(req, res, 500, "Ocorreu um erro ao salvar!", err)
+    }
+
+}
+
+exports.deleteFavoriteEstablishment = async function (req, res) {
+
+    const userId = req.decoded.data.userId
+    const establishmentId = req.body.establishmentId
+
+    req.assert('establishmentId', 'O id do estabelecimento deve ser informado!').notEmpty()
+
+    try {
+
+        if (validator.validateFields(req, res) != null)
+            return
+
+        let query = `
+            DELETE FROM 
+                establishments_favorites
+            WHERE 
+                user_id = ?
+                AND establishment_id = ?
+        `
+
+        let queryParams = [
+            userId,
+            establishmentId
+        ]
+
+        req.connection.query(query, queryParams, function (err, results, _) {
+
+            if (err) {
+                return handleError(req, res, 500, "Ocorreu um erro ao deletar dos favoritos!", err)
+            }
+
+            return res.status(200).json({
+                success: true,
+                message: "Estabelecimento deletado dos favoritos com sucesso!",
+                verbose: null,
+                data: null
+            })
+
+        })
+
+    } catch (err) {
+        handleError(req, res, 500, "Ocorreu um erro ao deletar dos favoritos!", err)
     }
 
 }
