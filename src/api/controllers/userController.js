@@ -649,6 +649,9 @@ exports.favoriteEstablishments = async function (req, res) {
 
     const userId = req.decoded.data.userId
 
+    console.log(userId);
+    
+
     try {
 
         const query = `
@@ -658,12 +661,23 @@ exports.favoriteEstablishments = async function (req, res) {
                     e.id,
                     e.name,
                     e.professor,
-                    TRUE AS isIndicated
+                    true AS isIndicated,
+                    ea.zipcode AS cep,
+                    ea.country,
+                    ea.state,
+                    ea.city,
+                    ea.neighbourhood,
+                    ea.street,
+                    ea.number,
+                    ea.complement
                 FROM establishments e
                 INNER JOIN establishments_indication ei
                     ON ei.establishment_id = e.id
                 INNER JOIN users u
                     ON u.indication_id = ei.id
+                INNER JOIN establishment_addresses ea
+                    ON ea.establishment_id = e.id
+                    ANd ea.type_id = 1
                 WHERE 
                     u.id = ?
             
@@ -677,12 +691,23 @@ exports.favoriteEstablishments = async function (req, res) {
                     e.id,
                     e.name,
                     e.professor,
-                    FALSE AS isIndicated
+                    false AS isIndicated,
+                    ea.zipcode AS cep,
+                    ea.country,
+                    ea.state,
+                    ea.city,
+                    ea.neighbourhood,
+                    ea.street,
+                    ea.number,
+                    ea.complement
                 FROM establishments e
                 INNER JOIN establishments_favorites ef
                     ON ef.establishment_id = e.id
                 INNER JOIN users u
                     ON u.id = ef.user_id
+                INNER JOIN establishment_addresses ea
+                    ON ea.establishment_id = e.id
+                    ANd ea.type_id = 1
                 WHERE u.id = ?
                 
             )
@@ -699,11 +724,36 @@ exports.favoriteEstablishments = async function (req, res) {
                 return handleError(req, res, 500, "Ocorreu um erro ao cadastrar o usuário!", err)
             }
 
+            console.log(results);
+
+            const establishments = []
+
+                for (row of results) {
+
+                    establishments.push({
+                        id: row.id,
+                        name: row.name,
+                        professor: row.professor,
+                        isIndicated: row.isIndicated,
+                        address: {
+                            cep: row.zipcode,
+                            country: row.country,
+                            state: row.state,
+                            city: row.city,
+                            neighbourhood: row.neighbourhood,
+                            street: row.street,
+                            number: row.number,
+                            complement: row.complement
+                        }
+                    })
+
+                }
+
             return res.status(200).json({
                 success: true,
                 message: "Estabelecimentos favoritos listado com successo!",
                 verbose: null,
-                data: results
+                data: establishments
             })
 
         })
