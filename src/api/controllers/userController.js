@@ -649,9 +649,6 @@ exports.favoriteEstablishments = async function (req, res) {
 
     const userId = req.decoded.data.userId
 
-    console.log(userId);
-    
-
     try {
 
         const query = `
@@ -661,7 +658,7 @@ exports.favoriteEstablishments = async function (req, res) {
                     e.id,
                     e.name,
                     e.professor,
-                    true AS isIndicated,
+                    'true' AS isIndicated,
                     ea.zipcode AS cep,
                     ea.country,
                     ea.state,
@@ -691,7 +688,7 @@ exports.favoriteEstablishments = async function (req, res) {
                     e.id,
                     e.name,
                     e.professor,
-                    false AS isIndicated,
+                    'false' AS isIndicated,
                     ea.zipcode AS cep,
                     ea.country,
                     ea.state,
@@ -723,8 +720,6 @@ exports.favoriteEstablishments = async function (req, res) {
             if (err) {
                 return handleError(req, res, 500, "Ocorreu um erro ao cadastrar o usuário!", err)
             }
-
-            console.log(results);
 
             const establishments = []
 
