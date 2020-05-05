@@ -731,7 +731,7 @@ exports.favoriteEstablishments = async function (req, res) {
                         professor: row.professor,
                         isIndicated: row.isIndicated,
                         address: {
-                            cep: row.zipcode,
+                            cep: row.cep,
                             country: row.country,
                             state: row.state,
                             city: row.city,
