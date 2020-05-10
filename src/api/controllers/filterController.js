@@ -106,7 +106,19 @@ exports.establishments = async function (req, res) {
             SELECT DISTINCT
                 e.id, 
                 e.name,
+                e.professor,
+                e.cnpj,
                 ea.id AS addressId,
+                ea.type_id AS typeId,
+                ea.country,
+                ea.state,
+                ea.city,
+                ea.neighbourhood,
+                ea.street,
+                ea.number,
+                ea.complement,
+                s.id AS sportId,
+                s.display_name AS sport,
                 IF(
                     (
                         SELECT 1 
@@ -131,6 +143,10 @@ exports.establishments = async function (req, res) {
                 b.establishment_id = e.id
             INNER JOIN establishment_addresses ea ON
                 ea.id = b.address_id
+            INNER JOIN batteries b ON
+                b.establishment_id = e.id
+            LEFT JOIN sports s ON
+                s.id = b.sport_id
             WHERE
                 b.sport_id = ?
                 AND ea.country = ?
@@ -156,12 +172,67 @@ exports.establishments = async function (req, res) {
             if (err)
                 handleError(req, res, 500, "Ocorreu um erro ao filtrar o estabelecimento!", err)
 
+            const establishments = []
+
+            for (row of results) {
+
+                let filtered = establishments.findIndex(value => value.id === row.id)
+
+                if (filtered >= 0) {
+                    establishments[filtered].serviceAddresses.push({
+                        id: row.addressId,
+                        typeId: row.typeId,
+                        country: row.country,
+                        state: row.state,
+                        neighbourhood: row.neighbourhood,
+                        street: row.street,
+                        number: row.number,
+                        complement: row.complement
+                    })
+
+                    let filteredSports = establishments[filtered].findIndex(value => value.id === row.sportId)
+
+                    if (filteredSports == 0) {
+                        establishments[filtered].sports.push({
+                            id: row.sportId,
+                            name: row.sport
+                        })
+                    }
+
+                } else {
+
+                    establishments.push({
+                        id: row.id,
+                        name: row.name,
+                        professor: row.professor,
+                        serviceAddresses: [{
+                            id: row.addressId,
+                            typeId: row.typeId,
+                            country: row.country,
+                            state: row.state,
+                            neighbourhood: row.neighbourhood,
+                            street: row.street,
+                            number: row.number,
+                            complement: row.complement
+                        }],
+                        sports: [{
+                            id: row.sportId,
+                            name: row.sport
+                        }],
+                        isIndicated: row.isIndicated,
+                        isFavorite: row.isFavorite
+                    })
+
+                }
+
+            }
+
             return res.status(200).json({
                 success: true,
                 message: "Filtro realizado com sucesso!",
                 verbose: null,
                 data: {
-                    establishments: results
+                    establishments: establishments
                 }
             })
 
