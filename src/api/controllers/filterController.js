@@ -92,7 +92,6 @@ exports.establishments = async function (req, res) {
 
     const sportId = req.body.sportId
     const address = req.body.address
-    const userId = req.decoded.data.userId
 
     req.assert('sportId', 'O id do esporte deve ser informado').notEmpty()
     req.assert('address.country', 'O país deve ser informado').notEmpty()
@@ -103,47 +102,27 @@ exports.establishments = async function (req, res) {
     try {
 
         const query = `
-            SELECT DISTINCT
-                e.id, 
-                e.name,
-                ea.id AS addressId,
-                IF(
-                    (
-                        SELECT 1 
-                        FROM establishments_favorites ef 
-                        WHERE ef.establishment_id = e.id 
-                        AND ef.user_id = ?
-                    ), true, false
-                ) AS isFavorite,
-                IF (
-                    (
-                        SELECT 1
-                        FROM users u
-                        INNER JOIN establishments_indication ei
-                            ON u.indication_id = ei.id 
-                        WHERE u.id = ?
-                        AND ei.establishment_id = e.id
-                    ), true, false
-                ) AS isIndicated
-            FROM
-                establishments e
-            INNER JOIN batteries b ON
-                b.establishment_id = e.id
-            INNER JOIN establishment_addresses ea ON
-                ea.id = b.address_id
-            WHERE
-                b.sport_id = ?
-                AND ea.country = ?
-                AND ea.state = ?
-                AND ea.city =  ?
-                AND ea.neighbourhood = ?
-                AND ea.type_id = 2
-            ORDER BY 
-                e.name`
+                SELECT DISTINCT
+                    e.id, 
+                    e.name,
+                    ea.id AS addressId
+                FROM
+                    establishments e
+                INNER JOIN batteries b ON
+                    b.establishment_id = e.id
+                INNER JOIN establishment_addresses ea ON
+                    ea.id = b.address_id
+                WHERE 
+                    b.sport_id = ?
+                    AND ea.country = ?
+                    AND ea.state = ?
+                    AND ea.city =  ?
+                    AND ea.neighbourhood = ?
+                    AND ea.type_id = 2
+                ORDER BY 
+                    e.name`
 
         const fiters = [
-            userId,
-            userId,
             sportId,
             address.country,
             address.state,
@@ -151,10 +130,11 @@ exports.establishments = async function (req, res) {
             address.neighbourhood
         ]
 
-        req.connection.query(query, fiters, function (err, results, _) {
+        req.connection.query(query, fiters, function (err, results, fields) {
 
-            if (err)
+            if (err) {
                 handleError(req, res, 500, "Ocorreu um erro ao filtrar o estabelecimento!", err)
+            }
 
             return res.status(200).json({
                 success: true,
