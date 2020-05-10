@@ -136,12 +136,67 @@ exports.establishments = async function (req, res) {
                 handleError(req, res, 500, "Ocorreu um erro ao filtrar o estabelecimento!", err)
             }
 
+            const establishments = []
+
+            for (row of results) {
+
+                let filtered = establishments.findIndex(value => value.id === row.id)
+
+                if (filtered >= 0) {
+                    establishments[filtered].serviceAddresses.push({
+                        id: row.addressId,
+                        typeId: row.typeId,
+                        country: row.country,
+                        state: row.state,
+                        neighbourhood: row.neighbourhood,
+                        street: row.street,
+                        number: row.number,
+                        complement: row.complement
+                    })
+
+                    let filteredSports = establishments[filtered].findIndex(value => value.id === row.sportId)
+
+                    if (filteredSports == 0) {
+                        establishments[filtered].sports.push({
+                            id: row.sportId,
+                            name: row.sport
+                        })
+                    }
+
+                } else {
+
+                    establishments.push({
+                        id: row.id,
+                        name: row.name,
+                        professor: row.professor,
+                        serviceAddresses: [{
+                            id: row.addressId,
+                            typeId: row.typeId,
+                            country: row.country,
+                            state: row.state,
+                            neighbourhood: row.neighbourhood,
+                            street: row.street,
+                            number: row.number,
+                            complement: row.complement
+                        }],
+                        sports: [{
+                            id: row.sportId,
+                            name: row.sport
+                        }],
+                        isIndicated: row.isIndicated,
+                        isFavorite: row.isFavorite
+                    })
+
+                }
+
+            }
+
             return res.status(200).json({
                 success: true,
                 message: "Filtro realizado com sucesso!",
                 verbose: null,
                 data: {
-                    establishments: results
+                    establishments: establishments
                 }
             })
 
