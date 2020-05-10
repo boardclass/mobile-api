@@ -654,11 +654,13 @@ exports.favoriteEstablishments = async function (req, res) {
         const query = `
             (
             
-                SELECT 
+                SELECT DISTINCT
                     e.id,
                     e.name,
                     e.professor,
                     true AS isIndicated,
+                    ea.id AS addressId,
+                    ea.type_id AS typeId,
                     ea.zipcode AS cep,
                     ea.country,
                     ea.state,
@@ -666,7 +668,9 @@ exports.favoriteEstablishments = async function (req, res) {
                     ea.neighbourhood,
                     ea.street,
                     ea.number,
-                    ea.complement
+                    ea.complement,
+                    s.id AS sportId,
+                    s.display_name AS sport
                 FROM establishments e
                 INNER JOIN establishments_indication ei
                     ON ei.establishment_id = e.id
@@ -674,9 +678,21 @@ exports.favoriteEstablishments = async function (req, res) {
                     ON u.indication_id = ei.id
                 INNER JOIN establishment_addresses ea
                     ON ea.establishment_id = e.id
-                    ANd ea.type_id = 1
+                LEFT JOIN batteries b
+                    ON b.establishment_id = e.id
+                LEFT JOIN sports s
+                    ON s.id = b.sport_id
                 WHERE 
                     u.id = ?
+                ORDER BY
+                    isIndicated, 
+                    e.name,
+                    e.professor,
+                    typeId,
+                    ea.country,
+                    ea.state,
+                    ea.city,
+                    ea.neighbourhood
             
             )
 
@@ -689,6 +705,8 @@ exports.favoriteEstablishments = async function (req, res) {
                     e.name,
                     e.professor,
                     false AS isIndicated,
+                    ea.id AS addressId,
+                    ea.type_id AS typeId,
                     ea.zipcode AS cep,
                     ea.country,
                     ea.state,
@@ -696,7 +714,9 @@ exports.favoriteEstablishments = async function (req, res) {
                     ea.neighbourhood,
                     ea.street,
                     ea.number,
-                    ea.complement
+                    ea.complement,
+                    s.id AS sportId,
+                    s.display_name AS sport
                 FROM establishments e
                 INNER JOIN establishments_favorites ef
                     ON ef.establishment_id = e.id
@@ -704,9 +724,21 @@ exports.favoriteEstablishments = async function (req, res) {
                     ON u.id = ef.user_id
                 INNER JOIN establishment_addresses ea
                     ON ea.establishment_id = e.id
-                    ANd ea.type_id = 1
-                WHERE u.id = ?
-                
+                LEFT JOIN batteries b
+                    ON b.establishment_id = e.id
+                LEFT JOIN sports s
+                    ON s.id = b.sport_id
+                WHERE
+                    u.id = ?
+                ORDER BY
+                    isIndicated, 
+                    e.name,
+                    e.professor,
+                    typeId,
+                    ea.country,
+                    ea.state,
+                    ea.city,
+                    ea.neighbourhood
             )
         `
 
@@ -718,19 +750,24 @@ exports.favoriteEstablishments = async function (req, res) {
         req.connection.query(query, queryParams, function (err, results, _) {
 
             if (err) {
-                return handleError(req, res, 500, "Ocorreu um erro ao cadastrar o usuário!", err)
+                return handleError(req, res, 500, "Ocorreu um erro ao obter os estabelecimentos!", err)
             }
 
             const establishments = []
 
-                for (row of results) {
+            for (row of results) {
 
-                    establishments.push({
-                        id: row.id,
-                        name: row.name,
-                        professor: row.professor,
-                        isIndicated: row.isIndicated,
-                        address: {
+                let filtered = establishments.findIndex(value => value.id === row.id)
+
+                if (filtered >= 0) {
+
+                    let addressFiltered = establishments[filtered].addresses.findIndex(value => value.id === row.addressId)
+
+                    if (addressFiltered < 0) {
+
+                        establishments[filtered].addresses.push({
+                            id: row.addressId,
+                            typeId: row.typeId,
                             cep: row.cep,
                             country: row.country,
                             state: row.state,
@@ -739,10 +776,47 @@ exports.favoriteEstablishments = async function (req, res) {
                             street: row.street,
                             number: row.number,
                             complement: row.complement
-                        }
+                        })
+
+                    }
+
+                    let sportsFiltered = establishments[filtered].sports.findIndex(value => value.id === row.sportId)
+
+                    if (sportsFiltered < 0) {
+                        establishments[filtered].sports.push({
+                            id: row.sportId,
+                            name: row.sport
+                        })
+                    }
+
+                } else {
+
+                    establishments.push({
+                        id: row.id,
+                        name: row.name,
+                        professor: row.professor,
+                        isIndicated: row.isIndicated,
+                        addresses: [{
+                            id: row.addressId,
+                            typeId: row.typeId,
+                            cep: row.cep,
+                            country: row.country,
+                            state: row.state,
+                            city: row.city,
+                            neighbourhood: row.neighbourhood,
+                            street: row.street,
+                            number: row.number,
+                            complement: row.complement
+                        }],
+                        sports: [{
+                            id: row.sportId,
+                            name: row.sport
+                        }]
                     })
 
                 }
+
+            }
 
             return res.status(200).json({
                 success: true,
@@ -754,7 +828,7 @@ exports.favoriteEstablishments = async function (req, res) {
         })
 
     } catch (err) {
-        handleError(req, res, 500, "Ocorreu um erro ao cadastrar o usuário!", err)
+        handleError(req, res, 500, "Ocorreu um erro ao obter os estabelecimentos!", err)
     }
 
 }
