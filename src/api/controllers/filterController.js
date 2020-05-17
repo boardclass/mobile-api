@@ -148,11 +148,15 @@ exports.establishments = async function (req, res) {
             address.neighbourhood
         ]
 
+        console.log(fiters);
+
         req.connection.query(query, fiters, function (err, results, _) {
 
             if (err) {
                 handleError(req, res, 500, "Ocorreu um erro ao filtrar o estabelecimento!", err)
             }
+
+            console.log(results);
 
             return res.status(200).json({
                 success: true,
