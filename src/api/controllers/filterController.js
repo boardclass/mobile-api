@@ -105,7 +105,25 @@ exports.establishments = async function (req, res) {
                 SELECT DISTINCT
                     e.id, 
                     e.name,
-                    ea.id AS addressId
+                    ea.id AS addressId,
+                    IF(
+                        (
+                            SELECT 1 
+                            FROM establishments_favorites ef 
+                            WHERE ef.establishment_id = e.id 
+                            AND ef.user_id = ?
+                        ), true, false
+                    ) AS isFavorite,
+                    IF(
+                        (
+                            SELECT 1
+                            FROM users u
+                            INNER JOIN establishments_indication ei
+                                ON u.indication_id = ei.id 
+                            WHERE u.id = ?
+                            AND ei.establishment_id = e.id
+                        ), true, false
+                    ) AS isIndicated
                 FROM
                     establishments e
                 INNER JOIN batteries b ON
@@ -130,65 +148,10 @@ exports.establishments = async function (req, res) {
             address.neighbourhood
         ]
 
-        req.connection.query(query, fiters, function (err, results, fields) {
+        req.connection.query(query, fiters, function (err, results, _) {
 
             if (err) {
                 handleError(req, res, 500, "Ocorreu um erro ao filtrar o estabelecimento!", err)
-            }
-
-            const establishments = []
-
-            for (row of results) {
-
-                let filtered = establishments.findIndex(value => value.id === row.id)
-
-                if (filtered >= 0) {
-                    establishments[filtered].serviceAddresses.push({
-                        id: row.addressId,
-                        typeId: row.typeId,
-                        country: row.country,
-                        state: row.state,
-                        neighbourhood: row.neighbourhood,
-                        street: row.street,
-                        number: row.number,
-                        complement: row.complement
-                    })
-
-                    let filteredSports = establishments[filtered].findIndex(value => value.id === row.sportId)
-
-                    if (filteredSports == 0) {
-                        establishments[filtered].sports.push({
-                            id: row.sportId,
-                            name: row.sport
-                        })
-                    }
-
-                } else {
-
-                    establishments.push({
-                        id: row.id,
-                        name: row.name,
-                        professor: row.professor,
-                        serviceAddresses: [{
-                            id: row.addressId,
-                            typeId: row.typeId,
-                            country: row.country,
-                            state: row.state,
-                            neighbourhood: row.neighbourhood,
-                            street: row.street,
-                            number: row.number,
-                            complement: row.complement
-                        }],
-                        sports: [{
-                            id: row.sportId,
-                            name: row.sport
-                        }],
-                        isIndicated: row.isIndicated,
-                        isFavorite: row.isFavorite
-                    })
-
-                }
-
             }
 
             return res.status(200).json({
@@ -196,7 +159,7 @@ exports.establishments = async function (req, res) {
                 message: "Filtro realizado com sucesso!",
                 verbose: null,
                 data: {
-                    establishments: establishments
+                    establishments: results
                 }
             })
 

@@ -659,6 +659,7 @@ exports.favoriteEstablishments = async function (req, res) {
                     e.name,
                     e.professor,
                     true AS isIndicated,
+                    false AS isFavorite,
                     ea.id AS addressId,
                     ea.type_id AS typeId,
                     ea.zipcode AS cep,
@@ -705,6 +706,7 @@ exports.favoriteEstablishments = async function (req, res) {
                     e.name,
                     e.professor,
                     false AS isIndicated,
+                    true AS isFavorite,
                     ea.id AS addressId,
                     ea.type_id AS typeId,
                     ea.zipcode AS cep,
@@ -796,6 +798,7 @@ exports.favoriteEstablishments = async function (req, res) {
                         name: row.name,
                         professor: row.professor,
                         isIndicated: row.isIndicated,
+                        isFavorite: row.isFavorite,
                         addresses: [{
                             id: row.addressId,
                             typeId: row.typeId,
