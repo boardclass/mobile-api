@@ -90,6 +90,7 @@ exports.addresses = async function (req, res) {
 
 exports.establishments = async function (req, res) {
 
+    const userId = req.decoded.data.userId
     const sportId = req.body.sportId
     const address = req.body.address
 
@@ -141,6 +142,8 @@ exports.establishments = async function (req, res) {
                     e.name`
 
         const fiters = [
+            userId,
+            userId,
             sportId,
             address.country,
             address.state,
