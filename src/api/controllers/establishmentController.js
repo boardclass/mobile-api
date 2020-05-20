@@ -1,9 +1,12 @@
+const ejs = require('ejs')
+
 const Establishment = require('../models/Establishment')
 const randomstring = require("randomstring");
 
 const bcrypt = require('bcrypt')
 const validator = require('../classes/validator')
 const jwtHandler = require('../classes/jwt')
+const pdfGenerator = require('../classes/pdf')
 
 const { handleError } = require('../classes/error-handler')
 const { ADDRESS, SCHEDULE_STATUS, USER_TYPE, ESTABLISHMENT_STATUS, SCHEDULE_ACTION } = require('../classes/constants')
@@ -1868,9 +1871,10 @@ exports.getExtractByDate = async function (req, res) {
                 us.email,
                 DATE_FORMAT(s.date, "%Y-%m-%d") AS date,
                 b.id AS batteryId,
-                b.session_value AS value,
+                SUM(b.session_value) AS value,
                 MONTH(s.date) AS month,
                 YEAR(s.date) AS year,
+                COUNT(b.id) AS reservedVacancies,
                 IF((
                     SELECT DISTINCT 1 
                     FROM schedules_history sh 
@@ -1903,6 +1907,7 @@ exports.getExtractByDate = async function (req, res) {
                 b.establishment_id = ?
                 AND MONTH(s.date) = ?
                 AND YEAR(s.date) = ?
+            GROUP BY b.id, s.date
             ORDER BY 
                 s.date, 
                 u.name, 
@@ -1923,10 +1928,7 @@ exports.getExtractByDate = async function (req, res) {
             const extract = []
 
             for (row of results) {
-                
-                console.log(row);
-                console.log(row);
-                
+
                 let filtered = extract.findIndex(value => {
                     return value.month === row.month
                         && value.year === row.year
@@ -1934,21 +1936,20 @@ exports.getExtractByDate = async function (req, res) {
 
                 if (filtered >= 0) {
 
-                    console.log("filtered");
-
                     extract[filtered].schedules.push({
                         date: row.date,
                         userName: row.name,
                         userPhone: row.phone,
                         batteryId: row.batteryId,
                         value: row.value,
+                        reservedVacancies: row.reservedVacancies,
                         isPaid: row.isPaid,
                         isCheckin: row.isCheckin,
                         isCanceled: row.isCanceled
                     })
 
                 } else {
-                
+
                     extract.push({
                         month: row.month,
                         year: row.year,
@@ -1958,15 +1959,29 @@ exports.getExtractByDate = async function (req, res) {
                             userPhone: row.phone,
                             batteryId: row.batteryId,
                             value: row.value,
+                            reservedVacancies: row.reservedVacancies,
                             isPaid: row.isPaid,
                             isCheckin: row.isCheckin,
-                            isCanceled: row.isCanceled
+                            isCanceled: row.isCanceled,
                         }]
                     })
 
                 }
 
             }
+
+            ejs.renderFile("./resource/template/schedules_extract.ejs",
+                { extract: extract }, (err, html) => {
+
+                    if (err) {
+                        console.log(err);
+                    } else {
+
+                        pdfGenerator.generate(html, 'test')
+
+                    }
+
+                })
 
             return res.status(200).json({
                 success: true,
