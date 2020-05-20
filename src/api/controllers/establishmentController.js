@@ -223,7 +223,7 @@ exports.login = async function (req, res) {
             FROM establishments e
             INNER JOIN establishment_accounts ea
                 ON ea.establishment_id = e.id
-            INNER JOIN establishments_indication ei
+            LEFT JOIN establishments_indication ei
                 ON ei.establishment_id = e.id
                 AND ei.deleted = false
             WHERE 
@@ -1846,3 +1846,139 @@ exports.editSchedule = async function (req, res) {
     }
 
 }
+
+exports.getExtractByDate = async function (req, res) {
+
+    const establishmentId = req.decoded.data.establishmentId
+    const month = req.params.month
+    const year = req.params.year
+
+    req.assert('month', 'O mês desejado deve ser informado').notEmpty()
+    req.assert('year', 'O ano desejado deve ser informado').notEmpty()
+
+    if (validator.validateFields(req, res) != null)
+        return
+
+    try {
+
+        const query = `
+            SELECT
+                u.name,
+                u.phone,
+                us.email,
+                DATE_FORMAT(s.date, "%Y-%m-%d") AS date,
+                b.id AS batteryId,
+                b.session_value AS value,
+                MONTH(s.date) AS month,
+                YEAR(s.date) AS year,
+                IF((
+                    SELECT DISTINCT 1 
+                    FROM schedules_history sh 
+                    WHERE 
+                        sh.schedule_id = s.id 
+                        AND sh.status_id = 3 
+                ), TRUE, FALSE) AS isPaid,
+                IF((
+                    SELECT DISTINCT 1 
+                    FROM schedules_history sh 
+                    WHERE 
+                        sh.schedule_id = s.id 
+                        AND sh.status_id = 6
+                ), TRUE, FALSE) AS isCheckin,
+                IF((
+                    SELECT DISTINCT 1 
+                    FROM schedules_history sh 
+                    WHERE 
+                        sh.schedule_id = s.id 
+                        AND sh.status_id = 2
+                ), TRUE, FALSE) AS isCanceled
+            FROM schedules s 
+            INNER JOIN users u 
+                ON u.id = s.user_id 
+            INNER JOIN user_accounts us 
+                ON us.user_id = u.id
+            INNER JOIN batteries b
+                ON b.id = s.battery_id
+            WHERE 
+                b.establishment_id = ?
+                AND MONTH(s.date) = ?
+                AND YEAR(s.date) = ?
+            ORDER BY 
+                s.date, 
+                u.name, 
+                b.start_hour ;
+        `
+
+        const params = [
+            establishmentId,
+            month,
+            year
+        ]
+
+        req.connection.query(query, params, function (err, results, _) {
+
+            if (err)
+                return handleError(req, res, 500, "Ocorreu um erro ao obter extrato!", err)
+
+            const extract = []
+
+            for (row of results) {
+                
+                console.log(row);
+                console.log(row);
+                
+                let filtered = extract.findIndex(value => {
+                    return value.month === row.month
+                        && value.year === row.year
+                })
+
+                if (filtered >= 0) {
+
+                    console.log("filtered");
+
+                    extract[filtered].schedules.push({
+                        date: row.date,
+                        userName: row.name,
+                        userPhone: row.phone,
+                        batteryId: row.batteryId,
+                        value: row.value,
+                        isPaid: row.isPaid,
+                        isCheckin: row.isCheckin,
+                        isCanceled: row.isCanceled
+                    })
+
+                } else {
+                
+                    extract.push({
+                        month: row.month,
+                        year: row.year,
+                        schedules: [{
+                            date: row.date,
+                            userName: row.name,
+                            userPhone: row.phone,
+                            batteryId: row.batteryId,
+                            value: row.value,
+                            isPaid: row.isPaid,
+                            isCheckin: row.isCheckin,
+                            isCanceled: row.isCanceled
+                        }]
+                    })
+
+                }
+
+            }
+
+            return res.status(200).json({
+                success: true,
+                message: "Extrato obtido com sucesso!",
+                verbose: null,
+                data: extract
+            })
+
+        })
+
+    } catch (err) {
+        return handleError(req, res, 500, "Ocorreu um erro ao obter extrato!", err)
+    }
+
+} 

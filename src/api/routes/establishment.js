@@ -79,4 +79,8 @@ module.exports = (app) => {
         establishmentController.editSchedule(req, res)
     })
 
+    app.get('/api/establishment/extract/:month/:year', (req, res) => {
+        establishmentController.getExtractByDate(req, res)
+    })
+
 }

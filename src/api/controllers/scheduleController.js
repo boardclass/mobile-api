@@ -38,7 +38,7 @@ exports.store = async function (req, res) {
                     DATE_ADD(NOW(), INTERVAL ? MINUTE) > b.start_hour 
                     AND ? = DATE_FORMAT(NOW(), "%Y-%m-%d")
                     )
-                GROUP By b.id;
+            GROUP By b.id;
         `
 
         const batteriesIds = batteries.map(battery => battery.id);
