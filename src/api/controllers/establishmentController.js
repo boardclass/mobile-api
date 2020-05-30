@@ -2018,7 +2018,7 @@ exports.getExtractByDate = async function (req, res) {
                 { extract: extract[0] }, (err, html) => {
 
                     if (err) {
-                        return console.log(err);
+                        return handleError(req, res, 500, "Ocorreu um erro ao obter extrato!", err)
                     }
 
                     pdfGenerator.generate(html, (buffer) => {
@@ -2029,6 +2029,8 @@ exports.getExtractByDate = async function (req, res) {
                             message: "Extrato obtido com sucesso!",
                             verbose: null,
                             data: {
+                                month: extract[0].month,
+                                year: extract[0].year,
                                 pdf: `data:application/pdf;base64,${base64data}`
                             }
                         })
