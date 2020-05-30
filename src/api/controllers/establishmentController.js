@@ -2031,8 +2031,7 @@ exports.getExtractByDate = async function (req, res) {
                             data: {
                                 month: extract[0].month,
                                 year: extract[0].year,
-                                pdf: `data:application/pdf;base64,${base64data}`,
-                                pdf2: base64data
+                                pdf: base64data
                             }
                         })
 
