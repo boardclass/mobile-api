@@ -256,7 +256,6 @@ exports.login = async function (req, res) {
             } else {
 
                 const establishment = result[0]
-                console.log(result[0]);
 
                 const matchPassword = await bcrypt.compare(password, establishment.password)
                     .catch(err => {
@@ -639,14 +638,10 @@ exports.getFilteredAgenda = async function (req, res) {
             establishmentId
         ]
 
-        console.log(queryValues);
-
         req.connection.query(query, queryValues, function (err, results, _) {
 
             if (err)
                 return handleError(req, res, 500, "Ocorreu um erro ao obter a agenda!", err)
-
-            console.log(results.length);
 
             return res.status(200).json({
                 success: true,
@@ -1850,6 +1845,49 @@ exports.editSchedule = async function (req, res) {
 
 }
 
+exports.getExtractReference = async function (req, res) {
+
+    const establishmentId = req.decoded.data.establishmentId
+
+    if (validator.validateFields(req, res) != null)
+        return
+
+    try {
+
+        const query = `
+            SELECT DISTINCT
+                MONTH(s.date) AS month,
+                YEAR(s.date) AS year
+            FROM schedules s 
+            INNER JOIN batteries b
+                ON b.id = s.battery_id
+            WHERE 
+                b.establishment_id = ?
+            ORDER BY 
+                year DESC,
+                month
+        `
+
+        req.connection.query(query, establishmentId, function (err, results, _) {
+
+            if (err)
+                return handleError(req, res, 500, "Ocorreu um erro ao obter o extrato!", err)
+
+            return res.status(200).json({
+                success: true,
+                message: "Extrato obtido com sucesso!",
+                verbose: null,
+                data: results
+            })
+
+        })
+
+    } catch (err) {
+        return handleError(req, res, 500, "Ocorreu um erro ao obter extrato!", err)
+    }
+
+}
+
 exports.getExtractByDate = async function (req, res) {
 
     const establishmentId = req.decoded.data.establishmentId
@@ -1869,9 +1907,10 @@ exports.getExtractByDate = async function (req, res) {
                 u.name,
                 u.phone,
                 us.email,
+                e.name AS establishment,
                 DATE_FORMAT(s.date, "%Y-%m-%d") AS date,
                 b.id AS batteryId,
-                SUM(b.session_value) AS value,
+                FORMAT(SUM(b.session_value),2) AS value,
                 MONTH(s.date) AS month,
                 YEAR(s.date) AS year,
                 COUNT(b.id) AS reservedVacancies,
@@ -1881,21 +1920,21 @@ exports.getExtractByDate = async function (req, res) {
                     WHERE 
                         sh.schedule_id = s.id 
                         AND sh.status_id = 3 
-                ), TRUE, FALSE) AS isPaid,
+                ), "OK", "-") AS isPaid,
                 IF((
                     SELECT DISTINCT 1 
                     FROM schedules_history sh 
                     WHERE 
                         sh.schedule_id = s.id 
                         AND sh.status_id = 6
-                ), TRUE, FALSE) AS isCheckin,
+                ), "OK", "-") AS isCheckin,
                 IF((
                     SELECT DISTINCT 1 
                     FROM schedules_history sh 
                     WHERE 
                         sh.schedule_id = s.id 
                         AND sh.status_id = 2
-                ), TRUE, FALSE) AS isCanceled
+                ), "OK", "-") AS isCanceled
             FROM schedules s 
             INNER JOIN users u 
                 ON u.id = s.user_id 
@@ -1903,6 +1942,8 @@ exports.getExtractByDate = async function (req, res) {
                 ON us.user_id = u.id
             INNER JOIN batteries b
                 ON b.id = s.battery_id
+            INNER JOIN establishments e
+                ON e.id = b.establishment_id
             WHERE 
                 b.establishment_id = ?
                 AND MONTH(s.date) = ?
@@ -1911,7 +1952,7 @@ exports.getExtractByDate = async function (req, res) {
             ORDER BY 
                 s.date, 
                 u.name, 
-                b.start_hour ;
+                b.start_hour;
         `
 
         const params = [
@@ -1938,8 +1979,9 @@ exports.getExtractByDate = async function (req, res) {
 
                     extract[filtered].schedules.push({
                         date: row.date,
-                        userName: row.name,
-                        userPhone: row.phone,
+                        name: row.name,
+                        phone: row.phone,
+                        email: row.email,
                         batteryId: row.batteryId,
                         value: row.value,
                         reservedVacancies: row.reservedVacancies,
@@ -1953,16 +1995,18 @@ exports.getExtractByDate = async function (req, res) {
                     extract.push({
                         month: row.month,
                         year: row.year,
+                        establishment: row.establishment,
                         schedules: [{
                             date: row.date,
-                            userName: row.name,
-                            userPhone: row.phone,
+                            name: row.name,
+                            phone: row.phone,
+                            email: row.email,
                             batteryId: row.batteryId,
                             value: row.value,
                             reservedVacancies: row.reservedVacancies,
                             isPaid: row.isPaid,
                             isCheckin: row.isCheckin,
-                            isCanceled: row.isCanceled,
+                            isCanceled: row.isCanceled
                         }]
                     })
 
@@ -1970,25 +2014,28 @@ exports.getExtractByDate = async function (req, res) {
 
             }
 
-            ejs.renderFile("./resource/template/schedules_extract.ejs",
-                { extract: extract }, (err, html) => {
+            ejs.renderFile("./public/template/schedules_extract.ejs",
+                { extract: extract[0] }, (err, html) => {
 
                     if (err) {
-                        console.log(err);
-                    } else {
-
-                        pdfGenerator.generate(html, 'test')
-
+                        return console.log(err);
                     }
 
-                })
+                    pdfGenerator.generate(html, (buffer) => {
+                        let base64data = buffer.toString('base64');
 
-            return res.status(200).json({
-                success: true,
-                message: "Extrato obtido com sucesso!",
-                verbose: null,
-                data: extract
-            })
+                        return res.status(200).json({
+                            success: true,
+                            message: "Extrato obtido com sucesso!",
+                            verbose: null,
+                            data: {
+                                pdf: `data:application/pdf;base64,${base64data}`
+                            }
+                        })
+
+                    })
+
+                })
 
         })
 
@@ -1997,3 +2044,160 @@ exports.getExtractByDate = async function (req, res) {
     }
 
 } 
+
+exports.shareExtract = async function (req, res) {
+
+    const establishmentId = req.decoded.data.establishmentId
+    const month = req.params.month
+    const year = req.params.year
+
+    req.assert('month', 'O mês desejado deve ser informado').notEmpty()
+    req.assert('year', 'O ano desejado deve ser informado').notEmpty()
+
+    if (validator.validateFields(req, res) != null)
+        return
+
+    try {
+
+        const query = `
+            SELECT
+                u.name,
+                u.phone,
+                us.email,
+                e.name AS establishment,
+                DATE_FORMAT(s.date, "%Y-%m-%d") AS date,
+                b.id AS batteryId,
+                FORMAT(SUM(b.session_value),2) AS value,
+                MONTH(s.date) AS month,
+                YEAR(s.date) AS year,
+                COUNT(b.id) AS reservedVacancies,
+                IF((
+                    SELECT DISTINCT 1 
+                    FROM schedules_history sh 
+                    WHERE 
+                        sh.schedule_id = s.id 
+                        AND sh.status_id = 3 
+                ), "OK", "-") AS isPaid,
+                IF((
+                    SELECT DISTINCT 1 
+                    FROM schedules_history sh 
+                    WHERE 
+                        sh.schedule_id = s.id 
+                        AND sh.status_id = 6
+                ), "OK", "-") AS isCheckin,
+                IF((
+                    SELECT DISTINCT 1 
+                    FROM schedules_history sh 
+                    WHERE 
+                        sh.schedule_id = s.id 
+                        AND sh.status_id = 2
+                ), "OK", "-") AS isCanceled
+            FROM schedules s 
+            INNER JOIN users u 
+                ON u.id = s.user_id 
+            INNER JOIN user_accounts us 
+                ON us.user_id = u.id
+            INNER JOIN batteries b
+                ON b.id = s.battery_id
+            INNER JOIN establishments e
+                ON e.id = b.establishment_id
+            WHERE 
+                b.establishment_id = ?
+                AND MONTH(s.date) = ?
+                AND YEAR(s.date) = ?
+            GROUP BY b.id, s.date
+            ORDER BY 
+                s.date, 
+                u.name, 
+                b.start_hour;
+        `
+
+        const params = [
+            establishmentId,
+            month,
+            year
+        ]
+
+        req.connection.query(query, params, function (err, results, _) {
+
+            if (err)
+                return handleError(req, res, 500, "Ocorreu um erro ao obter extrato!", err)
+
+            const extract = []
+
+            for (row of results) {
+
+                let filtered = extract.findIndex(value => {
+                    return value.month === row.month
+                        && value.year === row.year
+                })
+
+                if (filtered >= 0) {
+
+                    extract[filtered].schedules.push({
+                        date: row.date,
+                        name: row.name,
+                        phone: row.phone,
+                        email: row.email,
+                        batteryId: row.batteryId,
+                        value: row.value,
+                        reservedVacancies: row.reservedVacancies,
+                        isPaid: row.isPaid,
+                        isCheckin: row.isCheckin,
+                        isCanceled: row.isCanceled
+                    })
+
+                } else {
+
+                    extract.push({
+                        month: row.month,
+                        year: row.year,
+                        establishment: row.establishment,
+                        schedules: [{
+                            date: row.date,
+                            name: row.name,
+                            phone: row.phone,
+                            email: row.email,
+                            batteryId: row.batteryId,
+                            value: row.value,
+                            reservedVacancies: row.reservedVacancies,
+                            isPaid: row.isPaid,
+                            isCheckin: row.isCheckin,
+                            isCanceled: row.isCanceled
+                        }]
+                    })
+
+                }
+
+            }
+
+            ejs.renderFile("./public/template/schedules_extract.ejs",
+                { extract: extract[0] }, (err, html) => {
+
+                    if (err) {
+                        return console.log(err);
+                    }
+
+                    pdfGenerator.generate(html, (buffer) => {
+                        let base64data = buffer.toString('base64');
+
+                        return res.status(200).json({
+                            success: true,
+                            message: "Extrato obtido com sucesso!",
+                            verbose: null,
+                            data: {
+                                pdf: `data:application/pdf;base64,${base64data}`
+                            }
+                        })
+
+                    })
+
+                })
+
+        })
+
+    } catch (err) {
+        return handleError(req, res, 500, "Ocorreu um erro ao obter extrato!", err)
+    }
+
+}

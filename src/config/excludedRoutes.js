@@ -12,7 +12,8 @@ module.exports = {
         '/api/establishment/password/validate',
         '/api/employee/login',
         '/apple-app-site-association',
-        '/establishment/'
+        '/establishment/',
+        '/public'
     ]
 
 }

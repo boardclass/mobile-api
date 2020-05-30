@@ -79,8 +79,16 @@ module.exports = (app) => {
         establishmentController.editSchedule(req, res)
     })
 
+    app.get('/api/establishment/extract/reference', (req, res) => {
+        establishmentController.getExtractReference(req, res)
+    })
+
     app.get('/api/establishment/extract/:month/:year', (req, res) => {
         establishmentController.getExtractByDate(req, res)
+    })
+
+    app.get('/api/establishment/extract/share/:month/:year', (req, res) => {
+        establishmentController.shareExtract(req, res)
     })
 
 }
