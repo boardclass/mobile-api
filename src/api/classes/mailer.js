@@ -7,8 +7,8 @@ module.exports = {
 
         const auth = {
             auth: {
-                api_key: process.env.MAIL_API_KEY,
-                domain: process.env.MAIL_DOMAIN 
+                api_key: "b71d032b4eb737544c8c78724f5a7b56-074fa10c-849b62d2",
+                domain: "sandbox67f74dc1590a4f7a92b78e4372c54cc9.mailgun.org"
             }
         }
 
@@ -18,7 +18,8 @@ module.exports = {
             from: `Board Class <lifestyleboardapp@gmail.com>`,
             to: data.destination,
             subject: data.subject,
-            text: data.message
+            text: data.message,
+            attachments: data.attachments
         }).then(message => {
             callback(message)
         }).catch(err => {

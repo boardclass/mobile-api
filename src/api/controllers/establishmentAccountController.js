@@ -65,15 +65,6 @@ exports.tokenPassword = function (req, res) {
                             message: `Seu código de recuperação é: ${verificationCode}`
                         }
 
-                        return res.status(200).json({
-                            success: true,
-                            message: `Seu token é: ${verificationCode}`,
-                            verbose: null,
-                            data: {}
-                        })
-
-                        // TODO: Sent email disabled temporary
-
                         mailer.send(data, callback => {
 
                             if (callback == null) {

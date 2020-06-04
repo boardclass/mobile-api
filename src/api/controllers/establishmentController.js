@@ -3,6 +3,7 @@ const ejs = require('ejs')
 const Establishment = require('../models/Establishment')
 const randomstring = require("randomstring");
 
+const mailer = require('../classes/mailer')
 const bcrypt = require('bcrypt')
 const validator = require('../classes/validator')
 const jwtHandler = require('../classes/jwt')
@@ -2045,7 +2046,7 @@ exports.getExtractByDate = async function (req, res) {
         return handleError(req, res, 500, "Ocorreu um erro ao obter extrato!", err)
     }
 
-} 
+}
 
 exports.shareExtract = async function (req, res) {
 
@@ -2065,8 +2066,8 @@ exports.shareExtract = async function (req, res) {
             SELECT
                 u.name,
                 u.phone,
-                us.email,
                 e.name AS establishment,
+                ec.email AS establishmentEmail,
                 DATE_FORMAT(s.date, "%Y-%m-%d") AS date,
                 b.id AS batteryId,
                 FORMAT(SUM(b.session_value),2) AS value,
@@ -2096,13 +2097,13 @@ exports.shareExtract = async function (req, res) {
                 ), "OK", "-") AS isCanceled
             FROM schedules s 
             INNER JOIN users u 
-                ON u.id = s.user_id 
-            INNER JOIN user_accounts us 
-                ON us.user_id = u.id
+                ON u.id = s.user_id
             INNER JOIN batteries b
                 ON b.id = s.battery_id
             INNER JOIN establishments e
                 ON e.id = b.establishment_id
+            INNER JOIN establishment_accounts ec
+                ON ec.establishment_id = e.id
             WHERE 
                 b.establishment_id = ?
                 AND MONTH(s.date) = ?
@@ -2140,7 +2141,6 @@ exports.shareExtract = async function (req, res) {
                         date: row.date,
                         name: row.name,
                         phone: row.phone,
-                        email: row.email,
                         batteryId: row.batteryId,
                         value: row.value,
                         reservedVacancies: row.reservedVacancies,
@@ -2155,11 +2155,11 @@ exports.shareExtract = async function (req, res) {
                         month: row.month,
                         year: row.year,
                         establishment: row.establishment,
+                        email: row.establishmentEmail,
                         schedules: [{
                             date: row.date,
                             name: row.name,
                             phone: row.phone,
-                            email: row.email,
                             batteryId: row.batteryId,
                             value: row.value,
                             reservedVacancies: row.reservedVacancies,
@@ -2173,23 +2173,52 @@ exports.shareExtract = async function (req, res) {
 
             }
 
-            ejs.renderFile("./public/template/schedules_extract.ejs",
-                { extract: extract[0] }, (err, html) => {
+            let currentExtract = extract[0]
 
-                    if (err) {
-                        return console.log(err);
-                    }
+            if (currentExtract == null) {
+                return res.status(404).json({
+                    success: true,
+                    message: "Não há extrato disponível",
+                    verbose: null,
+                    data: null
+                })
+            }
+
+            ejs.renderFile("./public/template/schedules_extract.ejs",
+                { extract: currentExtract }, (err, html) => {
+
+                    if (err)
+                        return handleError(req, res, 500, "Ocorreu um erro ao enviar extrato!", err)
 
                     pdfGenerator.generate(html, (buffer) => {
-                        let base64data = buffer.toString('base64');
 
-                        return res.status(200).json({
-                            success: true,
-                            message: "Extrato obtido com sucesso!",
-                            verbose: null,
-                            data: {
-                                pdf: `data:application/pdf;base64,${base64data}`
-                            }
+                        let filename = `extract_${currentExtract.establishment}_${currentExtract.month}_${currentExtract.year}.pdf`
+
+                        let attachments = [{
+                            filename: filename,
+                            content: buffer,
+                            contentType: 'application/pdf'
+                        }]
+
+                        const data = {
+                            destination: currentExtract.email,
+                            subject: `${extract[0].establishment} - Extrato ${extract[0].month}/${extract[0].year}`,
+                            message: `Segue extrato de referência ${extract[0].month}/${extract[0].year} no formato pdf`,
+                            attachments: attachments
+                        }
+
+                        mailer.send(data, (result) => {
+
+                            if (result == undefined)
+                                return handleError(req, res, 500, "Ocorreu um erro ao enviar extrato!", null)
+
+                            return res.status(200).json({
+                                success: true,
+                                message: `Extrato enviado para o email ${currentExtract.email}!`,
+                                verbose: null,
+                                data: null
+                            })
+
                         })
 
                     })
@@ -2199,7 +2228,7 @@ exports.shareExtract = async function (req, res) {
         })
 
     } catch (err) {
-        return handleError(req, res, 500, "Ocorreu um erro ao obter extrato!", err)
+        return handleError(req, res, 500, "Ocorreu um erro ao enviar extrato!", err)
     }
 
 }
