@@ -18,6 +18,7 @@ DELETE FROM establishments;
 
 # Schedules
 DELETE FROM schedules;
+DELETE FROM schedules_history;
 
 # Users
 DELETE FROM user_addresses;
