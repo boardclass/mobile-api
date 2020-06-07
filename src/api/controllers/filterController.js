@@ -107,6 +107,15 @@ exports.establishments = async function (req, res) {
                     e.id, 
                     e.name,
                     ea.id AS addressId,
+                    ea.type_id AS typeId,
+                    ea.zipcode AS cep,
+                    ea.country,
+                    ea.state,
+                    ea.city,
+                    ea.neighbourhood,
+                    ea.street,
+                    ea.number,
+                    ea.complement,
                     IF(
                         (
                             SELECT 1 
@@ -151,22 +160,70 @@ exports.establishments = async function (req, res) {
             address.neighbourhood
         ]
 
-        console.log(fiters);
-
         req.connection.query(query, fiters, function (err, results, _) {
 
             if (err) {
                 handleError(req, res, 500, "Ocorreu um erro ao filtrar o estabelecimento!", err)
             }
 
-            console.log(results);
+            const establishments = []
+
+            for (row of results) {
+
+                let filtered = establishments.findIndex(value => value.id === row.id)
+
+                if (filtered >= 0) {
+
+                    let addressFiltered = establishments[filtered].addresses.findIndex(value => value.id === row.addressId)
+
+                    if (addressFiltered < 0) {
+
+                        establishments[filtered].addresses.push({
+                            id: row.addressId,
+                            typeId: row.typeId,
+                            cep: row.cep,
+                            country: row.country,
+                            state: row.state,
+                            city: row.city,
+                            neighbourhood: row.neighbourhood,
+                            street: row.street,
+                            number: row.number,
+                            complement: row.complement
+                        })
+
+                    }
+
+                } else {
+
+                    establishments.push({
+                        id: row.id,
+                        name: row.name,
+                        isIndicated: row.isIndicated,
+                        isFavorite: row.isFavorite,
+                        addresses: [{
+                            id: row.addressId,
+                            typeId: row.typeId,
+                            cep: row.cep,
+                            country: row.country,
+                            state: row.state,
+                            city: row.city,
+                            neighbourhood: row.neighbourhood,
+                            street: row.street,
+                            number: row.number,
+                            complement: row.complement
+                        }]
+                    })
+                    
+                }
+
+            }
 
             return res.status(200).json({
                 success: true,
                 message: "Filtro realizado com sucesso!",
                 verbose: null,
                 data: {
-                    establishments: results
+                    establishments: establishments
                 }
             })
 
