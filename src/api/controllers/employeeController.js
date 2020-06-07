@@ -480,7 +480,8 @@ exports.login = async function (req, res) {
                 u.phone,
                 ua.password,
                 ee.establishment_id,
-                e.name AS establishment_name
+                e.name AS establishment_name,
+                ei.code AS indication
             FROM
                 users u
             INNER JOIN user_accounts ua ON
@@ -489,6 +490,9 @@ exports.login = async function (req, res) {
                 ee.user_id = u.id
             INNER JOIN establishments e ON
                 e.id = ee.establishment_id
+            LEFT JOIN establishments_indication ei
+                ON ei.establishment_id = e.id
+                AND ei.deleted = false
             INNER JOIN users_roles ur
                 ON ur.user_id = u.id
                 AND ur.role_id = ?
@@ -553,6 +557,7 @@ exports.login = async function (req, res) {
                         establishments: [{
                             id: row.establishment_id,
                             name: row.establishment_name,
+                            indication: row.indication
                         }]
                     })
 
