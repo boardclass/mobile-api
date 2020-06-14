@@ -2045,6 +2045,7 @@ exports.shareExtract = async function (req, res) {
                 u.name,
                 u.phone,
                 e.name AS establishment,
+                ua.email AS userEmail,
                 ec.email AS establishmentEmail,
                 DATE_FORMAT(s.date, "%Y-%m-%d") AS date,
                 b.id AS batteryId,
@@ -2052,36 +2053,20 @@ exports.shareExtract = async function (req, res) {
                 MONTH(s.date) AS month,
                 YEAR(s.date) AS year,
                 COUNT(b.id) AS reservedVacancies,
-                IF((
-                    SELECT DISTINCT 1 
-                    FROM schedules_history sh 
-                    WHERE 
-                        sh.schedule_id = s.id 
-                        AND sh.status_id = 3 
-                ), "OK", "-") AS isPaid,
-                IF((
-                    SELECT DISTINCT 1 
-                    FROM schedules_history sh 
-                    WHERE 
-                        sh.schedule_id = s.id 
-                        AND sh.status_id = 6
-                ), "OK", "-") AS isCheckin,
-                IF((
-                    SELECT DISTINCT 1 
-                    FROM schedules_history sh 
-                    WHERE 
-                        sh.schedule_id = s.id 
-                        AND sh.status_id = 2
-                ), "OK", "-") AS isCanceled
+                ss.display_name AS status
             FROM schedules s 
             INNER JOIN users u 
                 ON u.id = s.user_id
+            INNER JOIN user_accounts ua
+                ON ua.user_id = u.id
             INNER JOIN batteries b
                 ON b.id = s.battery_id
             INNER JOIN establishments e
                 ON e.id = b.establishment_id
             INNER JOIN establishment_accounts ec
                 ON ec.establishment_id = e.id
+            INNER JOIN schedule_status ss
+                ON s.status_id = ss.id
             WHERE 
                 b.establishment_id = ?
                 AND MONTH(s.date) = ?
@@ -2119,12 +2104,11 @@ exports.shareExtract = async function (req, res) {
                         date: row.date,
                         name: row.name,
                         phone: row.phone,
+                        email: row.userEmail,
                         batteryId: row.batteryId,
                         value: row.value,
                         reservedVacancies: row.reservedVacancies,
-                        isPaid: row.isPaid,
-                        isCheckin: row.isCheckin,
-                        isCanceled: row.isCanceled
+                        status: row.status
                     })
 
                 } else {
@@ -2138,12 +2122,11 @@ exports.shareExtract = async function (req, res) {
                             date: row.date,
                             name: row.name,
                             phone: row.phone,
+                            email: row.userEmail,
                             batteryId: row.batteryId,
                             value: row.value,
                             reservedVacancies: row.reservedVacancies,
-                            isPaid: row.isPaid,
-                            isCheckin: row.isCheckin,
-                            isCanceled: row.isCanceled
+                            status: row.status
                         }]
                     })
 
@@ -2192,7 +2175,7 @@ exports.shareExtract = async function (req, res) {
 
                             return res.status(200).json({
                                 success: true,
-                                message: `Extrato enviado para o email ${currentExtract.email}!`,
+                                message: `O extrato foi enviado para o email: ${currentExtract.email}`,
                                 verbose: null,
                                 data: null
                             })
