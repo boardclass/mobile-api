@@ -163,9 +163,7 @@
 				<th class="text-center">Email</th>
 				<th class="text-center">Reservas</th>
 				<th class="text-center">Valor(R$)</th>
-				<th class="text-center">Pago</th>
-				<th class="text-center">Checkin</th>
-				<th class="text-center">Cancelado</th>
+				<th class="text-center">Status</th>
 			</tr>
 		</thead>
 		<tbody class="table-hover">
@@ -179,9 +177,7 @@
 				<td class="text-left"><%= schedule.email %></th>
 				<td class="text-center"><%= schedule.reservedVacancies %></th>
 				<td class="text-center"><%= schedule.value %></th>
-				<td class="text-center"><%= schedule.isPaid %></th>
-				<td class="text-center"><%= schedule.isCheckin %></th>
-				<td class="text-center"><%= schedule.isCanceled %></th>
+				<td class="text-center"><%= schedule.status %></th>
 			</tr>
 			<% }); %>
 

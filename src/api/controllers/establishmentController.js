@@ -1915,27 +1915,7 @@ exports.getExtractByDate = async function (req, res) {
                 MONTH(s.date) AS month,
                 YEAR(s.date) AS year,
                 COUNT(b.id) AS reservedVacancies,
-                IF((
-                    SELECT DISTINCT 1 
-                    FROM schedules_history sh 
-                    WHERE 
-                        sh.schedule_id = s.id 
-                        AND sh.status_id = 3 
-                ), "OK", "-") AS isPaid,
-                IF((
-                    SELECT DISTINCT 1 
-                    FROM schedules_history sh 
-                    WHERE 
-                        sh.schedule_id = s.id 
-                        AND sh.status_id = 6
-                ), "OK", "-") AS isCheckin,
-                IF((
-                    SELECT DISTINCT 1 
-                    FROM schedules_history sh 
-                    WHERE 
-                        sh.schedule_id = s.id 
-                        AND sh.status_id = 2
-                ), "OK", "-") AS isCanceled
+                ss.display_name AS status
             FROM schedules s 
             INNER JOIN users u 
                 ON u.id = s.user_id 
@@ -1945,6 +1925,8 @@ exports.getExtractByDate = async function (req, res) {
                 ON b.id = s.battery_id
             INNER JOIN establishments e
                 ON e.id = b.establishment_id
+            INNER JOIN schedule_status ss
+                ON s.status_id = ss.id
             WHERE 
                 b.establishment_id = ?
                 AND MONTH(s.date) = ?
@@ -1986,9 +1968,7 @@ exports.getExtractByDate = async function (req, res) {
                         batteryId: row.batteryId,
                         value: row.value,
                         reservedVacancies: row.reservedVacancies,
-                        isPaid: row.isPaid,
-                        isCheckin: row.isCheckin,
-                        isCanceled: row.isCanceled
+                        status: row.status
                     })
 
                 } else {
@@ -2005,9 +1985,7 @@ exports.getExtractByDate = async function (req, res) {
                             batteryId: row.batteryId,
                             value: row.value,
                             reservedVacancies: row.reservedVacancies,
-                            isPaid: row.isPaid,
-                            isCheckin: row.isCheckin,
-                            isCanceled: row.isCanceled
+                            status: row.status
                         }]
                     })
 
