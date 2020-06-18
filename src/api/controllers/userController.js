@@ -511,7 +511,7 @@ exports.agenda = async function (req, res) {
                     COUNT(b.id) AS booking,
                     TIME_FORMAT(b.start_hour, "%H:%i") AS start_hour,
                     TIME_FORMAT(b.end_hour, "%H:%i") AS end_hour,
-                    b.session_value AS price,
+                    SUM(b.session_value) AS price,
                     ea.zipcode,
                     ea.country,
                     ea.state,
