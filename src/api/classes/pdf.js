@@ -6,7 +6,7 @@ module.exports = {
 
         let options = {
             format: 'A2',
-            orientation: 'portrait'
+            orientation: 'landscape'
         }
 
         pdf.create(content, options).toBuffer(function (err, buffer) {

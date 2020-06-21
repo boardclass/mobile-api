@@ -1906,7 +1906,7 @@ exports.getExtractByDate = async function (req, res) {
         const query = `
             SELECT
                 u.name,
-                u.phone,
+                CONCAT('(', SUBSTR(u.phone, 1, 2), ') ', SUBSTR(u.phone, 3, 2), ' ', SUBSTR(u.phone, 5, 5), '-', SUBSTR(u.phone, 10, 4)) AS phone,
                 us.email,
                 e.name AS establishment,
                 DATE_FORMAT(s.date, "%Y-%m-%d") AS date,
@@ -1915,7 +1915,9 @@ exports.getExtractByDate = async function (req, res) {
                 MONTH(s.date) AS month,
                 YEAR(s.date) AS year,
                 COUNT(b.id) AS reservedVacancies,
-                ss.display_name AS status
+                ss.display_name AS status,
+                SUBSTRING(b.start_hour, 1, 5) AS startHour,
+                SUBSTRING(b.end_hour, 1, 5) AS endHour
             FROM schedules s 
             INNER JOIN users u 
                 ON u.id = s.user_id 
@@ -1967,6 +1969,8 @@ exports.getExtractByDate = async function (req, res) {
                         email: row.email,
                         batteryId: row.batteryId,
                         value: row.value,
+                        start: row.startHour,
+                        end: row.endHour,
                         reservedVacancies: row.reservedVacancies,
                         status: row.status
                     })
@@ -1985,6 +1989,8 @@ exports.getExtractByDate = async function (req, res) {
                             batteryId: row.batteryId,
                             value: row.value,
                             reservedVacancies: row.reservedVacancies,
+                            start: row.startHour,
+                            end: row.endHour,
                             status: row.status
                         }]
                     })
@@ -2043,7 +2049,7 @@ exports.shareExtract = async function (req, res) {
         const query = `
             SELECT
                 u.name,
-                u.phone,
+                CONCAT('(', SUBSTR(u.phone, 1, 2), ') ', SUBSTR(u.phone, 3, 2), ' ', SUBSTR(u.phone, 5, 5), '-', SUBSTR(u.phone, 10, 4)) AS phone,
                 e.name AS establishment,
                 ua.email AS userEmail,
                 ec.email AS establishmentEmail,
@@ -2053,7 +2059,9 @@ exports.shareExtract = async function (req, res) {
                 MONTH(s.date) AS month,
                 YEAR(s.date) AS year,
                 COUNT(b.id) AS reservedVacancies,
-                ss.display_name AS status
+                ss.display_name AS status,
+                SUBSTRING(b.start_hour, 1, 5) AS startHour,
+                SUBSTRING(b.end_hour, 1, 5) AS endHour
             FROM schedules s 
             INNER JOIN users u 
                 ON u.id = s.user_id
@@ -2107,6 +2115,8 @@ exports.shareExtract = async function (req, res) {
                         email: row.userEmail,
                         batteryId: row.batteryId,
                         value: row.value,
+                        start: row.startHour,
+                        end: row.endHour,
                         reservedVacancies: row.reservedVacancies,
                         status: row.status
                     })
@@ -2125,6 +2135,8 @@ exports.shareExtract = async function (req, res) {
                             email: row.userEmail,
                             batteryId: row.batteryId,
                             value: row.value,
+                            start: row.startHour,
+                            end: row.endHour,
                             reservedVacancies: row.reservedVacancies,
                             status: row.status
                         }]
