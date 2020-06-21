@@ -1905,6 +1905,7 @@ exports.getExtractByDate = async function (req, res) {
 
         const query = `
             SELECT
+                u.id,
                 u.name,
                 CONCAT('(', SUBSTR(u.phone, 1, 2), ') ', SUBSTR(u.phone, 3, 2), ' ', SUBSTR(u.phone, 5, 5), '-', SUBSTR(u.phone, 10, 4)) AS phone,
                 us.email,
@@ -1933,7 +1934,7 @@ exports.getExtractByDate = async function (req, res) {
                 b.establishment_id = ?
                 AND MONTH(s.date) = ?
                 AND YEAR(s.date) = ?
-            GROUP BY b.id, s.date
+            GROUP BY b.id, u.id, s.date
             ORDER BY 
                 s.date, 
                 u.name, 
@@ -2048,6 +2049,7 @@ exports.shareExtract = async function (req, res) {
 
         const query = `
             SELECT
+                u.id,
                 u.name,
                 CONCAT('(', SUBSTR(u.phone, 1, 2), ') ', SUBSTR(u.phone, 3, 2), ' ', SUBSTR(u.phone, 5, 5), '-', SUBSTR(u.phone, 10, 4)) AS phone,
                 e.name AS establishment,
@@ -2079,7 +2081,7 @@ exports.shareExtract = async function (req, res) {
                 b.establishment_id = ?
                 AND MONTH(s.date) = ?
                 AND YEAR(s.date) = ?
-            GROUP BY b.id, s.date
+            GROUP BY b.id, u.id, s.date
             ORDER BY 
                 s.date, 
                 u.name, 
