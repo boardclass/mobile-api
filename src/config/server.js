@@ -27,7 +27,7 @@ module.exports = {
 
         require('./routes')(app)
 
-        let port = process.env.PORT || 8080
+        let port = process.env.PORT || 3000
 
         if (port != 8080) {
             wakeuper.setTimer()
