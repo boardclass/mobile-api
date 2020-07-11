@@ -10,6 +10,7 @@ const jwtHandler = require('../classes/jwt')
 const pdfGenerator = require('../classes/pdf')
 
 const { handleError } = require('../classes/error-handler')
+const { minutesRestriction } = require('../classes/time-restriction')
 const { ADDRESS, SCHEDULE_STATUS, USER_TYPE, ESTABLISHMENT_STATUS, SCHEDULE_ACTION } = require('../classes/constants')
 
 exports.store = async function (req, res) {
@@ -1778,6 +1779,251 @@ exports.getSchedulesByBattery = async function (req, res) {
 
     } catch (err) {
         return handleError(req, res, 500, "Ocorreu um erro ao obter os agendamentos!", err)
+    }
+
+}
+
+// TODO: TEST SERVICE
+exports.selfSchedule = async function (req, res) {
+
+    const date = req.body.date
+    const batteryId = req.body.batteryId
+    const user = req.body.user
+
+    if (req.decoded.data.establishmentId === undefined) {
+        return res.status(401).json({
+            success: false,
+            message: "Permissão negada, autenticação necessária",
+            verbose: null,
+            data: {}
+        })
+    }
+
+    try {
+
+        // TODO: fix battery_weekdays excluded, maybe insert isdelete on database
+        let query = `
+            SET @@session.time_zone = '-03:00';
+
+            SELECT
+                1
+            FROM batteries b
+            INNER JOIN battery_weekdays bw 
+                ON bw.battery_id = b.id
+            INNER JOIN weekday w
+                ON w.id = bw.weekday_id
+            WHERE 
+                b.id IN (?)
+                AND b.deleted = false
+                AND w.day = LOWER(DATE_FORMAT(?, "%W"))
+                AND (
+                    DATE_ADD(NOW(), INTERVAL ? MINUTE) > b.start_hour 
+                    AND ? = DATE_FORMAT(NOW(), "%Y-%m-%d")
+                    )
+            GROUP By b.id;
+        `
+
+        let queryParams = [
+            batteryId,
+            date,
+            minutesRestriction,
+            date
+        ]
+
+        req.connection.beginTransaction(function (err) {
+
+            if (err) {
+                return req.connection.rollback(function () {
+                    return handleError(req, res, 500, "Ocorreu um erro no agendamento!", err)
+                })
+            }
+
+            req.connection.query(query, queryParams, function (err, result, _) {
+
+                if (err) {
+                    return req.connection.rollback(function () {
+                        return handleError(req, res, 500, "Ocorreu um erro no agendamento!", err)
+                    })
+                }
+
+                if (result[1] && result[1].length > 0) {
+
+                    return res.status(404).json({
+                        success: false,
+                        message: "Não foi possível realizar o agendamento, é preciso agendar com até duas horas de antecência.",
+                        verbose: null,
+                        data: {}
+                    })
+
+                }
+
+                query = `
+                    SELECT
+                        b.start_hour,
+                        b.people_allowed - COUNT(s.id) AS available_vacancies
+                    FROM
+                        batteries b
+                    LEFT JOIN schedules s ON
+                        s.battery_id = b.id
+                        AND s.date = ?
+                        AND s.status_id NOT IN (?)
+                        AND b.deleted = false
+                    WHERE
+                        b.id = ?
+                    GROUP BY 
+                        b.id
+                `
+
+                const filters = [
+                    date,
+                    SCHEDULE_STATUS.CANCELED,
+                    batteryId
+                ]
+
+                req.connection.query(query, filters, function (err, results, _) {
+
+                    if (err) {
+                        return req.connection.rollback(function () {
+                            return handleError(req, res, 500, "Ocorreu um erro no agendamento!", err)
+                        })
+                    }
+
+                    let available_vacancies = results[0].available_vacancies
+
+                    if (available_vacancies != 0)  {
+
+                        let query = `
+                            SELECT DISTINCT
+                                id 
+                            FROM users 
+                            WHERE cpf = ?
+                        `
+
+                        let filters = [
+                            user.cpf
+                        ]
+
+                        req.connection.query(query, filters, function (err, results, _) {
+
+                            if (err) {
+                                return req.connection.rollback(function () {
+                                    return handleError(req, res, 500, "Ocorreu um erro no agendamento!", err)
+                                })
+                            }
+                        
+                            let userId = undefined
+
+                            if (results[0] != undefined) {
+                                userId = results[0].id
+                            } else {
+
+                                query = `
+                                    INSERT INTO users
+                                    (
+                                        cpf,
+                                        name,
+                                        phone
+                                    )
+                                    VALUES
+                                    (
+                                        ?,
+                                        ?,
+                                        ?
+                                    )
+                                `
+
+                                filters = [
+                                    user.cpf,
+                                    user.name,
+                                    user.phone
+                                ]
+
+                                req.connection.query(query, filters, function (err, results, _) {
+
+                                    if (err) {
+                                        return req.connection.rollback(function () {
+                                            return handleError(req, res, 500, "Ocorreu um erro no agendamento!", err)
+                                        })
+                                    }
+
+                                    userId = results.insertId
+
+                                })
+
+                            }
+
+                            query = `
+                                INSERT INTO schedules
+                                    (battery_id, 
+                                    user_id, 
+                                    status_id, 
+                                    date,
+                                    created_at, 
+                                    updated_at)
+                                VALUES
+                                    (?, 
+                                    ?, 
+                                    ?, 
+                                    ?,
+                                    NOW(), 
+                                    NOW())
+                            `
+
+                            filters = [
+                                batteryId,
+                                userId,
+                                SCHEDULE_STATUS.PENDENT_PAYMENT,
+                                date
+                            ]
+
+                            req.connection.query(query, filters, function (err, results, fields) {
+
+                                if (err) {
+                                    return req.connection.rollback(function () {
+                                        return handleError(req, res, 500, "Ocorreu um erro no agendamento!", err)
+                                    })
+                                }
+
+                            })
+
+                            req.connection.commit(function (err) {
+
+                                if (err) {
+                                    req.connection.rollback(function () {
+                                        return handleError(req, res, 500, "Ocorreu um erro no agendamento!", err)
+                                    })
+                                }
+
+                            })
+
+                            return res.status(200).json({
+                                success: true,
+                                message: "Agendamento realizado com sucesso!",
+                                verbose: null,
+                                data: {}
+                            })
+
+                        })
+
+                    } else {
+
+                        return res.status(404).json({
+                            success: false,
+                            message: "Não foi possível realizar o agendamento, pois não há vagas disponíveis para essa bateria!",
+                            verbose: null,
+                            data: {}
+                        })
+
+                    }
+
+                })
+
+            })
+
+        })
+
+    } catch (err) {
+        return handleError(req, res, 500, "Ocorreu um erro no agendamento!", err)
     }
 
 }

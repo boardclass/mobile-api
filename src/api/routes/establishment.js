@@ -79,6 +79,10 @@ module.exports = (app) => {
         establishmentController.editSchedule(req, res)
     })
 
+    app.post('/api/establishment/schedule', (req, res) => {
+        establishmentController.selfSchedule(req, res)
+    })
+
     app.get('/api/establishment/extract/reference', (req, res) => {
         establishmentController.getExtractReference(req, res)
     })
