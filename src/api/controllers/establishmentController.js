@@ -834,20 +834,36 @@ exports.getBatteriesByDate = async function (req, res) {
     const establishmentId = req.decoded.data.establishmentId
 
     try {
-
+        // TODO: deploy and verify query and json response
+        // obs: left join recover batteires when hasn't schedules??
         const query = `
             SELECT
                 b.id,
-                TIME_FORMAT(b.start_hour, "%H:%i") AS startHour,
-                TIME_FORMAT(b.end_hour, "%H:%i") AS endHour,
+                TIME_FORMAT(b.start_hour, "%H:%i") AS start_hour,
+                TIME_FORMAT(b.end_hour, "%H:%i") AS end_hour,
                 b.session_value AS price,
-                ABS(COUNT(s.id) - b.people_allowed) AS availableVacancies
+                ABS(COUNT(s.id) - b.people_allowed) AS availableVacancies,
+                sp.id AS sport_id,
+                sp.display_name AS sport,
+                b.address_id,
+                ea.zipcode AS cep,
+                ea.country,
+                ea.state,
+                ea.city,
+                ea.neighbourhood,
+                ea.street,
+                ea.number,
+                ea.complement
             FROM
                 batteries b
             LEFT JOIN schedules s ON
                 s.battery_id = b.id 
                 AND s.date = ?
                 AND s.status_id NOT IN(?)
+            INNER JOIN sports sp 
+                ON sp.id = b.sport_id
+            INNER JOIN establishment_addresses ea
+                ON ea.id = b.address_id
             INNER JOIN battery_weekdays ew
                 ON ew.battery_id = b.id
             INNER JOIN weekday w
@@ -873,12 +889,38 @@ exports.getBatteriesByDate = async function (req, res) {
             if (err)
                 return handleError(req, res, 500, "Ocorreu um erro ao obter a bateria!", err)
 
+            const batteries = []
+            
+            for (row of results) {
+                batteries.push({
+                    id: row.id,
+                    startHour: row.start_hour,
+                    endHour: row.end_hour,
+                    price: row.price,
+                    address: {
+                        id: row.address_id,
+                        cep: row.cep,
+                        country: row.country,
+                        state: row.state,
+                        city: row.city,
+                        street: row.street,
+                        neighbourhood: row.neighbourhood,
+                        number: row.number,
+                        complement: row.complement
+                    },
+                    sport: {
+                        id: row.sport_id,
+                        name: row.sport
+                    }
+                })
+            }
+
             return res.status(200).json({
                 success: true,
                 message: "Bateria obtida com sucesso!",
                 verbose: null,
                 data: {
-                    batteries: results
+                    batteries: batteries
                 }
             })
 
