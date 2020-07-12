@@ -1911,11 +1911,9 @@ exports.selfSchedule = async function (req, res) {
                                 })
                             }
                         
-                            let userId = undefined
+                            let userId = results[0].id
 
-                            if (results[0] != undefined) {
-                                userId = results[0].id
-                            } else {
+                            if (userId == undefined) {
 
                                 query = `
                                     INSERT INTO users
@@ -1946,62 +1944,114 @@ exports.selfSchedule = async function (req, res) {
                                         })
                                     }
 
-                                    userId = results.insertId
+                                    query = `
+                                        INSERT INTO schedules
+                                            (battery_id, 
+                                            user_id, 
+                                            status_id, 
+                                            date,
+                                            created_at, 
+                                            updated_at)
+                                        VALUES
+                                            (?, 
+                                            ?, 
+                                            ?, 
+                                            ?,
+                                            NOW(), 
+                                            NOW())
+                                    `
+
+                                    filters = [
+                                        batteryId,
+                                        results.insertId,
+                                        SCHEDULE_STATUS.PENDENT_PAYMENT,
+                                        date
+                                    ]
+        
+                                    req.connection.query(query, filters, function (err, results, fields) {
+        
+                                        if (err) {
+                                            return req.connection.rollback(function () {
+                                                return handleError(req, res, 500, "Ocorreu um erro no agendamento!", err)
+                                            })
+                                        }
+        
+                                        req.connection.commit(function (err) {
+        
+                                            if (err) {
+                                                req.connection.rollback(function () {
+                                                    return handleError(req, res, 500, "Ocorreu um erro no agendamento!", err)
+                                                })
+                                            }
+            
+                                            return res.status(200).json({
+                                                success: true,
+                                                message: "Agendamento realizado com sucesso!",
+                                                verbose: null,
+                                                data: {}
+                                            })
+
+                                        })
+
+                                    })
+        
+                                    
+                                })
+                                
+                            } else {
+
+                                query = `
+                                    INSERT INTO schedules
+                                        (battery_id, 
+                                        user_id, 
+                                        status_id, 
+                                        date,
+                                        created_at, 
+                                        updated_at)
+                                    VALUES
+                                        (?, 
+                                        ?, 
+                                        ?, 
+                                        ?,
+                                        NOW(), 
+                                        NOW())
+                                `
+
+                                filters = [
+                                    batteryId,
+                                    userId,
+                                    SCHEDULE_STATUS.PENDENT_PAYMENT,
+                                    date
+                                ]
+
+                                req.connection.query(query, filters, function (err, results, fields) {
+
+                                    if (err) {
+                                        return req.connection.rollback(function () {
+                                            return handleError(req, res, 500, "Ocorreu um erro no agendamento!", err)
+                                        })
+                                    }
+
+                                    req.connection.commit(function (err) {
+
+                                        if (err) {
+                                            req.connection.rollback(function () {
+                                                return handleError(req, res, 500, "Ocorreu um erro no agendamento!", err)
+                                            })
+                                        }
+        
+                                        return res.status(200).json({
+                                            success: true,
+                                            message: "Agendamento realizado com sucesso!",
+                                            verbose: null,
+                                            data: {}
+                                        })
+
+                                    })
 
                                 })
 
                             }
-
-                            query = `
-                                INSERT INTO schedules
-                                    (battery_id, 
-                                    user_id, 
-                                    status_id, 
-                                    date,
-                                    created_at, 
-                                    updated_at)
-                                VALUES
-                                    (?, 
-                                    ?, 
-                                    ?, 
-                                    ?,
-                                    NOW(), 
-                                    NOW())
-                            `
-
-                            filters = [
-                                batteryId,
-                                userId,
-                                SCHEDULE_STATUS.PENDENT_PAYMENT,
-                                date
-                            ]
-
-                            req.connection.query(query, filters, function (err, results, fields) {
-
-                                if (err) {
-                                    return req.connection.rollback(function () {
-                                        return handleError(req, res, 500, "Ocorreu um erro no agendamento!", err)
-                                    })
-                                }
-
-                            })
-
-                            req.connection.commit(function (err) {
-
-                                if (err) {
-                                    req.connection.rollback(function () {
-                                        return handleError(req, res, 500, "Ocorreu um erro no agendamento!", err)
-                                    })
-                                }
-
-                            })
-
-                            return res.status(200).json({
-                                success: true,
-                                message: "Agendamento realizado com sucesso!",
-                                verbose: null,
-                                data: {}
-                            })
 
                         })
 
