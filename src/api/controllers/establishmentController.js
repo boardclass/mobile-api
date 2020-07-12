@@ -1911,9 +1911,7 @@ exports.selfSchedule = async function (req, res) {
                                 })
                             }
                         
-                            let userId = results[0].id
-
-                            if (userId == undefined) {
+                            if (results[0].id == undefined) {
 
                                 query = `
                                     INSERT INTO users
@@ -2019,7 +2017,7 @@ exports.selfSchedule = async function (req, res) {
 
                                 filters = [
                                     batteryId,
-                                    userId,
+                                    results[0].id,
                                     SCHEDULE_STATUS.PENDENT_PAYMENT,
                                     date
                                 ]
