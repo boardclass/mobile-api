@@ -1948,6 +1948,7 @@ exports.selfSchedule = async function (req, res) {
                                             user_id, 
                                             status_id, 
                                             date,
+                                            is_detached,
                                             created_at, 
                                             updated_at)
                                         VALUES
@@ -1955,6 +1956,7 @@ exports.selfSchedule = async function (req, res) {
                                             ?, 
                                             ?, 
                                             ?,
+                                            1,
                                             NOW(), 
                                             NOW())
                                     `
@@ -2004,6 +2006,7 @@ exports.selfSchedule = async function (req, res) {
                                         user_id, 
                                         status_id, 
                                         date,
+                                        is_detached,
                                         created_at, 
                                         updated_at)
                                     VALUES
@@ -2011,6 +2014,7 @@ exports.selfSchedule = async function (req, res) {
                                         ?, 
                                         ?, 
                                         ?,
+                                        1,
                                         NOW(), 
                                         NOW())
                                 `
