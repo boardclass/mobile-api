@@ -1911,7 +1911,7 @@ exports.selfSchedule = async function (req, res) {
                                 })
                             }
                         
-                            if (results[0].id == undefined) {
+                            if (results[0] == undefined) {
 
                                 query = `
                                     INSERT INTO users
