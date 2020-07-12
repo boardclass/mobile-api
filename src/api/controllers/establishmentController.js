@@ -1783,7 +1783,6 @@ exports.getSchedulesByBattery = async function (req, res) {
 
 }
 
-// TODO: TEST SERVICE
 exports.selfSchedule = async function (req, res) {
 
     const date = req.body.date
@@ -2258,7 +2257,8 @@ exports.getExtractByDate = async function (req, res) {
                 COUNT(b.id) AS reservedVacancies,
                 ss.display_name AS status,
                 SUBSTRING(b.start_hour, 1, 5) AS startHour,
-                SUBSTRING(b.end_hour, 1, 5) AS endHour
+                SUBSTRING(b.end_hour, 1, 5) AS endHour,
+                IF(s.is_detached == 0, 'Nao', 'Sim') AS isDetached
             FROM schedules s 
             INNER JOIN users u 
                 ON u.id = s.user_id 
@@ -2313,7 +2313,8 @@ exports.getExtractByDate = async function (req, res) {
                         start: row.startHour,
                         end: row.endHour,
                         reservedVacancies: row.reservedVacancies,
-                        status: row.status
+                        status: row.status,
+                        isDetached: row.isDetached
                     })
 
                 } else {
@@ -2332,7 +2333,8 @@ exports.getExtractByDate = async function (req, res) {
                             reservedVacancies: row.reservedVacancies,
                             start: row.startHour,
                             end: row.endHour,
-                            status: row.status
+                            status: row.status,
+                            isDetached: row.isDetached
                         }]
                     })
 
@@ -2403,7 +2405,8 @@ exports.shareExtract = async function (req, res) {
                 COUNT(b.id) AS reservedVacancies,
                 ss.display_name AS status,
                 SUBSTRING(b.start_hour, 1, 5) AS startHour,
-                SUBSTRING(b.end_hour, 1, 5) AS endHour
+                SUBSTRING(b.end_hour, 1, 5) AS endHour,
+                IF(s.is_detached == 0, 'Nao', 'Sim') AS isDetached
             FROM schedules s 
             INNER JOIN users u 
                 ON u.id = s.user_id
@@ -2460,7 +2463,8 @@ exports.shareExtract = async function (req, res) {
                         start: row.startHour,
                         end: row.endHour,
                         reservedVacancies: row.reservedVacancies,
-                        status: row.status
+                        status: row.status,
+                        isDetached: row.isDetached
                     })
 
                 } else {
@@ -2480,7 +2484,8 @@ exports.shareExtract = async function (req, res) {
                             start: row.startHour,
                             end: row.endHour,
                             reservedVacancies: row.reservedVacancies,
-                            status: row.status
+                            status: row.status,
+                            isDetached: row.isDetached
                         }]
                     })
 
