@@ -843,14 +843,15 @@ exports.getBatteriesByDate = async function (req, res) {
                 TIME_FORMAT(b.start_hour, "%H:%i") AS start_hour,
                 TIME_FORMAT(b.end_hour, "%H:%i") AS end_hour,
                 b.session_value AS price,
-                ABS(COUNT(
-                        SELECT * 
-                        FROM schedules 
-                        WHERE 
+                ABS(
+                    (SELECT COUNT(id)
+                        FROM schedules
+                        WHERE
                             battery_id = b.id
-                            AND s.date = ?
-                            AND s.status_id NOT IN(?)
-                    ) - b.people_allowed) AS availableVacancies,
+                            AND date = ?
+                            AND status_id NOT IN(?)
+                    ) - b.people_allowed
+                ) AS availableVacancies,
                 sp.id AS sport_id,
                 sp.display_name AS sport,
                 b.address_id,
