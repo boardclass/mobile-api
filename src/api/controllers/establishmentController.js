@@ -599,7 +599,7 @@ exports.getFilteredAgenda = async function (req, res) {
                             short_name
                         FROM establishment_status
                         
-                    ) AS establishment_status_table 
+                    ) AS establishment_status_table
                     ON establishment_status_table.id = IF (schedule_table.schedules_amount >= available_vacancies.total_vacancies, ?, ?)
 
                 ) AS query_table
@@ -843,7 +843,14 @@ exports.getBatteriesByDate = async function (req, res) {
                 TIME_FORMAT(b.start_hour, "%H:%i") AS start_hour,
                 TIME_FORMAT(b.end_hour, "%H:%i") AS end_hour,
                 b.session_value AS price,
-                ABS(COUNT(s.id) - b.people_allowed) AS availableVacancies,
+                ABS(COUNT(
+                        SELECT * 
+                        FROM schedules 
+                        WHERE 
+                            battery_id = b.id
+                            AND s.date = ?
+                            AND s.status_id NOT IN(?)
+                    ) - b.people_allowed) AS availableVacancies,
                 sp.id AS sport_id,
                 sp.display_name AS sport,
                 b.address_id,
@@ -857,10 +864,6 @@ exports.getBatteriesByDate = async function (req, res) {
                 ea.complement
             FROM
                 batteries b
-            LEFT JOIN schedules s ON
-                s.battery_id = b.id 
-                AND s.date = ?
-                AND s.status_id NOT IN(?)
             INNER JOIN sports sp 
                 ON sp.id = b.sport_id
             INNER JOIN establishment_addresses ea
