@@ -2261,7 +2261,7 @@ exports.getExtractByDate = async function (req, res) {
                 ss.display_name AS status,
                 SUBSTRING(b.start_hour, 1, 5) AS startHour,
                 SUBSTRING(b.end_hour, 1, 5) AS endHour,
-                IF(s.is_detached == 0, 'Nao', 'Sim') AS isDetached
+                IF(s.is_detached = 0, 'Não', 'Sim') AS isDetached
             FROM schedules s 
             INNER JOIN users u 
                 ON u.id = s.user_id 
@@ -2409,7 +2409,7 @@ exports.shareExtract = async function (req, res) {
                 ss.display_name AS status,
                 SUBSTRING(b.start_hour, 1, 5) AS startHour,
                 SUBSTRING(b.end_hour, 1, 5) AS endHour,
-                IF(s.is_detached == 0, 'Nao', 'Sim') AS isDetached
+                IF(s.is_detached = 0, 'Não', 'Sim') AS isDetached
             FROM schedules s 
             INNER JOIN users u 
                 ON u.id = s.user_id
