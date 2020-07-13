@@ -835,8 +835,6 @@ exports.getBatteriesByDate = async function (req, res) {
     const establishmentId = req.decoded.data.establishmentId
 
     try {
-        // TODO: deploy and verify query and json response
-        // obs: left join recover batteires when hasn't schedules??
         const query = `
             SELECT
                 b.id,
@@ -902,6 +900,7 @@ exports.getBatteriesByDate = async function (req, res) {
                     startHour: row.start_hour,
                     endHour: row.end_hour,
                     price: row.price,
+                    availableVacancies: row.availableVacancies,
                     address: {
                         id: row.address_id,
                         cep: row.cep,
