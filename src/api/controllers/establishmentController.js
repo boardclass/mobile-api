@@ -2265,7 +2265,7 @@ exports.getExtractByDate = async function (req, res) {
             FROM schedules s 
             INNER JOIN users u 
                 ON u.id = s.user_id 
-            INNER JOIN user_accounts us 
+            LEFT JOIN user_accounts us 
                 ON us.user_id = u.id
             INNER JOIN batteries b
                 ON b.id = s.battery_id
@@ -2413,7 +2413,7 @@ exports.shareExtract = async function (req, res) {
             FROM schedules s 
             INNER JOIN users u 
                 ON u.id = s.user_id
-            INNER JOIN user_accounts ua
+            LEFT JOIN user_accounts ua
                 ON ua.user_id = u.id
             INNER JOIN batteries b
                 ON b.id = s.battery_id
