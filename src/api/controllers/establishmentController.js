@@ -57,8 +57,7 @@ exports.store = async function (req, res) {
             FROM establishments e 
             INNER JOIN establishment_accounts ec 
                 ON ec.establishment_id = e.id
-            WHERE 
-                e.name = ? OR 
+            WHERE
                 e.cpf = ? OR 
                 e.phone = ? OR
                 ec.email = ?
