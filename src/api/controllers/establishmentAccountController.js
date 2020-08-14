@@ -184,7 +184,22 @@ exports.resetPassword = async function (req, res) {
 
                 const token = jwtHandler.generate(null, establishmentId)
                 res.setHeader('access-token', token)
+                req.connection.commit(function (err) {
 
+                    if (err) {
+                        return req.connection.rollback(function () {
+                            handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
+                        })
+                    }
+
+                    return res.status(200).json({
+                        success: true,
+                        message: "Bateria adicionado com sucesso!",
+                        verbose: null,
+                        data: {}
+                    })
+
+                })
                 return res.status(200).json({
                     success: true,
                     message: "Senha alterada com sucesso!",

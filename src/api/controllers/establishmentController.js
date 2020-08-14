@@ -1,7 +1,7 @@
 const ejs = require('ejs')
 
-const Establishment = require('../models/Establishment')
-const randomstring = require("randomstring");
+const randomstring = require("randomstring")
+const establishment = require('../requests/establishment')
 
 const mailer = require('../classes/mailer')
 const bcrypt = require('bcrypt')
@@ -11,7 +11,7 @@ const pdfGenerator = require('../classes/pdf')
 
 const { handleError } = require('../classes/error-handler')
 const { minutesRestriction } = require('../classes/time-restriction')
-const { ADDRESS, SCHEDULE_STATUS, USER_TYPE, ESTABLISHMENT_STATUS, SCHEDULE_ACTION } = require('../classes/constants')
+const { ADDRESS, SCHEDULE_STATUS, USER_TYPE, ESTABLISHMENT_STATUS, SCHEDULE_ACTION } = require('../classes/constants');
 
 exports.store = async function (req, res) {
 
@@ -769,7 +769,12 @@ exports.getAvailableBatteries = async function (req, res) {
                         AND s.status_id NOT IN (?)
                     GROUP BY s.battery_id
                     ), b.people_allowed
-               ) AS availableVacancies
+               ) AS availableVacancies,
+               be.id AS equipmentBatteryId,
+               e.id AS equipmentId,
+               e.name AS equipmentName,
+               be.description AS equipmentDescription,
+               be.price AS equipmentPrice
             FROM
                 batteries b
             INNER JOIN battery_weekdays ew
@@ -779,6 +784,10 @@ exports.getAvailableBatteries = async function (req, res) {
             INNER JOIN establishment_addresses ea  
                 ON ea.id = b.address_id
                 AND ea.type_id = ?
+            LEFT JOIN battery_equipments be
+                ON be.battery_id = b.id
+            LEFT JOIN equipment e
+                ON e.id = be.equipment_id
             WHERE
                 b.establishment_id = ?
                 AND b.deleted = false
@@ -790,7 +799,8 @@ exports.getAvailableBatteries = async function (req, res) {
                 AND ea.neighbourhood = ?
             GROUP BY
                 b.start_hour,
-                b.id
+                b.id,
+                be.id
         `
 
         const data = [
@@ -811,12 +821,51 @@ exports.getAvailableBatteries = async function (req, res) {
             if (err)
                 return handleError(req, res, 500, "Ocorreu um erro ao obter a bateria!", err)
 
+            const batteries = []
+            
+            for (row of results) {
+                
+                let filtered = batteries.findIndex(value => {
+                    return value.id === row.id
+                })
+
+                if (filtered >= 0) {
+
+                    batteries[filtered].equipments.push({
+                        id: row.equipmentId,
+                        equipmentBatteryId: row.equipmentBatteryId,
+                        name: row.equipmentName,
+                        description: row.equipmentDescription,
+                        price: row.equipmentPrice
+                    })
+
+                } else {
+
+                    batteries.push({
+                        id: row.id,
+                        startHour: row.startHour,
+                        endHour: row.endHour,
+                        price: row.price,
+                        availableVacancies: row.availableVacancies,
+                        equipments: [{
+                            id: row.equipmentId,
+                            equipmentBatteryId: row.equipmentBatteryId,
+                            name: row.equipmentName,
+                            description: row.equipmentDescription,
+                            price: row.equipmentPrice
+                        }]
+                    })
+
+                }
+
+            }
+
             return res.status(200).json({
                 success: true,
                 message: "Bateria obtida com sucesso!",
                 verbose: null,
                 data: {
-                    batteries: results
+                    batteries: batteries
                 }
             })
 
@@ -1074,6 +1123,8 @@ exports.storeBattery = async function (req, res) {
 
     try {
 
+        let batteryId = undefined
+
         let fetchQuery = `
                 SELECT *
                 FROM batteries b
@@ -1168,23 +1219,31 @@ exports.storeBattery = async function (req, res) {
                         })
                     }
 
+                    batteryId = results.insertId
+
+                    if (batteryId == undefined) {
+                        return req.connection.rollback(function () {
+                            handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
+                        })
+                    }
+
                     query = `
-                            INSERT INTO battery_weekdays
-                            (
-                                battery_id,
-                                weekday_id
-                            )
-                            VALUES
-                            (
-                                ?,
-                                ?
-                            )
-                        `
+                        INSERT INTO battery_weekdays
+                        (
+                            battery_id,
+                            weekday_id
+                        )
+                        VALUES
+                        (
+                            ?,
+                            ?
+                        )
+                    `
 
                     for (index in weekdays) {
 
                         queryValues = [
-                            results.insertId,
+                            batteryId,
                             weekdays[index]
                         ]
 
@@ -1198,28 +1257,33 @@ exports.storeBattery = async function (req, res) {
 
                             if (index == weekdays.length - 1) {
 
-                                req.connection.commit(function (err) {
+                                establishment.insertEquipments(req, res, batteryId)
+                                .then(_ =>
+                                    
+                                    req.connection.commit(function (err) {
 
-                                    if (err) {
-                                        return req.connection.rollback(function () {
-                                            handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
+                                        if (err) {
+                                            return req.connection.rollback(function () {
+                                                handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
+                                            })
+                                        }
+    
+                                        return res.status(200).json({
+                                            success: true,
+                                            message: "Bateria adicionado com sucesso!",
+                                            verbose: null,
+                                            data: {}
                                         })
-                                    }
+    
+                                    })
 
-                                })
+                                );
 
                             }
 
                         })
 
                     }
-
-                    return res.status(200).json({
-                        success: true,
-                        message: "Bateria adicionado com sucesso!",
-                        verbose: null,
-                        data: {}
-                    })
 
                 })
 
@@ -1260,6 +1324,7 @@ exports.editBattery = async function (req, res) {
     req.assert('price', 'O valor deve ser informado').notEmpty()
     req.assert('peopleAmount', 'O quantidade máxima de pessoas deve ser informada').notEmpty()
     req.assert('weekdays', 'Os dias da semana devem ser informados').notEmpty()
+    req.assert('equipments', 'Os equipamentos devem ser informados').notEmpty()
 
     if (validator.validateFields(req, res) != null)
         return

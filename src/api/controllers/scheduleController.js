@@ -1,3 +1,4 @@
+const establishment = require('../requests/establishment')
 const { minutesRestriction } = require('../classes/time-restriction')
 const { handleError } = require('../classes/error-handler')
 const { SCHEDULE_STATUS } = require('../classes/constants')
@@ -154,28 +155,33 @@ exports.store = async function (req, res) {
                                         })
                                     }
 
+                                    establishment.createScheduleEquipments(req, res, results.insertId, batteries[index].id, batteries[index].equipments[0])
+                                    .then(function(_) { 
+                                        
+                                        if (index == batteries.length - 1) {
+
+                                            req.connection.commit(function (err) {
+            
+                                                if (err) {
+                                                    req.connection.rollback(function () {
+                                                        return handleError(req, res, 500, "Ocorreu um erro no agendamento!", err)
+                                                    })
+                                                }
+            
+                                            })
+            
+                                            return res.status(200).json({
+                                                success: true,
+                                                message: "Agendamento realizado com sucesso!",
+                                                verbose: null,
+                                                data: {}
+                                            })
+                                        }
+                                        
+                                    });
+
                                 })
 
-                            }
-
-                            if (index == batteries.length - 1) {
-
-                                req.connection.commit(function (err) {
-
-                                    if (err) {
-                                        req.connection.rollback(function () {
-                                            return handleError(req, res, 500, "Ocorreu um erro no agendamento!", err)
-                                        })
-                                    }
-
-                                })
-
-                                return res.status(200).json({
-                                    success: true,
-                                    message: "Agendamento realizado com sucesso!",
-                                    verbose: null,
-                                    data: {}
-                                })
                             }
 
                         } else {

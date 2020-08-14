@@ -519,7 +519,12 @@ exports.agenda = async function (req, res) {
                     ea.neighbourhood,
                     ea.street,
                     ea.number,
-                    ea.complement
+                    ea.complement,
+                    eq.id AS equipment_id,
+                    be.id AS equipment_battery_id,
+                    eq.name AS equipment_name,
+                    be.description AS equipment_description,
+                    be.price AS equipment_price
                 FROM schedules s
                 INNER JOIN batteries b
                     ON b.id = s.battery_id
@@ -530,10 +535,16 @@ exports.agenda = async function (req, res) {
                     ON sp.id = b.sport_id
                 INNER JOIN establishment_addresses ea
                     ON ea.id = b.address_id
+                LEFT JOIN schedule_equipments se ON
+                    se.schedule_id = s.id 
+                LEFT JOIN battery_equipments be 
+                    ON be.id = se.equipment_id
+                LEFT JOIN equipment eq ON
+                    eq.id = be.equipment_id
                 WHERE 
                     s.user_id = ?
                     AND s.status_id NOT IN (?)
-                GROUP BY b.id, date
+                GROUP BY b.id, date, se.id
                 ORDER BY date, sport, establishment, start_hour
                 `
 
@@ -620,7 +631,14 @@ exports.agenda = async function (req, res) {
                                     street: row.street,
                                     number: row.number,
                                     complement: row.complement
-                                }
+                                },
+                                equipments: [{
+                                    id: row.equipment_id,
+                                    equipmentBatteryId: row.equipment_battery_id,
+                                    name: row.equipment_name,
+                                    description: row.equipment_description,
+                                    price: row.equipment_price
+                                }]
                             }]
                         })
 

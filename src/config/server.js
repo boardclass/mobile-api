@@ -27,8 +27,7 @@ module.exports = {
 
         require('./routes')(app)
 
-        // umbler port
-        let port = process.env.PORT || 3000
+        let port = process.env.PORT || 8080
 
         if (port != 8080) {
             wakeuper.setTimer()
