@@ -528,7 +528,6 @@ exports.agenda = async function (req, res) {
                 FROM schedules s
                 INNER JOIN batteries b
                     ON b.id = s.battery_id
-                    AND b.deleted = false
                 INNER JOIN establishments e
                     ON e.id = b.establishment_id
                 INNER JOIN sports sp
@@ -544,7 +543,7 @@ exports.agenda = async function (req, res) {
                 WHERE 
                     s.user_id = ?
                     AND s.status_id NOT IN (?)
-                GROUP BY b.id, date, se.id
+                GROUP BY b.id, date
                 ORDER BY date, sport, establishment, start_hour
                 `
 

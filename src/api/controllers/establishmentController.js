@@ -1,7 +1,7 @@
 const ejs = require('ejs')
+const mysql = require('../util/connection')
 
 const randomstring = require("randomstring")
-const establishment = require('../requests/establishment')
 
 const mailer = require('../classes/mailer')
 const bcrypt = require('bcrypt')
@@ -12,6 +12,7 @@ const pdfGenerator = require('../classes/pdf')
 const { handleError } = require('../classes/error-handler')
 const { minutesRestriction } = require('../classes/time-restriction')
 const { ADDRESS, SCHEDULE_STATUS, USER_TYPE, ESTABLISHMENT_STATUS, SCHEDULE_ACTION } = require('../classes/constants');
+
 
 exports.store = async function (req, res) {
 
@@ -831,15 +832,29 @@ exports.getAvailableBatteries = async function (req, res) {
 
                 if (filtered >= 0) {
 
-                    batteries[filtered].equipments.push({
-                        id: row.equipmentId,
-                        equipmentBatteryId: row.equipmentBatteryId,
-                        name: row.equipmentName,
-                        description: row.equipmentDescription,
-                        price: row.equipmentPrice
-                    })
+                    if (row.equipmentId != null) {
+                        batteries[filtered].equipments.push({
+                            id: row.equipmentId,
+                            equipmentBatteryId: row.equipmentBatteryId,
+                            name: row.equipmentName,
+                            description: row.equipmentDescription,
+                            price: row.equipmentPrice
+                        })
+                    }
 
                 } else {
+
+                    let equipments = null 
+
+                    if (row.equipmentId != null) {
+                        equipments = [{
+                            id: row.equipmentId,
+                            equipmentBatteryId: row.equipmentBatteryId,
+                            name: row.equipmentName,
+                            description: row.equipmentDescription,
+                            price: row.equipmentPrice
+                        }]
+                    }
 
                     batteries.push({
                         id: row.id,
@@ -847,13 +862,7 @@ exports.getAvailableBatteries = async function (req, res) {
                         endHour: row.endHour,
                         price: row.price,
                         availableVacancies: row.availableVacancies,
-                        equipments: [{
-                            id: row.equipmentId,
-                            equipmentBatteryId: row.equipmentBatteryId,
-                            name: row.equipmentName,
-                            description: row.equipmentDescription,
-                            price: row.equipmentPrice
-                        }]
+                        equipments: equipments
                     })
 
                 }
@@ -1101,6 +1110,8 @@ exports.batteries = async function (req, res) {
 
 exports.storeBattery = async function (req, res) {
 
+    const connection = await mysql.connection()
+
     const establishmentId = req.decoded.data.establishmentId
     const sportId = req.body.sportId
     const addressId = req.body.addressId
@@ -1109,6 +1120,7 @@ exports.storeBattery = async function (req, res) {
     const price = req.body.price
     const peopleAmount = req.body.peopleAmount
     const weekdays = req.body.weekdays
+    const equipments = req.body.equipments
 
     req.assert('sportId', 'O id do esporte deve ser informado').notEmpty()
     req.assert('addressId', 'O id do endereço deve ser informado').notEmpty()
@@ -1123,26 +1135,24 @@ exports.storeBattery = async function (req, res) {
 
     try {
 
-        let batteryId = undefined
+        const fetchQuery = `
+            SELECT *
+            FROM batteries b
+            INNER JOIN battery_weekdays bw
+                ON bw.battery_id = b.id
+            WHERE 
+                b.establishment_id = ?
+                AND b.deleted = false
+                AND b.sport_id = ?
+                AND b.address_id = ?
+                AND (
+                    (? >= b.start_hour AND ? < b.end_hour) 
+                    OR (? > b.start_hour AND ? <= b.end_hour)
+                    ) 
+                AND bw.weekday_id IN (?)
+        `
 
-        let fetchQuery = `
-                SELECT *
-                FROM batteries b
-                INNER JOIN battery_weekdays bw
-                    ON bw.battery_id = b.id
-                WHERE 
-                    b.establishment_id = ?
-                    AND b.deleted = false
-                    AND b.sport_id = ?
-                    AND b.address_id = ?
-                    AND (
-                        (? >= b.start_hour AND ? < b.end_hour) 
-                        OR (? > b.start_hour AND ? <= b.end_hour)
-                    )
-                    AND bw.weekday_id IN (?)
-            `
-
-        let fetchParams = [
+        const fetchParams = [
             establishmentId,
             sportId,
             addressId,
@@ -1153,146 +1163,127 @@ exports.storeBattery = async function (req, res) {
             weekdays
         ]
 
-        req.connection.query(fetchQuery, fetchParams, function (err, result, _) {
+        await connection.query('START TRANSACTION');
 
-            if (err) {
-                return req.connection.rollback(function () {
-                    handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
-                })
-            }
+        const fetchedBattery = await connection.query(fetchQuery, fetchParams)
 
-            if (result.length > 0) {
-
-                return res.status(400).json({
-                    success: true,
-                    message: "Não foi possível adicionar a bateria, pois os horários já estão sendo utilizados!",
-                    verbose: null,
-                    data: {}
-                })
-
-            }
-
-            req.connection.beginTransaction(function (err) {
-
-                let query = `
-                        INSERT INTO batteries 
-                        (
-                            establishment_id, 
-                            address_id, 
-                            sport_id, 
-                            start_hour, 
-                            end_hour, 
-                            session_value, 
-                            people_allowed, 
-                            created_at, 
-                            updated_at
-                        )
-                        VALUES
-                        (
-                            ?, 
-                            ?, 
-                            ?, 
-                            ?, 
-                            ?, 
-                            ?, 
-                            ?, 
-                            NOW(), 
-                            NOW()
-                        )
-                    `
-
-                let queryValues = [
-                    establishmentId,
-                    addressId,
-                    sportId,
-                    startHour,
-                    finishHour,
-                    price,
-                    peopleAmount
-                ]
-
-                req.connection.query(query, queryValues, function (err, results, fields) {
-
-                    if (err) {
-                        return req.connection.rollback(function () {
-                            handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
-                        })
-                    }
-
-                    batteryId = results.insertId
-
-                    if (batteryId == undefined) {
-                        return req.connection.rollback(function () {
-                            handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
-                        })
-                    }
-
-                    query = `
-                        INSERT INTO battery_weekdays
-                        (
-                            battery_id,
-                            weekday_id
-                        )
-                        VALUES
-                        (
-                            ?,
-                            ?
-                        )
-                    `
-
-                    for (index in weekdays) {
-
-                        queryValues = [
-                            batteryId,
-                            weekdays[index]
-                        ]
-
-                        req.connection.query(query, queryValues, function (err, result, fields) {
-
-                            if (err) {
-                                return req.connection.rollback(function () {
-                                    handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
-                                })
-                            }
-
-                            if (index == weekdays.length - 1) {
-
-                                establishment.insertEquipments(req, res, batteryId)
-                                .then(_ =>
-                                    
-                                    req.connection.commit(function (err) {
-
-                                        if (err) {
-                                            return req.connection.rollback(function () {
-                                                handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
-                                            })
-                                        }
-    
-                                        return res.status(200).json({
-                                            success: true,
-                                            message: "Bateria adicionado com sucesso!",
-                                            verbose: null,
-                                            data: {}
-                                        })
-    
-                                    })
-
-                                );
-
-                            }
-
-                        })
-
-                    }
-
-                })
-
+        if (fetchedBattery.length != 0) {
+            return res.status(400).json({
+                success: true,
+                message: "Não foi possível adicionar a bateria, pois os horários já estão sendo utilizados!",
+                verbose: null,
+                data: {}
             })
+        }
 
+        const insertQuery = `
+            INSERT INTO batteries 
+            (
+                establishment_id, 
+                address_id, 
+                sport_id, 
+                start_hour, 
+                end_hour, 
+                session_value, 
+                people_allowed, 
+                created_at, 
+                updated_at
+            )
+            VALUES
+            (
+                ?, 
+                ?, 
+                ?, 
+                ?, 
+                ?, 
+                ?, 
+                ?, 
+                NOW(), 
+                NOW()
+            )
+        `
+
+        const insertParams = [
+            establishmentId,
+            addressId,
+            sportId,
+            startHour,
+            finishHour,
+            price,
+            peopleAmount
+        ]
+
+        const insertedBattery = await connection.query(insertQuery, insertParams)
+        const insertedBatteryId = insertedBattery.insertId
+
+        const weekendInsertQuery = `
+            INSERT INTO battery_weekdays
+            (
+                battery_id,
+                weekday_id
+            )
+            VALUES
+            (
+                ?,
+                ?
+            )
+        `
+
+        for (index in weekdays) {
+
+            let params = queryValues = [
+                insertedBatteryId,
+                weekdays[index]
+            ]
+
+            await connection.query(weekendInsertQuery, params)
+
+        }
+
+        let equipmentsQuery = `
+            INSERT INTO battery_equipments
+            (
+                equipment_id,
+                description,
+                price,
+                battery_id
+            )
+            VALUES
+            (
+                ?,
+                ?,
+                ?,
+                ?
+            )   
+        `
+
+        for (index in equipments) {
+            
+            let params = [
+                equipments[index].id,
+                equipments[index].description,
+                equipments[index].price,
+                insertedBatteryId
+            ]
+
+            await connection.query(equipmentsQuery, params)
+
+        }
+
+        await connection.query('COMMIT')
+
+        return res.status(200).json({
+            success: true,
+            message: "Bateria adicionado com sucesso!",
+            verbose: null,
+            data: {}
         })
 
     } catch (err) {
+        await connection.query('ROLLBACK')
         return handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
+    } finally {
+        await connection.release()
     }
 }
 
