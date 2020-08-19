@@ -1945,9 +1945,7 @@ exports.selfSchedule = async function (req, res) {
                         })
                     }
 
-                    let available_vacancies = results[0].available_vacancies
-
-                    if (available_vacancies != 0)  {
+                    if (results[0] != undefined && results[0].available_vacancies != 0)  {
 
                         let query = `
                             SELECT DISTINCT
