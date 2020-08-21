@@ -1168,6 +1168,7 @@ exports.storeBattery = async function (req, res) {
         const fetchedBattery = await connection.query(fetchQuery, fetchParams)
 
         if (fetchedBattery.length != 0) {
+            await connection.query('ROLLBACK')
             return res.status(400).json({
                 success: true,
                 message: "Não foi possível adicionar a bateria, pois os horários já estão sendo utilizados!",
