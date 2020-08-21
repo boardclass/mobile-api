@@ -7,8 +7,6 @@ module.exports = {
 
     let token = req.headers['access-token'] || req.headers['Authorization']
 
-    console.log(`Validating token ${token}`);
-
     if (token) {
 
       if (token.startsWith('Bearer ')) {
