@@ -1216,6 +1216,8 @@ exports.storeBattery = async function (req, res) {
         const insertedBattery = await connection.query(insertQuery, insertParams)
         const insertedBatteryId = insertedBattery.insertId
 
+        console.log(`battery inserted -> ${insertedBatteryId}`);
+
         const weekendInsertQuery = `
             INSERT INTO battery_weekdays
             (
@@ -1237,6 +1239,8 @@ exports.storeBattery = async function (req, res) {
             ]
 
             await connection.query(weekendInsertQuery, params)
+
+            console.log(`weekday inserted -> ${weekdays[index]}`);
 
         }
 
@@ -1268,6 +1272,8 @@ exports.storeBattery = async function (req, res) {
 
             await connection.query(equipmentsQuery, params)
 
+            console.log(`equipment inserted -> ${equipments[index].id}`);
+
         }
 
         await connection.query('COMMIT')
@@ -1280,6 +1286,7 @@ exports.storeBattery = async function (req, res) {
         })
 
     } catch (err) {
+        console.log("passing on catch");
         await connection.query('ROLLBACK')
         return handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
     } finally {
