@@ -275,9 +275,12 @@ exports.login = async function (req, res) {
 
                 }
 
+                let accessToken = jwtHandler.generate(null, establishment.id)
+                console.log(accessToken);
+
                 res.setHeader('role-id', USER_TYPE.PROFESSOR)
+                res.setHeader('access-token', accessToken)
                 res.setHeader('establishment-id', establishment.id)
-                res.setHeader('access-token', jwtHandler.generate(null, establishment.id))
 
                 return res.status(200).json({
                     success: true,
