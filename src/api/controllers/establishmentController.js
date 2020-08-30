@@ -2316,6 +2316,18 @@ exports.getExtractByDate = async function (req, res) {
                     if (scheduleFiltered > 0) {
 
                         extract[filtered].schedules[scheduleFiltered].push({
+                            id: row.scheduleId,
+                            date: row.date,
+                            name: row.name,
+                            phone: row.phone,
+                            email: row.userEmail,
+                            batteryId: row.batteryId,
+                            value: row.value,
+                            start: row.startHour,
+                            end: row.endHour,
+                            reservedVacancies: row.reservedVacancies,
+                            status: row.status,
+                            isDetached: row.isDetached,
                             equipmentsValue: row.equipmentPrice,
                             totalValue: row.totalValue
                         })
@@ -2498,6 +2510,18 @@ exports.shareExtract = async function (req, res) {
                     if (scheduleFiltered > 0) {
 
                         extract[filtered].schedules[scheduleFiltered].push({
+                            id: row.scheduleId,
+                            date: row.date,
+                            name: row.name,
+                            phone: row.phone,
+                            email: row.userEmail,
+                            batteryId: row.batteryId,
+                            value: row.value,
+                            start: row.startHour,
+                            end: row.endHour,
+                            reservedVacancies: row.reservedVacancies,
+                            status: row.status,
+                            isDetached: row.isDetached,
                             equipmentsValue: row.equipmentPrice,
                             totalValue: row.totalValue
                         })
@@ -2585,19 +2609,19 @@ exports.shareExtract = async function (req, res) {
                             attachments: attachments
                         }
 
-                        mailer.send(data, (result) => {
+                        // mailer.send(data, (result) => {
 
-                            if (result == undefined)
-                                return handleError(req, res, 500, "Ocorreu um erro ao enviar extrato!", null)
+                        //     if (result == undefined)
+                        //         return handleError(req, res, 500, "Ocorreu um erro ao enviar extrato!", null)
 
-                            return res.status(200).json({
-                                success: true,
-                                message: `O extrato foi enviado para o email: ${currentExtract.email}`,
-                                verbose: null,
-                                data: null
-                            })
+                        //     return res.status(200).json({
+                        //         success: true,
+                        //         message: `O extrato foi enviado para o email: ${currentExtract.email}`,
+                        //         verbose: null,
+                        //         data: null
+                        //     })
 
-                        })
+                        // })
 
                     })
 
