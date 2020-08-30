@@ -823,9 +823,9 @@ exports.getAvailableBatteries = async function (req, res) {
                 return handleError(req, res, 500, "Ocorreu um erro ao obter a bateria!", err)
 
             const batteries = []
-            
+
             for (row of results) {
-                
+
                 let filtered = batteries.findIndex(value => {
                     return value.id === row.id
                 })
@@ -844,7 +844,7 @@ exports.getAvailableBatteries = async function (req, res) {
 
                 } else {
 
-                    let equipments = null 
+                    let equipments = null
 
                     if (row.equipmentId != null) {
                         equipments = [{
@@ -950,7 +950,7 @@ exports.getBatteriesByDate = async function (req, res) {
                 return handleError(req, res, 500, "Ocorreu um erro ao obter a bateria!", err)
 
             const batteries = []
-            
+
             for (row of results) {
                 batteries.push({
                     id: row.id,
@@ -1263,7 +1263,7 @@ exports.storeBattery = async function (req, res) {
         `
 
         for (index in equipments) {
-            
+
             let params = [
                 equipments[index].id,
                 equipments[index].description,
@@ -2255,7 +2255,9 @@ exports.getExtractByDate = async function (req, res) {
                 ss.display_name AS status,
                 SUBSTRING(b.start_hour, 1, 5) AS startHour,
                 SUBSTRING(b.end_hour, 1, 5) AS endHour,
-                IF(s.is_detached = 0, 'Não', 'Sim') AS isDetached
+                IF(s.is_detached = 0, 'Não', 'Sim') AS isDetached,
+                FORMAT(IFNULL(SUM(be.price),0),2) AS equipmentPrice,
+                FORMAT(IFNULL(SUM(be.price) + SUM(b.session_value),0),2) AS totalValue
             FROM schedules s 
             INNER JOIN users u 
                 ON u.id = s.user_id 
@@ -2267,6 +2269,12 @@ exports.getExtractByDate = async function (req, res) {
                 ON e.id = b.establishment_id
             INNER JOIN schedule_status ss
                 ON s.status_id = ss.id
+            LEFT JOIN schedule_equipments se
+                ON se.schedule_id = s.id
+            LEFT JOIN battery_equipments be
+                ON be.id = se.equipment_id
+            LEFT JOIN equipment eq
+                on eq.id = se.equipment_id
             WHERE 
                 b.establishment_id = ?
                 AND MONTH(s.date) = ?
@@ -2300,19 +2308,40 @@ exports.getExtractByDate = async function (req, res) {
 
                 if (filtered >= 0) {
 
-                    extract[filtered].schedules.push({
-                        date: row.date,
-                        name: row.name,
-                        phone: row.phone,
-                        email: row.email,
-                        batteryId: row.batteryId,
-                        value: row.value,
-                        start: row.startHour,
-                        end: row.endHour,
-                        reservedVacancies: row.reservedVacancies,
-                        status: row.status,
-                        isDetached: row.isDetached
+                    let scheduleFiltered = extract.findIndex(value => {
+                        return value.scheduleId == row.scheduleId
+
                     })
+
+                    if (scheduleFiltered > 0) {
+
+                        extract[filtered].schedules[scheduleFiltered].push({
+                            equipmentsValue: row.equipmentPrice,
+                            totalValue: row.totalValue
+                        })
+
+                    } else {
+
+                        extract[filtered].schedules.push({
+                            id: row.scheduleId,
+                            date: row.date,
+                            name: row.name,
+                            phone: row.phone,
+                            email: row.userEmail,
+                            batteryId: row.batteryId,
+                            value: row.value,
+                            start: row.startHour,
+                            end: row.endHour,
+                            reservedVacancies: row.reservedVacancies,
+                            status: row.status,
+                            isDetached: row.isDetached,
+                            equipmentsValue: row.equipmentPrice,
+                            totalValue: row.totalValue,
+                            equipmentsValue: row.equipmentPrice,
+                            totalValue: row.totalValue
+                        })
+
+                    }
 
                 } else {
 
@@ -2331,7 +2360,9 @@ exports.getExtractByDate = async function (req, res) {
                             start: row.startHour,
                             end: row.endHour,
                             status: row.status,
-                            isDetached: row.isDetached
+                            isDetached: row.isDetached,
+                            equipmentsValue: row.equipmentPrice,
+                            totalValue: row.totalValue
                         }]
                     })
 
@@ -2390,6 +2421,7 @@ exports.shareExtract = async function (req, res) {
             SELECT
                 u.id,
                 u.name,
+                s.id AS scheduleId,
                 CONCAT('(', SUBSTR(u.phone, 1, 2), ') ', SUBSTR(u.phone, 3, 2), ' ', SUBSTR(u.phone, 5, 5), '-', SUBSTR(u.phone, 10, 4)) AS phone,
                 e.name AS establishment,
                 ua.email AS userEmail,
@@ -2403,7 +2435,9 @@ exports.shareExtract = async function (req, res) {
                 ss.display_name AS status,
                 SUBSTRING(b.start_hour, 1, 5) AS startHour,
                 SUBSTRING(b.end_hour, 1, 5) AS endHour,
-                IF(s.is_detached = 0, 'Não', 'Sim') AS isDetached
+                IF(s.is_detached = 0, 'Não', 'Sim') AS isDetached,
+                FORMAT(IFNULL(SUM(be.price),0),2) AS equipmentPrice,
+                FORMAT(IFNULL(SUM(be.price) + SUM(b.session_value),0),2) AS totalValue
             FROM schedules s 
             INNER JOIN users u 
                 ON u.id = s.user_id
@@ -2417,6 +2451,12 @@ exports.shareExtract = async function (req, res) {
                 ON ec.establishment_id = e.id
             INNER JOIN schedule_status ss
                 ON s.status_id = ss.id
+            LEFT JOIN schedule_equipments se
+                ON se.schedule_id = s.id
+            LEFT JOIN battery_equipments be
+                ON be.id = se.equipment_id
+            LEFT JOIN equipment eq
+                on eq.id = se.equipment_id
             WHERE 
                 b.establishment_id = ?
                 AND MONTH(s.date) = ?
@@ -2450,19 +2490,38 @@ exports.shareExtract = async function (req, res) {
 
                 if (filtered >= 0) {
 
-                    extract[filtered].schedules.push({
-                        date: row.date,
-                        name: row.name,
-                        phone: row.phone,
-                        email: row.userEmail,
-                        batteryId: row.batteryId,
-                        value: row.value,
-                        start: row.startHour,
-                        end: row.endHour,
-                        reservedVacancies: row.reservedVacancies,
-                        status: row.status,
-                        isDetached: row.isDetached
+                    let scheduleFiltered = extract.findIndex(value => {
+                        return value.scheduleId == row.scheduleId
+
                     })
+
+                    if (scheduleFiltered > 0) {
+
+                        extract[filtered].schedules[scheduleFiltered].push({
+                            equipmentsValue: row.equipmentPrice,
+                            totalValue: row.totalValue
+                        })
+
+                    } else {
+
+                        extract[filtered].schedules.push({
+                            id: row.scheduleId,
+                            date: row.date,
+                            name: row.name,
+                            phone: row.phone,
+                            email: row.userEmail,
+                            batteryId: row.batteryId,
+                            value: row.value,
+                            start: row.startHour,
+                            end: row.endHour,
+                            reservedVacancies: row.reservedVacancies,
+                            status: row.status,
+                            isDetached: row.isDetached,
+                            equipmentsValue: row.equipmentPrice,
+                            totalValue: row.totalValue
+                        })
+
+                    }
 
                 } else {
 
@@ -2482,7 +2541,9 @@ exports.shareExtract = async function (req, res) {
                             end: row.endHour,
                             reservedVacancies: row.reservedVacancies,
                             status: row.status,
-                            isDetached: row.isDetached
+                            isDetached: row.isDetached,
+                            equipmentsValue: row.equipmentPrice,
+                            totalValue: row.totalValue
                         }]
                     })
 

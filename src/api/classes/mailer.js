@@ -15,7 +15,7 @@ module.exports = {
         const transporter = nodemailer.createTransport(mailGun(auth))
 
         transporter.sendMail({
-            from: `Board Class <lifestyleboardapp@gmail.com>`,
+            from: `Board Class <atendimento@boardclass.com.br>`,
             to: data.destination,
             subject: data.subject,
             text: data.message,
