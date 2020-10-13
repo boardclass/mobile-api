@@ -1,4 +1,4 @@
-const bcrypt = require('bcrypt')
+const bcrypt = require('bcryptjs')
 
 const math = require('../classes/math')
 const validator = require("../classes/validator")

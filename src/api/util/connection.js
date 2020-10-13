@@ -1,13 +1,17 @@
 const mysql = require("mysql2")
-const data = require('../../config/mysql')
+const connectionData = require('../../config/mysql')
 
 let dbConfig = {
-    connectionLimit: data.connectionLimit,
-    host: data.host,
-    user: data.username,
-    password: data.password,
-    database: data.database
-}
+    host: connectionData.host,
+    user: connectionData.username,
+    password: connectionData.password,
+    database: connectionData.database,
+    port: connectionData.port,
+    waitForConnections: true,
+    connectionLimit: connectionData.connectionLimit,
+    queueLimit: 0,
+    multipleStatements: true
+};
 
 const pool = mysql.createPool(dbConfig);
 

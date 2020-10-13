@@ -38,7 +38,7 @@ module.exports = {
         })
         
     },
-    secret: process.env.SECRET_KEY || 'worldisfullofdevelopers',
+    secret: process.env.SECRET_KEY || 'trustthatitgetsbetter',
     expirationSeconds: 1000
 
 }

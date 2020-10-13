@@ -1,7 +1,7 @@
 const UserAddress = require('../models/UserAddress')
 const UsersRoles = require('../models/UsersRoles')
 
-const bcrypt = require('bcrypt')
+const bcrypt = require('bcryptjs')
 const validator = require('../classes/validator')
 const jwtHandler = require('../classes/jwt')
 const logger = require('../classes/logger')

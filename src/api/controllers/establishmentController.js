@@ -4,7 +4,7 @@ const mysql = require('../util/connection')
 const randomstring = require("randomstring")
 
 const mailer = require('../classes/mailer')
-const bcrypt = require('bcrypt')
+const bcrypt = require('bcryptjs')
 const validator = require('../classes/validator')
 const jwtHandler = require('../classes/jwt')
 const pdfGenerator = require('../classes/pdf')
@@ -1851,18 +1851,18 @@ exports.getSchedulesByBattery = async function (req, res) {
 
 exports.selfSchedule = async function (req, res) {
 
-    const connection = await mysql.connection()
+    const connection = req.connection;
 
-    const date = req.body.date
-    const user = req.body.user
-    const batteryId = req.body.batteryId
+    const date = req.body.date;
+    const user = req.body.user;
+    const batteryId = req.body.batteryId;
 
-    req.assert('date', 'A data deve ser informada').notEmpty()
-    req.assert('user', 'O usuário deve ser informado').notEmpty()
-    req.assert('batteryId', 'O id da bateria deve ser informado').notEmpty()
+    req.assert('date', 'A data deve ser informada').notEmpty();
+    req.assert('user', 'O usuário deve ser informado').notEmpty();
+    req.assert('batteryId', 'O id da bateria deve ser informado').notEmpty();
 
     if (validator.validateFields(req, res) != null)
-        return
+        return;
 
     try {
 
@@ -1879,7 +1879,7 @@ exports.selfSchedule = async function (req, res) {
             SET @@session.time_zone = '-03:00';
 
             SELECT
-                1
+                *
             FROM batteries b
             INNER JOIN battery_weekdays bw 
                 ON bw.battery_id = b.id
@@ -1890,182 +1890,202 @@ exports.selfSchedule = async function (req, res) {
                 AND b.deleted = false
                 AND w.day = LOWER(DATE_FORMAT(?, "%W"))
                 AND (
-                    DATE_ADD(NOW(), INTERVAL ? MINUTE) > b.start_hour 
+                    NOW() > b.start_hour 
                     AND ? = DATE_FORMAT(NOW(), "%Y-%m-%d")
                     )
             GROUP By b.id;
-        `
+        `;
 
-        let queryParams = [
-            batteryId,
-            date,
-            minutesRestriction,
-            date
-        ]
+        req.connection.beginTransaction(function (err) {
 
-        await connection.query('START TRANSACTION');
+            let queryParams = [
+                batteryId,
+                date,
+                date
+            ];
 
-        let result = await connection.query(query, queryParams)
+            req.connection.query(query, queryParams, function (err, result, _) {
+                if (result[1] && result[1].length > 0) {
 
-        if (result[0] && result[0].length > 0) {
+                    connection.query('COMMIT')
 
-            await connection.query('COMMIT')
-
-            return res.status(404).json({
-                success: false,
-                message: "Não foi possível realizar o agendamento, é preciso agendar com até duas horas de antecência.",
-                verbose: null,
-                data: {}
-            })
-
-        }
-
-        query = `
-            SELECT
-                b.start_hour,
-                b.people_allowed - COUNT(s.id) AS available_vacancies
-            FROM
-                batteries b
-            LEFT JOIN schedules s ON
-                s.battery_id = b.id
-                AND s.date = ?
-                AND s.status_id NOT IN (?)
-                AND b.deleted = false
-            WHERE
-                b.id = ?
-            GROUP BY 
-                b.id
-        `
-
-        const filters = [
-            date,
-            SCHEDULE_STATUS.CANCELED,
-            batteryId
-        ]
-
-        let vacanciesResult = await connection.query(query, filters)
-
-        if (vacanciesResult.length != 0 && vacanciesResult[0].available_vacancies != 0) {
-
-            let query = `
-                    SELECT DISTINCT
-                        id 
-                    FROM users 
-                    WHERE cpf = ?
-                `
-
-            let filters = [
-                user.cpf
-            ]
-
-            let userIdResult = await connection.query(query, filters)
-
-            if (userIdResult.length == 0) {
+                    return res.status(404).json({
+                        success: false,
+                        message: "Não foi possível realizar o agendamento, a bateria já encerrou.",
+                        verbose: null,
+                        data: {}
+                    })
+                }
 
                 query = `
-                        INSERT INTO users
-                        (
-                            cpf,
-                            name,
-                            phone
-                        )
-                        VALUES
-                        (
-                            ?,
-                            ?,
-                            ?
-                        )
-                    `
+                    SELECT
+                        b.start_hour,
+                        b.people_allowed - COUNT(s.id) AS available_vacancies
+                    FROM
+                        batteries b
+                    LEFT JOIN schedules s ON
+                        s.battery_id = b.id
+                        AND s.date = ?
+                        AND s.status_id NOT IN (?)
+                        AND b.deleted = false
+                    WHERE
+                        b.id = ?
+                    GROUP BY 
+                        b.id
+                `;
 
-                filters = [
-                    user.cpf,
-                    user.name,
-                    user.phone
-                ]
+                const filters = [
+                    date,
+                    SCHEDULE_STATUS.CANCELED,
+                    batteryId
+                ];
 
-                await connection.query(query, filters)
+                req.connection.query(query, filters, function (err, result, _) {
+                    if (result.length !== 0 && result[0].available_vacancies !== 0) {
 
-                query = `
-                    INSERT INTO schedules
-                        (battery_id, 
-                        user_id, 
-                        status_id, 
-                        date,
-                        is_detached,
-                        created_at, 
-                        updated_at)
-                    VALUES
-                        (?, 
-                        ?, 
-                        ?, 
-                        ?,
-                        1,
-                        NOW(), 
-                        NOW())
-                `
+                        let query = `
+                            SELECT DISTINCT
+                                id 
+                            FROM users 
+                            WHERE phone = ? 
+                        `;
 
-                filters = [
-                    batteryId,
-                    userIdResult.insertId,
-                    SCHEDULE_STATUS.PENDENT_PAYMENT,
-                    date
-                ]
+                        if (user.cpf != null) {
+                            query += `OR cpf = ${user.cpf}`
+                        }
 
-                await connection.query(query, filters)
+                        let filters = [
+                            user.phone
+                        ];
 
-            } else {
+                        req.connection.query(query, filters, function (err, userIdResult, _) {
+                            if (userIdResult.length === 0) {
 
-                query = `
-                    INSERT INTO schedules
-                        (battery_id, 
-                        user_id, 
-                        status_id, 
-                        date,
-                        is_detached,
-                        created_at, 
-                        updated_at)
-                    VALUES
-                        (?, 
-                        ?, 
-                        ?, 
-                        ?,
-                        1,
-                        NOW(), 
-                        NOW())
-                `
+                                query = `
+                                    INSERT INTO users
+                                    (
+                                        cpf,
+                                        name,
+                                        phone
+                                    )
+                                    VALUES
+                                    (
+                                        ?,
+                                        ?,
+                                        ?
+                                    )
+                                `;
 
-                filters = [
-                    batteryId,
-                    userIdResult[0].id,
-                    SCHEDULE_STATUS.PENDENT_PAYMENT,
-                    date
-                ]
+                                filters = [
+                                    user.cpf,
+                                    user.name,
+                                    user.phone
+                                ];
 
-                await connection.query(query, filters)
+                                req.connection.query(query, filters, function (err, result, _) {
+                                    query = `
+                                        INSERT INTO schedules
+                                            (battery_id, 
+                                            user_id, 
+                                            status_id, 
+                                            date,
+                                            is_detached,
+                                            created_at, 
+                                            updated_at)
+                                        VALUES
+                                            (?, 
+                                            ?, 
+                                            ?, 
+                                            ?,
+                                            1,
+                                            NOW(), 
+                                            NOW())
+                                    `;
 
-            }
+                                    filters = [
+                                        batteryId,
+                                        result.insertId,
+                                        SCHEDULE_STATUS.PENDENT_PAYMENT,
+                                        date
+                                    ];
 
-        } else {
+                                    connection.query(query, filters)
+                                });
 
-            await connection.query('COMMIT')
+                            } else {
 
-            return res.status(404).json({
-                success: false,
-                message: "Não foi possível realizar o agendamento, pois não há vagas disponíveis para essa bateria!",
-                verbose: null,
-                data: {}
-            })
+                                let update_user_query = `
+                                    UPDATE users SET 
+                                    cpf = ?,
+                                    name = ?,
+                                    phone = ? 
+                                    WHERE id = ?
+                                `;
 
-        }
+                                let update_filter = [
+                                    user.cpf,
+                                    user.name,
+                                    user.phone,
+                                    userIdResult[0].id
+                                ];
 
-        await connection.query('COMMIT')
+                                connection.query(update_user_query, update_filter);
 
-        res.status(200).json({
-            success: true,
-            message: "Agendamento realizado com sucesso!",
-            verbose: null,
-            data: {}
-        })
+                                query = `
+                                    INSERT INTO schedules
+                                        (battery_id, 
+                                        user_id, 
+                                        status_id, 
+                                        date,
+                                        is_detached,
+                                        created_at, 
+                                        updated_at)
+                                    VALUES
+                                        (?, 
+                                        ?, 
+                                        ?, 
+                                        ?,
+                                        1,
+                                        NOW(), 
+                                        NOW())
+                                `;
+
+                                filters = [
+                                    batteryId,
+                                    userIdResult[0].id,
+                                    SCHEDULE_STATUS.PENDENT_PAYMENT,
+                                    date
+                                ];
+
+                                connection.query(query, filters)
+
+                            }
+                        });
+
+                        connection.query('COMMIT')
+
+                        res.status(200).json({
+                            success: true,
+                            message: "Agendamento realizado com sucesso!",
+                            verbose: null,
+                            data: {}
+                        })
+
+                    } else {
+
+                        connection.query('COMMIT');
+
+                        return res.status(404).json({
+                            success: false,
+                            message: "Não foi possível realizar o agendamento, pois não há vagas disponíveis para essa bateria!",
+                            verbose: null,
+                            data: {}
+                        })
+
+                    }
+                });
+            });
+        });
 
     } catch (err) {
         await connection.query('ROLLBACK')
@@ -2078,11 +2098,11 @@ exports.selfSchedule = async function (req, res) {
 
 exports.editSchedule = async function (req, res) {
 
-    const action = req.body.action
-    const scheduleId = req.body.scheduleId
+    const action = req.body.action;
+    const scheduleId = req.body.scheduleId;
 
-    req.assert('action', 'A ação do agendamento deve ser informada').notEmpty()
-    req.assert('scheduleId', 'O id dos agendamentos devem ser informado').notEmpty()
+    req.assert('action', 'A ação do agendamento deve ser informada').notEmpty();
+    req.assert('scheduleId', 'O id dos agendamentos devem ser informado').notEmpty();
 
     if (validator.validateFields(req, res) != null)
         return
@@ -2096,17 +2116,17 @@ exports.editSchedule = async function (req, res) {
                 status_id = ?,
                 updated_at = NOW()
             WHERE id = ?
-        `
+        `;
 
         let scheduleAction = null
 
         switch (action) {
             case SCHEDULE_ACTION.CANCEL:
                 scheduleAction = SCHEDULE_STATUS.CANCELED
-                break
+                break;
             case SCHEDULE_ACTION.PAY:
                 scheduleAction = SCHEDULE_STATUS.PAID
-                break
+                break;
             case SCHEDULE_ACTION.CHECKIN:
                 scheduleAction = SCHEDULE_STATUS.CHECKIN
                 break
@@ -2124,7 +2144,7 @@ exports.editSchedule = async function (req, res) {
         const queryValues = [
             scheduleAction,
             scheduleId
-        ]
+        ];
 
         req.connection.beginTransaction(function (err) {
 

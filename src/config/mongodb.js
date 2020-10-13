@@ -4,6 +4,7 @@ module.exports = {
 
     setup: function () {
 
+        // var databaseURL = 'mongodb://kamino.mongodb.umbler.com:46538/boardclass-log'
         var databaseURL = process.env.MONGODB_URI || 'mongodb://localhost/board'
 
         mongoose.connect(databaseURL, {

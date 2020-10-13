@@ -35,7 +35,7 @@ exports.store = async function (req, res) {
                 AND b.deleted = false
                 AND w.day = LOWER(DATE_FORMAT(?, "%W"))
                 AND (
-                    DATE_ADD(NOW(), INTERVAL ? MINUTE) > b.start_hour 
+                    NOW() < b.end_hour 
                     AND ? = DATE_FORMAT(NOW(), "%Y-%m-%d")
                 )
             GROUP By b.id;
@@ -54,7 +54,7 @@ exports.store = async function (req, res) {
 
             return res.status(404).json({
                 success: false,
-                message: "Não foi possível realizar o agendamento, é preciso agendar com até duas horas de antecência.",
+                message: "Não foi possível realizar o agendamento, a bateria já encerrou.",
                 verbose: null,
                 data: {}
             })
