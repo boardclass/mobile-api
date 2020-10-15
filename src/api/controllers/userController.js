@@ -519,12 +519,7 @@ exports.agenda = async function (req, res) {
                     ea.neighbourhood,
                     ea.street,
                     ea.number,
-                    ea.complement,
-                    eq.id AS equipment_id,
-                    be.id AS equipment_battery_id,
-                    eq.name AS equipment_name,
-                    be.description AS equipment_description,
-                    be.price AS equipment_price
+                    ea.complement
                 FROM schedules s
                 INNER JOIN batteries b
                     ON b.id = s.battery_id
@@ -534,12 +529,6 @@ exports.agenda = async function (req, res) {
                     ON sp.id = b.sport_id
                 INNER JOIN establishment_addresses ea
                     ON ea.id = b.address_id
-                LEFT JOIN schedule_equipments se ON
-                    se.schedule_id = s.id 
-                LEFT JOIN battery_equipments be 
-                    ON be.id = se.equipment_id
-                LEFT JOIN equipment eq ON
-                    eq.id = be.equipment_id
                 WHERE 
                     s.user_id = ?
                     AND s.status_id NOT IN (?)
@@ -630,30 +619,61 @@ exports.agenda = async function (req, res) {
                                     street: row.street,
                                     number: row.number,
                                     complement: row.complement
-                                },
-                                equipments: [{
-                                    id: row.equipment_id,
-                                    equipmentBatteryId: row.equipment_battery_id,
-                                    name: row.equipment_name,
-                                    description: row.equipment_description,
-                                    price: row.equipment_price
-                                }]
+                                }
                             }]
                         })
 
                     }
-
                 }
 
-                return res.status(200).json({
-                    success: true,
-                    message: "Agenda obtida com sucesso!",
-                    verbose: null,
-                    data: {
-                        schedules: agenda
-                    }
-                })
+                const equipmentsQuery = `
+                    SELECT s.id, b.id AS battery_id, DATE_FORMAT(s.date,'%Y-%m-%d') as date, se.equipment_id, be.price, eq.name, be.description, e.id as establishment_id FROM schedules s 
+                    INNER JOIN batteries b ON b.id = s.battery_id 
+                    INNER JOIN establishments e ON e.id = b.establishment_id 
+                    INNER JOIN schedule_equipments se ON se.schedule_id = s.id 
+                    INNER JOIN battery_equipments be ON be.id = se.equipment_id 
+                    INNER JOIN equipment eq ON eq.id = be.equipment_id 
+                    WHERE 
+                        s.user_id = ? 
+                        AND s.status_id NOT IN (?)
+                        ORDER BY date
+                `;
 
+                const equipmentsFilters = [
+                    userId,
+                    SCHEDULE_STATUS.CANCELED
+                ];
+
+                req.connection.query(equipmentsQuery, equipmentsFilters, function (err, results, fields) {
+
+                    for(let item of agenda) {
+
+                        for (let battery of item.batteries) {
+                            battery['equipments'] = [];
+                            for (let row of results) {
+                                if (item.establishment.id === row.establishment_id && item.date === row.date && battery.id === row.battery_id) {
+                                    battery.equipments.push({
+                                        id: row.equipment_id,
+                                        equipmentBatteryId: row.battery_id,
+                                        name: row.name,
+                                        description: row.description,
+                                        price: row.price
+                                    })
+                                }
+                            }
+                        }
+                    }
+
+                    return res.status(200).json({
+                        success: true,
+                        message: "Agenda obtida com sucesso!",
+                        verbose: null,
+                        data: {
+                            schedules: agenda
+                        }
+                    })
+
+                });
             })
 
     } catch (error) {

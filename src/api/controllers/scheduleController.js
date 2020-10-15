@@ -35,7 +35,7 @@ exports.store = async function (req, res) {
                 AND b.deleted = false
                 AND w.day = LOWER(DATE_FORMAT(?, "%W"))
                 AND (
-                    NOW() < b.end_hour 
+                    NOW() > b.end_hour 
                     AND ? = DATE_FORMAT(NOW(), "%Y-%m-%d")
                 )
             GROUP By b.id;
