@@ -567,10 +567,10 @@ exports.login = async function (req, res) {
 
             const firstEstablishmentId = users[0].establishments[0].id
 
-            res.setHeader('Role-Id', USER_TYPE.ASSISTANT)
-            res.setHeader('User-Id', users[0].id)
-            res.setHeader('Establishment-Id', firstEstablishmentId)
-            res.setHeader('Access-Token', jwtHandler.generate(users[0].id, firstEstablishmentId))
+            res.setHeader('role-id', USER_TYPE.ASSISTANT)
+            res.setHeader('user-id', users[0].id)
+            res.setHeader('establishment-id', firstEstablishmentId)
+            res.setHeader('access-token', jwtHandler.generate(users[0].id, firstEstablishmentId))
 
             return res.status(200).json({
                 success: true,

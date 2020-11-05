@@ -5,7 +5,7 @@ module.exports = {
 
   validateToken: function (req, res, next) {
 
-    let token = req.headers['Access-Token'] || req.headers['Authorization']
+    let token = req.headers['access-token'] || req.headers['authorization']
 
     if (token) {
 

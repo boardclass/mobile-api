@@ -79,8 +79,8 @@ exports.login = async function (req, res) {
 
                 const token = jwtHandler.generate(user.id, null)
 
-                res.setHeader('Role-Id', USER_TYPE.USER)
-                res.setHeader('Access-Token', token)
+                res.setHeader('role-id', USER_TYPE.USER)
+                res.setHeader('access-token', token)
 
                 return res.status(200).json({
                     success: true,
@@ -279,9 +279,9 @@ exports.store = async function (req, res) {
 
                                         const token = jwtHandler.generate(insertId, null)
 
-                                        res.setHeader('Role-Id', USER_TYPE.USER)
-                                        res.setHeader('User-Id', insertId)
-                                        res.setHeader('Access-Token', token)
+                                        res.setHeader('role-id', USER_TYPE.USER)
+                                        res.setHeader('user-id', insertId)
+                                        res.setHeader('access-token', token)
 
                                         return res.status(200).json({
                                             success: true,
@@ -352,9 +352,9 @@ exports.store = async function (req, res) {
 
                                 const token = jwtHandler.generate(userId, null)
 
-                                res.setHeader('Role-Id', USER_TYPE.USER)
-                                res.setHeader('User-Id', userId)
-                                res.setHeader('Access-Token', token)
+                                res.setHeader('role-id', USER_TYPE.USER)
+                                res.setHeader('user-id', userId)
+                                res.setHeader('access-token', token)
 
                                 return res.status(200).json({
                                     success: true,

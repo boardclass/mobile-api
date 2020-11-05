@@ -141,7 +141,7 @@ exports.validatePassword = function (req, res) {
                 }
 
                 const establishmentId = results[0].establishment_id
-                res.setHeader('Access-Token', jwtHandler.generate(null, establishmentId))
+                res.setHeader('access-token', jwtHandler.generate(null, establishmentId))
 
                 return res.status(200).json({
                     success: true,
@@ -183,7 +183,7 @@ exports.resetPassword = async function (req, res) {
                 }
 
                 const token = jwtHandler.generate(null, establishmentId)
-                res.setHeader('Access-Token', token)
+                res.setHeader('access-token', token)
                 req.connection.commit(function (err) {
 
                     if (err) {
