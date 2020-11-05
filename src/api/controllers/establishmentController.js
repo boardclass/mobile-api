@@ -164,9 +164,9 @@ exports.store = async function (req, res) {
 
                                 })
 
-                                res.setHeader('role-id', USER_TYPE.PROFESSOR)
-                                res.setHeader('access-token', jwtHandler.generate(null, newEstablishmentId))
-                                res.setHeader('establishment-id', newEstablishmentId)
+                                res.setHeader('Role-Id', USER_TYPE.PROFESSOR)
+                                res.setHeader('Access-Token', jwtHandler.generate(null, newEstablishmentId))
+                                res.setHeader('Establishment-Id', newEstablishmentId)
 
                                 return res.status(200).json({
                                     success: true,
@@ -275,9 +275,9 @@ exports.login = async function (req, res) {
 
                 }
 
-                res.setHeader('role-id', USER_TYPE.PROFESSOR)
-                res.setHeader('establishment-id', establishment.id)
-                res.setHeader('access-token', jwtHandler.generate(null, establishment.id))
+                res.setHeader('Role-Id', USER_TYPE.PROFESSOR)
+                res.setHeader('Establishment-Id', establishment.id)
+                res.setHeader('Access-Token', jwtHandler.generate(null, establishment.id))
 
                 return res.status(200).json({
                     success: true,

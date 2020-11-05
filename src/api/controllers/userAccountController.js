@@ -266,7 +266,7 @@ exports.validatePassword = async function (req, res) {
                 }
 
                 const userId = results[0].user_id
-                res.setHeader('access-token', jwtHandler.generate(userId, null))
+                res.setHeader('Access-Token', jwtHandler.generate(userId, null))
 
                 return res.status(200).json({
                     success: true,
@@ -306,7 +306,7 @@ exports.resetPassword = async function (req, res) {
                 }
 
                 const token = jwtHandler.generate(userId, null)
-                res.setHeader('access-token', token)
+                res.setHeader('Access-Token', token)
 
                 return res.status(200).json({
                     success: true,
