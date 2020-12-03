@@ -110,9 +110,6 @@ exports.store = async function (req, res) {
     const account = req.body.account
     let indicationId = null
 
-    console.log(user);
-    console.log(account);
-
     req.assert('name', 'O nome deve ser informado').notEmpty()
     req.assert('cpf', 'O CPF deve ser informado').notEmpty()
     req.assert('cpf', 'O CPF está com formato inválido').len(11)
