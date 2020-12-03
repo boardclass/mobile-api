@@ -142,7 +142,7 @@ exports.store = async function (req, res) {
             WHERE code = ?
         `
 
-        if (user.indication != undefined) {
+        if (user.indication != "" && user.indication != undefined) {
 
             req.connection.query(indicationQuery, user.indication, function (err, result, _) {
 
