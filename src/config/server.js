@@ -29,9 +29,9 @@ module.exports = {
 
         let port = process.env.PORT || 8080
 
-        if (port != 8080) {
-            wakeuper.setTimer()
-        }
+        // if (port != 8080) {
+        //     wakeuper.setTimer()
+        // }
 
         mongodb.setup()
 
