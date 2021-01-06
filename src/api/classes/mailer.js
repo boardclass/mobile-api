@@ -13,7 +13,7 @@ module.exports = {
             text: data.message
         }, (error, result, fullResult) => {
             if (error) {
-                console.log(err)
+                console.log(error)
                 return callback(null)
             }
 
