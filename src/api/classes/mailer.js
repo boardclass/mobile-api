@@ -10,7 +10,8 @@ module.exports = {
         });
 
         send({
-            text: data.message
+            text: data.message,
+            files: data.attachments
         }, (error, result, fullResult) => {
             if (error) {
                 console.log(error)
