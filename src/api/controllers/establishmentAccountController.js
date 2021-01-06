@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs')
 
 const math = require('../classes/math')
+const mailer = require('../classes/mailer')
 const validator = require("../classes/validator")
 const jwtHandler = require("../classes/jwt")
 
@@ -61,7 +62,7 @@ exports.tokenPassword = function (req, res) {
 
                         const data = {
                             destination: email,
-                            subject: 'Recuperação de email solicitado!',
+                            subject: 'Recuperação de senha solicitada',
                             message: `Seu código de recuperação é: ${verificationCode}`
                         }
 

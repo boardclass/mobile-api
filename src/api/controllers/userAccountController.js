@@ -186,7 +186,7 @@ exports.tokenPassword = function (req, res) {
 
                         const data = {
                             destination: email,
-                            subject: 'Recuperação de email solicitado!',
+                            subject: 'Recuperação de senha solicitada',
                             message: `Seu código de recuperação é: ${verificationCode}`
                         }
 
