@@ -11,7 +11,6 @@ const pdfGenerator = require('../classes/pdf')
 
 const { handleError } = require('../classes/error-handler')
 const { ADDRESS, SCHEDULE_STATUS, USER_TYPE, ESTABLISHMENT_STATUS, SCHEDULE_ACTION } = require('../classes/constants');
-const root = require('../classes/root');
 
 exports.store = async function (req, res) {
 
@@ -2617,22 +2616,20 @@ exports.shareExtract = async function (req, res) {
 
                     pdfGenerator.generateFile(html, (err, file) => {
 
-                        console.log(file);
-                        
                         if (err)
                             return handleError(req, res, 500, "Ocorreu um erro ao enviar extrato!", err)
 
-                        let filePath = `/src/files`
                         let filename = `extract_${currentExtract.establishment}_${currentExtract.month}_${currentExtract.year}.pdf`
 
-                        console.log(`file path: ${filePath}`);
+                        console.log(`file path: ${filename}`);
+                        console.log(file.filename);
 
                         const data = {
                             destination: currentExtract.email,
                             subject: `${extract[0].establishment} - Extrato ${extract[0].month}/${extract[0].year}`,
                             message: `Segue extrato de referência ${extract[0].month}/${extract[0].year} no formato pdf`,
                             attachments: {
-                                path: file.filename,
+                                filesPath: file.filename,
                                 filename: filename
                             }
                         }
