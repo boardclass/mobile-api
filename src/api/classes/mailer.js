@@ -22,19 +22,6 @@ module.exports = {
             return callback(result)
         })
 
-        // transporter.sendMail({
-        //     from: `Board Class <atendimento@boardclass.com.br>`,
-        //     to: data.destination,
-        //     subject: data.subject,
-        //     text: data.message,
-        //     attachments: data.attachments
-        // }).then(message => {
-        //     callback(message)
-        // }).catch(err => {
-        //     console.log(err)
-        //     callback(null)
-        // })
-
     }
 
 }

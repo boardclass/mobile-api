@@ -3,6 +3,7 @@ const mysql = require('../util/connection')
 
 const randomstring = require("randomstring")
 
+const path = require('path');
 const mailer = require('../classes/mailer')
 const bcrypt = require('bcryptjs')
 const validator = require('../classes/validator')
@@ -12,7 +13,7 @@ const pdfGenerator = require('../classes/pdf')
 const { handleError } = require('../classes/error-handler')
 const { minutesRestriction } = require('../classes/time-restriction')
 const { ADDRESS, SCHEDULE_STATUS, USER_TYPE, ESTABLISHMENT_STATUS, SCHEDULE_ACTION } = require('../classes/constants');
-
+const filesPath = path.resolve(__dirname, '/src/files')
 
 exports.store = async function (req, res) {
 
@@ -2409,7 +2410,11 @@ exports.getExtractByDate = async function (req, res) {
                         return handleError(req, res, 500, "Ocorreu um erro ao obter extrato!", err)
                     }
 
-                    pdfGenerator.generate(html, (buffer) => {
+                    pdfGenerator.generate(html, (err, buffer) => {
+
+                        if (err) 
+                            return handleError(req, res, 500, "Ocorreu um erro ao obter extrato!", err)
+
                         let base64data = buffer.toString('base64');
 
                         return res.status(200).json({
@@ -2612,24 +2617,24 @@ exports.shareExtract = async function (req, res) {
                     if (err)
                         return handleError(req, res, 500, "Ocorreu um erro ao enviar extrato!", err)
 
-                    pdfGenerator.generate(html, (buffer) => {
+                    pdfGenerator.generateFile(html, (err, file) => {
+
+                        console.log(`file information: ${file}`);
+                        console.log(`file path: ${filesPath}`);
+
+                        if (err)
+                            return handleError(req, res, 500, "Ocorreu um erro ao enviar extrato!", err)
 
                         let filename = `extract_${currentExtract.establishment}_${currentExtract.month}_${currentExtract.year}.pdf`
-
-                        let attachments = [{
-                            filename: filename,
-                            content: buffer,
-                            contentType: 'application/pdf'
-                        }]
 
                         const data = {
                             destination: currentExtract.email,
                             subject: `${extract[0].establishment} - Extrato ${extract[0].month}/${extract[0].year}`,
                             message: `Segue extrato de referência ${extract[0].month}/${extract[0].year} no formato pdf`,
-                            attachments: [{
-                                path: buffer,
-                                filename: filename
-                            }]
+                            attachments: {
+                                path: filesPath,
+                                filename: file.fileNmae
+                            }
                         }
 
                         mailer.send(data, (result) => {
