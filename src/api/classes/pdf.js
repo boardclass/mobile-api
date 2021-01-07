@@ -25,7 +25,7 @@ module.exports = {
 
         let filePath = path.resolve(__dirname, '/src/files/test.pdf')
 
-        pdf.create(content, options).toFile([filePath], function (err, file) {
+        pdf.create(content, options).toFile(filePath, function (err, file) {
             callback(err, file)
         })
 
