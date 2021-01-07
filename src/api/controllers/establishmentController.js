@@ -2622,7 +2622,7 @@ exports.shareExtract = async function (req, res) {
                         if (err)
                             return handleError(req, res, 500, "Ocorreu um erro ao enviar extrato!", err)
 
-                        let filePath = `${root}/src/files`
+                        let filePath = `/src/files`
                         let filename = `extract_${currentExtract.establishment}_${currentExtract.month}_${currentExtract.year}.pdf`
 
                         console.log(`file path: ${filePath}`);
