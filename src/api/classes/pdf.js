@@ -23,7 +23,7 @@ module.exports = {
             orientation: 'landscape'
         }
 
-        let filePath = `/src/files`
+        let filePath = `/src/files/test.pdf`
 
         pdf.create(content, options).toFile(filePath, function (err, file) {
             callback(err, file)

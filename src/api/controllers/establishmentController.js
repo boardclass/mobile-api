@@ -2632,8 +2632,8 @@ exports.shareExtract = async function (req, res) {
                             subject: `${extract[0].establishment} - Extrato ${extract[0].month}/${extract[0].year}`,
                             message: `Segue extrato de referência ${extract[0].month}/${extract[0].year} no formato pdf`,
                             attachments: {
-                                path: filesPath,
-                                filename: file.filename
+                                path: file.filename,
+                                filename: filename
                             }
                         }
 
