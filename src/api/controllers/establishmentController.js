@@ -2628,10 +2628,10 @@ exports.shareExtract = async function (req, res) {
                             destination: currentExtract.email,
                             subject: `${extract[0].establishment} - Extrato ${extract[0].month}/${extract[0].year}`,
                             message: `Segue extrato de referência ${extract[0].month}/${extract[0].year} no formato pdf`,
-                            attachments: {
-                                filesPath: file.filename,
+                            attachments: [{
+                                path: file.filename,
                                 filename: filename
-                            }
+                            }]
                         }
 
                         mailer.send(data, (result) => {
