@@ -3,7 +3,6 @@ const mysql = require('../util/connection')
 
 const randomstring = require("randomstring")
 
-const path = require('path');
 const mailer = require('../classes/mailer')
 const bcrypt = require('bcryptjs')
 const validator = require('../classes/validator')
@@ -12,7 +11,7 @@ const pdfGenerator = require('../classes/pdf')
 
 const { handleError } = require('../classes/error-handler')
 const { ADDRESS, SCHEDULE_STATUS, USER_TYPE, ESTABLISHMENT_STATUS, SCHEDULE_ACTION } = require('../classes/constants');
-const filesPath = path.resolve(__dirname, '/src/files')
+const filesPath = `${__dirname}/src/files`
 
 exports.store = async function (req, res) {
 
@@ -2618,7 +2617,7 @@ exports.shareExtract = async function (req, res) {
 
                     pdfGenerator.generateFile(html, (err, file) => {
 
-                        console.log(`file information: ${file}`);
+                        console.log(file);
                         console.log(`file path: ${filesPath}`);
 
                         if (err)
