@@ -1,4 +1,5 @@
 const pdf = require('html-pdf');
+const root = require('./root');
 
 module.exports = {
 
@@ -22,7 +23,7 @@ module.exports = {
             orientation: 'landscape'
         }
 
-        let filePath = `${__dirname}/src/files`
+        let filePath = `${root}/src/files`
 
         pdf.create(content, options).toFile(filePath, function (err, file) {
             callback(err, file)
