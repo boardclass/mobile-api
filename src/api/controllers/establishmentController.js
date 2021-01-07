@@ -11,7 +11,6 @@ const jwtHandler = require('../classes/jwt')
 const pdfGenerator = require('../classes/pdf')
 
 const { handleError } = require('../classes/error-handler')
-const { minutesRestriction } = require('../classes/time-restriction')
 const { ADDRESS, SCHEDULE_STATUS, USER_TYPE, ESTABLISHMENT_STATUS, SCHEDULE_ACTION } = require('../classes/constants');
 const filesPath = path.resolve(__dirname, '/src/files')
 
