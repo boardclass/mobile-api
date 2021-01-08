@@ -22,7 +22,7 @@ module.exports = {
             orientation: 'landscape'
         }
 
-        pdf.create(content, options).toFile('../files/test.pdf', function (err, file) {
+        pdf.create(content, options).toFile('../../files/test.pdf', function (err, file) {
             callback(err, file)
         })
 
