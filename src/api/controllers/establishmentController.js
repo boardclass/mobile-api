@@ -2621,17 +2621,14 @@ exports.shareExtract = async function (req, res) {
 
                         let filename = `extract_${currentExtract.establishment}_${currentExtract.month}_${currentExtract.year}.pdf`
 
-                        console.log(`file path: ${filename}`);
-                        console.log(file.filename);
+                        console.log(`file path: ${file.filename}`);
+                        console.log(file);
 
                         const data = {
                             destination: currentExtract.email,
                             subject: `${extract[0].establishment} - Extrato ${extract[0].month}/${extract[0].year}`,
                             message: `Segue extrato de referência ${extract[0].month}/${extract[0].year} no formato pdf`,
-                            attachments: [{
-                                path: file.filename,
-                                filename: filename
-                            }]
+                            attachments: [file.filename]
                         }
 
                         mailer.send(data, (result) => {
