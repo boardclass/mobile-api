@@ -2255,7 +2255,8 @@ exports.getExtractByDate = async function (req, res) {
                 u.id,
                 u.name,
                 CONCAT('(', SUBSTR(u.phone, 1, 2), ') ', SUBSTR(u.phone, 3, 2), ' ', SUBSTR(u.phone, 5, 5), '-', SUBSTR(u.phone, 10, 4)) AS phone,
-                us.email,
+                us.email AS userEmail,,
+                ec.email AS establishmentEmail,
                 e.name AS establishment,
                 DATE_FORMAT(s.date, "%Y-%m-%d") AS date,
                 b.id AS batteryId,
@@ -2278,6 +2279,8 @@ exports.getExtractByDate = async function (req, res) {
                 ON b.id = s.battery_id
             INNER JOIN establishments e
                 ON e.id = b.establishment_id
+            INNER JOIN establishment_accounts ec
+                ON ec.establishment_id = e.id
             INNER JOIN schedule_status ss
                 ON s.status_id = ss.id
             LEFT JOIN schedule_equipments se
@@ -2359,8 +2362,6 @@ exports.getExtractByDate = async function (req, res) {
                             status: row.status,
                             isDetached: row.isDetached,
                             equipmentsValue: row.equipmentPrice,
-                            totalValue: row.totalValue,
-                            equipmentsValue: row.equipmentPrice,
                             totalValue: row.totalValue
                         })
 
@@ -2376,7 +2377,7 @@ exports.getExtractByDate = async function (req, res) {
                             date: row.date,
                             name: row.name,
                             phone: row.phone,
-                            email: row.email,
+                            email: row.userEmail,
                             batteryId: row.batteryId,
                             value: row.value,
                             reservedVacancies: row.reservedVacancies,
