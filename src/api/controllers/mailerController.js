@@ -9,14 +9,14 @@ exports.send = function (req, res) {
         message: req.body.message
     }
 
-    mailer.send(data, callback => {
+    mailer.send(data, (error, result) => {
 
-        if (callback == null) {
+        if (error) {
 
             return res.status(500).json({
                 success: false,
                 message: "Falha ao enviar email!",
-                verbose: null,
+                verbose: error,
                 data: {}
             })
 

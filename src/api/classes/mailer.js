@@ -15,11 +15,12 @@ module.exports = {
         }, (error, result, fullResult) => {
             if (error) {
                 console.log(error)
-                return callback(null)
+                return callback(error, null)
             }
 
             console.log(result);
-            return callback(result)
+            console.log(fullResult);
+            return callback(null, result);
         })
 
     }

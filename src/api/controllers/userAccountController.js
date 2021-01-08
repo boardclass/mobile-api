@@ -190,14 +190,14 @@ exports.tokenPassword = function (req, res) {
                             message: `Seu código de recuperação é: ${verificationCode}`
                         }
 
-                        mailer.send(data, callback => {
+                        mailer.send(data, (error, result) => {
 
-                            if (callback == null) {
+                            if (error) {
 
                                 return res.status(500).json({
                                     success: false,
                                     message: "Falha ao enviar email!",
-                                    verbose: null,
+                                    verbose: error,
                                     data: {}
                                 })
 

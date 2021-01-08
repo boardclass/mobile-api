@@ -2628,13 +2628,17 @@ exports.shareExtract = async function (req, res) {
                             destination: currentExtract.email,
                             subject: `${extract[0].establishment} - Extrato ${extract[0].month}/${extract[0].year}`,
                             message: `Segue extrato de referência ${extract[0].month}/${extract[0].year} no formato pdf`,
-                            attachments: [file.filename]
+                            attachments: [{
+                                filename: filename,
+                                path: file.filename,
+                                contentType: 'application/pdf'
+                            }]
                         }
 
-                        mailer.send(data, (result) => {
+                        mailer.send(data, (error, result) => {
 
-                            if (result == undefined)
-                                return handleError(req, res, 500, "Ocorreu um erro ao enviar extrato!", null)
+                            if (error)
+                                return handleError(req, res, 500, "Ocorreu um erro ao enviar extrato!", error)
 
                             return res.status(200).json({
                                 success: true,
