@@ -1,4 +1,5 @@
 const pdf = require('html-pdf');
+const randomstring = require("randomstring")
 
 module.exports = {
 
@@ -22,7 +23,7 @@ module.exports = {
             orientation: 'landscape'
         }
 
-        pdf.create(content, options).toFile('./html.pdf', function (err, file) {
+        pdf.create(content, options).toFile(`./files/pdf/extract_${randomstring.generate(6)}.pdf`, function (err, file) {
             callback(err, file)
         })
 

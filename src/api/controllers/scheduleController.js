@@ -140,7 +140,6 @@ exports.store = async function (req, res) {
                             equipment.equipmentBatteryId
                         ]
     
-                        console.log("equipmentParams", equipmentParams);
                         await connection.query(equipmentQuery, equipmentParams)
     
                     }

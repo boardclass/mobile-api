@@ -14,12 +14,9 @@ module.exports = {
             files: data.attachments
         }, (error, result, fullResult) => {
             if (error) {
-                console.log(error)
                 return callback(error, null)
             }
 
-            console.log(result);
-            console.log(fullResult);
             return callback(null, result);
         })
 
