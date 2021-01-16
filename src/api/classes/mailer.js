@@ -11,29 +11,14 @@ module.exports = {
 
         send({
             text: data.message,
-            files: [data.attachments]
+            files: data.attachments
         }, (error, result, fullResult) => {
             if (error) {
-                console.log(err)
-                return callback(null)
+                return callback(error, null)
             }
 
-            console.log(result);
-            return callback(result)
+            return callback(null, result);
         })
-
-        // transporter.sendMail({
-        //     from: `Board Class <atendimento@boardclass.com.br>`,
-        //     to: data.destination,
-        //     subject: data.subject,
-        //     text: data.message,
-        //     attachments: data.attachments
-        // }).then(message => {
-        //     callback(message)
-        // }).catch(err => {
-        //     console.log(err)
-        //     callback(null)
-        // })
 
     }
 

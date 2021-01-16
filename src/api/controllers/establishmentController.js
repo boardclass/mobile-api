@@ -10,9 +10,7 @@ const jwtHandler = require('../classes/jwt')
 const pdfGenerator = require('../classes/pdf')
 
 const { handleError } = require('../classes/error-handler')
-const { minutesRestriction } = require('../classes/time-restriction')
 const { ADDRESS, SCHEDULE_STATUS, USER_TYPE, ESTABLISHMENT_STATUS, SCHEDULE_ACTION } = require('../classes/constants');
-
 
 exports.store = async function (req, res) {
 
@@ -1217,8 +1215,6 @@ exports.storeBattery = async function (req, res) {
         const insertedBattery = await connection.query(insertQuery, insertParams)
         const insertedBatteryId = insertedBattery.insertId
 
-        console.log(`battery inserted -> ${insertedBatteryId}`);
-
         const weekendInsertQuery = `
             INSERT INTO battery_weekdays
             (
@@ -1240,8 +1236,6 @@ exports.storeBattery = async function (req, res) {
             ]
 
             await connection.query(weekendInsertQuery, params)
-
-            console.log(`weekday inserted -> ${weekdays[index]}`);
 
         }
 
@@ -1273,8 +1267,6 @@ exports.storeBattery = async function (req, res) {
 
             await connection.query(equipmentsQuery, params)
 
-            console.log(`equipment inserted -> ${equipments[index].id}`);
-
         }
 
         await connection.query('COMMIT')
@@ -1287,7 +1279,6 @@ exports.storeBattery = async function (req, res) {
         })
 
     } catch (err) {
-        console.log("passing on catch");
         await connection.query('ROLLBACK')
         return handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
     } finally {
@@ -2264,7 +2255,8 @@ exports.getExtractByDate = async function (req, res) {
                 u.id,
                 u.name,
                 CONCAT('(', SUBSTR(u.phone, 1, 2), ') ', SUBSTR(u.phone, 3, 2), ' ', SUBSTR(u.phone, 5, 5), '-', SUBSTR(u.phone, 10, 4)) AS phone,
-                us.email,
+                us.email AS userEmail,
+                ec.email AS establishmentEmail,
                 e.name AS establishment,
                 DATE_FORMAT(s.date, "%Y-%m-%d") AS date,
                 b.id AS batteryId,
@@ -2287,6 +2279,8 @@ exports.getExtractByDate = async function (req, res) {
                 ON b.id = s.battery_id
             INNER JOIN establishments e
                 ON e.id = b.establishment_id
+            INNER JOIN establishment_accounts ec
+                ON ec.establishment_id = e.id
             INNER JOIN schedule_status ss
                 ON s.status_id = ss.id
             LEFT JOIN schedule_equipments se
@@ -2368,8 +2362,6 @@ exports.getExtractByDate = async function (req, res) {
                             status: row.status,
                             isDetached: row.isDetached,
                             equipmentsValue: row.equipmentPrice,
-                            totalValue: row.totalValue,
-                            equipmentsValue: row.equipmentPrice,
                             totalValue: row.totalValue
                         })
 
@@ -2385,7 +2377,7 @@ exports.getExtractByDate = async function (req, res) {
                             date: row.date,
                             name: row.name,
                             phone: row.phone,
-                            email: row.email,
+                            email: row.userEmail,
                             batteryId: row.batteryId,
                             value: row.value,
                             reservedVacancies: row.reservedVacancies,
@@ -2409,7 +2401,11 @@ exports.getExtractByDate = async function (req, res) {
                         return handleError(req, res, 500, "Ocorreu um erro ao obter extrato!", err)
                     }
 
-                    pdfGenerator.generate(html, (buffer) => {
+                    pdfGenerator.generate(html, (err, buffer) => {
+
+                        if (err) 
+                            return handleError(req, res, 500, "Ocorreu um erro ao obter extrato!", err)
+
                         let base64data = buffer.toString('base64');
 
                         return res.status(200).json({
@@ -2612,27 +2608,28 @@ exports.shareExtract = async function (req, res) {
                     if (err)
                         return handleError(req, res, 500, "Ocorreu um erro ao enviar extrato!", err)
 
-                    pdfGenerator.generate(html, (buffer) => {
+                    pdfGenerator.generateFile(html, (err, file) => {
+
+                        if (err)
+                            return handleError(req, res, 500, "Ocorreu um erro ao enviar extrato!", err)
 
                         let filename = `extract_${currentExtract.establishment}_${currentExtract.month}_${currentExtract.year}.pdf`
-
-                        let attachments = [{
-                            filename: filename,
-                            content: buffer,
-                            contentType: 'application/pdf'
-                        }]
 
                         const data = {
                             destination: currentExtract.email,
                             subject: `${extract[0].establishment} - Extrato ${extract[0].month}/${extract[0].year}`,
                             message: `Segue extrato de referência ${extract[0].month}/${extract[0].year} no formato pdf`,
-                            attachments: attachments
+                            attachments: [{
+                                filename: filename,
+                                path: file.filename,
+                                contentType: 'application/pdf'
+                            }]
                         }
 
-                        mailer.send(data, (result) => {
+                        mailer.send(data, (error, result) => {
 
-                            if (result == undefined)
-                                return handleError(req, res, 500, "Ocorreu um erro ao enviar extrato!", null)
+                            if (error)
+                                return handleError(req, res, 500, "Ocorreu um erro ao enviar extrato!", error)
 
                             return res.status(200).json({
                                 success: true,
