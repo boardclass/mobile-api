@@ -1,5 +1,5 @@
 -- ADICIONAR EMAIL DO ESTABELECIMENTO
-SET @EMAIL = 'jonathalimax@gmail.com';
+SET @EMAIL = '';
 
 SET autocommit = 0;
 START TRANSACTION;
@@ -74,6 +74,15 @@ FROM establishments_favorites
 WHERE establishment_id = @ESTABLISHMENT_ID;
 
 -- Deleting employess
+DELETE 
+FROM users_roles
+WHERE role_id = 3
+AND user_id IN (
+	SELECT ee.user_id
+	FROM establishment_employees ee
+	WHERE ee.establishment_id = @ESTABLISHMENT_ID
+);
+
 DELETE 
 FROM establishment_employees
 WHERE establishment_id = @ESTABLISHMENT_ID;
