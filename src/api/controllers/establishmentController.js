@@ -1848,6 +1848,7 @@ exports.selfSchedule = async function (req, res) {
     const user = req.body.user;
     const batteryId = req.body.batteryId;
 
+    req.assert('cpf', 'O CPF deve ser informado').notEmpty();
     req.assert('date', 'A data deve ser informada').notEmpty();
     req.assert('user', 'O usuário deve ser informado').notEmpty();
     req.assert('batteryId', 'O id da bateria deve ser informado').notEmpty();
@@ -1937,16 +1938,12 @@ exports.selfSchedule = async function (req, res) {
                         let query = `
                             SELECT DISTINCT
                                 id 
-                            FROM users 
-                            WHERE phone = ? 
+                            FROM users
+                            WHERE cpf = ? 
                         `;
 
-                        if (user.cpf != null) {
-                            query += `OR cpf = ${user.cpf}`
-                        }
-
                         let filters = [
-                            user.phone
+                            user.cpf
                         ];
 
                         req.connection.query(query, filters, function (err, userIdResult, _) {
@@ -2006,16 +2003,12 @@ exports.selfSchedule = async function (req, res) {
                             } else {
 
                                 let update_user_query = `
-                                    UPDATE users SET 
-                                    cpf = ?,
-                                    name = ?,
+                                    UPDATE users SET
                                     phone = ? 
                                     WHERE id = ?
                                 `;
 
                                 let update_filter = [
-                                    user.cpf,
-                                    user.name,
                                     user.phone,
                                     userIdResult[0].id
                                 ];

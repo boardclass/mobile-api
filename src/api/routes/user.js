@@ -6,6 +6,10 @@ module.exports = (app) => {
         userController.store(req, res)
     })
 
+    app.get('/api/user/:cpf', (req, res) => {
+        userController.getByCpf(req, res)
+    })
+
     app.post('/api/user/login', (req, res) => {
         userController.login(req, res)
     })
