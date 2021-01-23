@@ -2247,7 +2247,7 @@ exports.getExtractByDate = async function (req, res) {
             SELECT
                 u.id,
                 u.name,
-                CONCAT('(', SUBSTR(u.phone, 1, 2), ') ', SUBSTR(u.phone, 3, 2), ' ', SUBSTR(u.phone, 5, 5), '-', SUBSTR(u.phone, 10, 4)) AS phone,
+                CONCAT('(', SUBSTR(u.phone, 3, 2), ') ', SUBSTR(u.phone, 5, 5), '-', SUBSTR(u.phone, 10, 4)) AS phone,
                 us.email AS userEmail,
                 ec.email AS establishmentEmail,
                 e.name AS establishment,
