@@ -1848,9 +1848,12 @@ exports.selfSchedule = async function (req, res) {
     const user = req.body.user;
     const batteryId = req.body.batteryId;
 
-    req.assert('cpf', 'O CPF deve ser informado').notEmpty();
     req.assert('date', 'A data deve ser informada').notEmpty();
-    req.assert('user', 'O usuário deve ser informado').notEmpty();
+    req.assert('user.cpf', 'O CPF deve ser informado').notEmpty()
+    req.assert('user.cpf', 'O CPF está com formato inválido').len(11)
+    req.assert('user.cpf', 'O CPF está deve conter apenas números').isNumeric()
+    req.assert('user.name', 'O nome do usuário deve ser informado').notEmpty();
+    req.assert('user.phone', 'O telefone deve ser informado').notEmpty();
     req.assert('batteryId', 'O id da bateria deve ser informado').notEmpty();
 
     if (validator.validateFields(req, res) != null)
