@@ -389,7 +389,7 @@ exports.store = async function (req, res) {
 }
 
 exports.getByCpf = async function (req, res) {
-    console.log("getByCpf");
+    console.log(req);
     const cpf = req.params.cpf
 
     try {
@@ -556,7 +556,7 @@ exports.storeRole = async function (req, res) {
 }
 
 exports.agenda = async function (req, res) {
-    console.log("agenda");
+    console.log(req);
     const userId = req.decoded.data.userId
 
     try {
