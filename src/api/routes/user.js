@@ -6,10 +6,6 @@ module.exports = (app) => {
         userController.store(req, res)
     })
 
-    app.get('/api/user/:cpf', (req, res) => {
-        userController.getByCpf(req, res)
-    })
-
     app.post('/api/user/login', (req, res) => {
         userController.login(req, res)
     })
@@ -24,6 +20,10 @@ module.exports = (app) => {
 
     app.get('/api/user/agenda', (req, res) => {
         userController.agenda(req, res)
+    })
+
+    app.get('/api/user/:cpf', (req, res) => {
+        userController.getByCpf(req, res)
     })
 
     app.get('/api/user/establishment/favorite', (req, res) => {
