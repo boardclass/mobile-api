@@ -2,16 +2,17 @@ const fs = require('fs');
 const path = require('path');
 
 module.exports = function (app) {
-    require('../api/routes/user')(app)
-    require('../api/routes/address')(app)
-    require('../api/routes/establishment')(app)
-    require('../api/routes/mailer')(app)
-    require('../api/routes/schedule')(app)
-    require('../api/routes/filter')(app)
-    require('../api/routes/userAccount')(app)
-    require('../api/routes/establishmentAccount')(app)
-    require('../api/routes/sport')(app)
-    require('../api/routes/employee')(app)
+    
+    require('../api/common/routes/user')(app)
+    require('../api/common/routes/address')(app)
+    require('../api/common/routes/establishment')(app)
+    require('../api/common/routes/mailer')(app)
+    require('../api/common/routes/schedule')(app)
+    require('../api/common/routes/filter')(app)
+    require('../api/common/routes/userAccount')(app)
+    require('../api/common/routes/establishmentAccount')(app)
+    require('../api/common/routes/sport')(app)
+    require('../api/common/routes/employee')(app)
 
     app.get('/apple-app-site-association', (req, res) => { 
         var pathh = path.resolve(__dirname, '../../', 'apple-app-site-association')
@@ -19,10 +20,6 @@ module.exports = function (app) {
         res.set('Content-Type', 'application/json')
         res.status(200)
         res.send(content)
-    })
-
-    app.get('/establishment', (req, res) => { 
-        res.send('Hello')
     })
 
 } 

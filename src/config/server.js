@@ -1,14 +1,13 @@
-require('../database')
+require('./sequelize')
 
 const pool = require('../config/database');
 const express = require('express')
 const validator = require('express-validator')
 const bodyParser = require('body-parser')
-const wakeuper = require('./wakeup-timer')
 const middleware = require('./middleware')
 const connectionMiddleware = require('./connectionMiddleware')
 const excludedRoutes = require('./excludedRoutes')
-const mongodb = require('../config/mongodb')
+const mongodb = require('./mongodb')
 
 const app = express()
 
@@ -20,21 +19,15 @@ module.exports = {
         app.use(bodyParser.urlencoded({ extended: true }))
         app.use(validator())
 
-        app.use(unless(excludedRoutes.excluded,
-            middleware.validateToken))
-
+        app.use(unless(excludedRoutes.excluded, middleware.validateToken))
+        app.use(middleware.versioning)
         app.use(connectionMiddleware(pool))
 
-        require('./routes')(app)
-
-        let port = process.env.PORT || 8080
-
-        // if (port != 8080) {
-        //     wakeuper.setTimer()
-        // }
+        require('./routes')(app, 'v1')
 
         mongodb.setup()
 
+        let port = process.env.PORT || 8080
         app.listen(port, () => {
             console.log(`Server started on ${port}`)
         })

@@ -5,9 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon index.js",
-    "doc": "documentation build app/** -f html -o docs",
-    "migration": "npx sequelize db:migrate"
+    "dev": "nodemon index.js"
   },
   "repository": {
     "type": "git",

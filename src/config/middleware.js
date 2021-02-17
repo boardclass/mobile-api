@@ -1,5 +1,4 @@
-let jwt = require('jsonwebtoken')
-const jwtHandler = require('../api/classes/jwt')
+const jwtHandler = require('../api/common/classes/jwt')
 
 module.exports = {
 
@@ -28,6 +27,16 @@ module.exports = {
 
     }
 
+  },
+
+  versioning: function (req, res, next) {
+    req.version = req.headers['accept-version'];
+    
+    if (req.version === undefined) {
+      req.version = "v1"
+    }
+
+    next();
   }
 
 }
