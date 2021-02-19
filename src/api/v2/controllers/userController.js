@@ -1,13 +1,13 @@
-const UserAddress = require('../models/UserAddress')
-const UsersRoles = require('../models/UsersRoles')
+const UserAddress = require('../../common/models/UserAddress')
+const UsersRoles = require('../../common/models/UsersRoles')
 
 const bcrypt = require('bcryptjs')
-const validator = require('../classes/validator')
-const jwtHandler = require('../classes/jwt')
-const logger = require('../classes/logger')
+const validator = require('../../common/classes/validator')
+const jwtHandler = require('../../common/classes/jwt')
+const logger = require('../../common/classes/logger')
 
-const { handleError } = require('../classes/error-handler')
-const { SCHEDULE_STATUS, USER_TYPE } = require('../classes/constants')
+const { handleError } = require('../../common/classes/error-handler')
+const { SCHEDULE_STATUS, USER_TYPE } = require('../../common/classes/constants')
 
 exports.login = async function (req, res) {
 
@@ -23,30 +23,7 @@ exports.login = async function (req, res) {
 
     try {
 
-        let query = `
-            SELECT 
-                u.id,
-                u.cpf,
-                u.name,
-                u.phone,
-                uc.password,
-                ur.role_id
-            FROM users u
-            INNER JOIN user_accounts uc
-                ON uc.user_id = u.id
-            INNER JOIN users_roles ur
-                ON ur.user_id = u.id
-                AND ur.role_id = ?
-            WHERE 
-                uc.email = ?
-        `
-
-        let params = [
-            USER_TYPE.USER,
-            email
-        ]
-
-        req.connection.query(query, params, async function (err, result, _) {
+        req.connection.query('CALL user_login(?)', email, async function (err, result, _) {
 
             if (err) {
                 return handleError(req, res, 500, "Ocorreu um erro ao realizar o login!")
@@ -56,14 +33,14 @@ exports.login = async function (req, res) {
 
                 return res.status(404).json({
                     success: true,
-                    message: "Este email não está cadastrado em nossa base de clientes!",
+                    message: "Este email não consta em nossa base de dados!",
                     verbose: null,
                     data: {}
                 })
 
             } else {
 
-                const user = result[0]
+                const user = result[0][0]
                 const matchPassword = await bcrypt.compare(password, user.password)
 
                 if (!matchPassword) {

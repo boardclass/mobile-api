@@ -1,4 +1,4 @@
-const validator = require('../classes/validator')
+const validator = require('../../common/classes/validator')
 const addressRequest = require('../requests/address')
 
 exports.findByCEP = function (req, res) {

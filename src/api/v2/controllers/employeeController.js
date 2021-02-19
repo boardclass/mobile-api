@@ -1,9 +1,9 @@
 const bcrypt = require('bcryptjs')
-const validator = require('../classes/validator')
-const jwtHandler = require('../classes/jwt')
+const validator = require('../../common/classes/validator')
+const jwtHandler = require('../../common/classes/jwt')
 
-const { handleError } = require('../classes/error-handler')
-const { USER_TYPE } = require('../classes/constants')
+const { handleError } = require('../../common/classes/error-handler')
+const { USER_TYPE } = require('../../common/classes/constants')
 
 exports.storeEmployee = async function (req, res) {
 

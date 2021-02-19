@@ -1,5 +1,5 @@
 const request = require('request')
-const logger = require('../classes/logger')
+const logger = require('../../common/classes/logger')
 
 exports.findByCEP = function (cep, callback) {
 

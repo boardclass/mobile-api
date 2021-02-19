@@ -1,4 +1,4 @@
-const { handleError } = require('../classes/error-handler')
+const { handleError } = require('../../common/classes/error-handler')
 
 exports.sports = async function (req, res) {
 

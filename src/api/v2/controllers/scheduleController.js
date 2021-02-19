@@ -1,7 +1,7 @@
-const mysql = require('../util/connection')
-const { handleError } = require('../classes/error-handler')
-const { minutesRestriction } = require('../classes/time-restriction')
-const { SCHEDULE_STATUS } = require('../classes/constants')
+const mysql = require('../../common/util/connection')
+const { handleError } = require('../../common/classes/error-handler')
+const { minutesRestriction } = require('../../common/classes/time-restriction')
+const { SCHEDULE_STATUS } = require('../../common/classes/constants')
 
 exports.store = async function (req, res) {
 

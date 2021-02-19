@@ -1,5 +1,5 @@
-const mailer = require('../classes/mailer')
-const logger = require('../classes/logger')
+const mailer = require('../../common/classes/mailer')
+const logger = require('../../common/classes/logger')
  
 exports.send = function (req, res) {
 

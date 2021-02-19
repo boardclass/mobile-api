@@ -1,11 +1,11 @@
 const bcrypt = require('bcryptjs')
 
-const math = require('../classes/math')
-const mailer = require('../classes/mailer')
-const validator = require("../classes/validator")
-const jwtHandler = require("../classes/jwt")
+const math = require('../../common/classes/math')
+const mailer = require('../../common/classes/mailer')
+const validator = require("../../common/classes/validator")
+const jwtHandler = require("../../common/classes/jwt")
 
-const { handleError } = require('../classes/error-handler')
+const { handleError } = require('../../common/classes/error-handler')
 
 exports.tokenPassword = function (req, res) {
 

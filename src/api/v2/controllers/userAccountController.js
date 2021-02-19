@@ -1,11 +1,11 @@
 const bcrypt = require('bcryptjs')
 
-const validator = require('../classes/validator')
-const math = require('../classes/math')
-const date = require('../classes/date')
-const logger = require('../classes/logger')
-const mailer = require('../classes/mailer')
-const jwtHandler = require('../classes/jwt')
+const validator = require('../../common/classes/validator')
+const math = require('../../common/classes/math')
+const date = require('../../common/classes/date')
+const logger = require('../../common/classes/logger')
+const mailer = require('../../common/classes/mailer')
+const jwtHandler = require('../../common/classes/jwt')
 
 exports.sendSMS = function (req, res) {
 

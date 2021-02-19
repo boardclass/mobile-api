@@ -1,16 +1,16 @@
 const ejs = require('ejs')
-const mysql = require('../util/connection')
+const mysql = require('../../common/util/connection')
 
 const randomstring = require("randomstring")
 
-const mailer = require('../classes/mailer')
+const mailer = require('../../common/classes/mailer')
 const bcrypt = require('bcryptjs')
-const validator = require('../classes/validator')
-const jwtHandler = require('../classes/jwt')
-const pdfGenerator = require('../classes/pdf')
+const validator = require('../../common/classes/validator')
+const jwtHandler = require('../../common/classes/jwt')
+const pdfGenerator = require('../../common/classes/pdf')
 
-const { handleError } = require('../classes/error-handler')
-const { ADDRESS, SCHEDULE_STATUS, USER_TYPE, ESTABLISHMENT_STATUS, SCHEDULE_ACTION } = require('../classes/constants');
+const { handleError } = require('../../common/classes/error-handler')
+const { ADDRESS, SCHEDULE_STATUS, USER_TYPE, ESTABLISHMENT_STATUS, SCHEDULE_ACTION } = require('../../common/classes/constants');
 
 exports.store = async function (req, res) {
 
@@ -512,7 +512,7 @@ exports.serviceAddresses = async function (req, res) {
 
 }
 
-exports.getFilteredAgenda = async function (req, res) {
+exports.getAvailableAgenda = async function (req, res) {
 
     const establishmentId = req.params.establishment_id
     const sportId = req.params.sport_id
@@ -660,54 +660,15 @@ exports.getFilteredAgenda = async function (req, res) {
 
 }
 
-exports.getAgenda = async function (req, res) {
+exports.getAgendaStatus = async function (req, res) {
 
     const establishmentId = req.decoded.data.establishmentId
 
     try {
 
-        const query = `
-        (
-            SELECT DISTINCT
-                DATE_FORMAT(s.date, "%Y-%m-%d") AS date,
-                es.id AS status_id,
-                es.display_name AS status,
-                es.short_name AS short_status,
-                NULL AS status_message
-            FROM schedules s
-            INNER JOIN batteries b 
-                ON b.id = s.battery_id
-            INNER JOIN establishment_status es 
-                ON es.id = ?
-            WHERE
-                b.establishment_id = ?
-                AND b.deleted = false
-            GROUP BY s.date
-        )
-        
-        Union 
-
-        (
-            SELECT DISTINCT
-              DATE_FORMAT(ess.date, "%Y-%m-%d") AS date,
-                es.id AS status_id,
-                es.display_name AS status,
-                es.short_name AS short_status,
-                ess.description AS status_message
-            FROM
-                establishments_status ess
-            INNER JOIN establishment_status es ON
-                es.id = ess.status_id
-            WHERE
-                ess.establishment_id = ?
-        )
-        
-        ORDER BY date
-        `
+        const query = 'CALL establishment_agenda_status(?)'
 
         const queryValues = [
-            ESTABLISHMENT_STATUS.SCHEDULES,
-            establishmentId,
             establishmentId
         ]
 
@@ -721,7 +682,7 @@ exports.getAgenda = async function (req, res) {
                 message: "Agenda obtida com sucesso!",
                 verbose: null,
                 data: {
-                    agenda: results
+                    agenda: results[0][0]
                 }
             })
 
