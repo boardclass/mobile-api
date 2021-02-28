@@ -23,7 +23,30 @@ exports.login = async function (req, res) {
 
     try {
 
-        req.connection.query('CALL user_login(?)', email, async function (err, result, _) {
+        let query = `
+            SELECT 
+                u.id,
+                u.cpf,
+                u.name,
+                u.phone,
+                uc.password,
+                ur.role_id
+            FROM users u
+            INNER JOIN user_accounts uc
+                ON uc.user_id = u.id
+            INNER JOIN users_roles ur
+                ON ur.user_id = u.id
+                AND ur.role_id = ?
+            WHERE 
+                uc.email = ?
+        `
+
+        let params = [
+            USER_TYPE.USER,
+            email
+        ]
+
+        req.connection.query(query, params, async function (err, result, _) {
 
             if (err) {
                 return handleError(req, res, 500, "Ocorreu um erro ao realizar o login!")
@@ -33,14 +56,14 @@ exports.login = async function (req, res) {
 
                 return res.status(404).json({
                     success: true,
-                    message: "Este email não consta em nossa base de dados!",
+                    message: "Este email não está cadastrado em nossa base de clientes!",
                     verbose: null,
                     data: {}
                 })
 
             } else {
 
-                const user = result[0][0]
+                const user = result[0]
                 const matchPassword = await bcrypt.compare(password, user.password)
 
                 if (!matchPassword) {
