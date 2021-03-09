@@ -26,7 +26,8 @@ module.exports = {
         MAINTENANCE: 3,
         FULL: 4,
         SCHEDULES: 5,
-        OTHER: 6
+        OTHER: 6,
+        HOLIDAY: 10
     },
 
     USER_TYPE: {

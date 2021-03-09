@@ -682,7 +682,7 @@ exports.getAgendaStatus = async function (req, res) {
                 message: "Agenda obtida com sucesso!",
                 verbose: null,
                 data: {
-                    agenda: results[0][0]
+                    agenda: results[0]
                 }
             })
 
@@ -713,77 +713,24 @@ exports.getAvailableBatteries = async function (req, res) {
 
     try {
 
-        const query = `
-            SELECT
-                b.id,
-                TIME_FORMAT(b.start_hour, "%H:%i") AS startHour,
-                TIME_FORMAT(b.end_hour, "%H:%i") AS endHour,
-                b.session_value AS price,
-                IFNULL((
-                    SELECT             
-                        (b.people_allowed - COUNT(s.id)) 
-                    FROM schedules s
-                    WHERE 
-                        s.battery_id = b.id
-                        AND s.date = ?
-                        AND s.status_id NOT IN (?)
-                    GROUP BY s.battery_id
-                    ), b.people_allowed
-               ) AS availableVacancies,
-               be.id AS equipmentBatteryId,
-               e.id AS equipmentId,
-               e.name AS equipmentName,
-               be.description AS equipmentDescription,
-               be.price AS equipmentPrice
-            FROM
-                batteries b
-            INNER JOIN battery_weekdays ew
-                ON ew.battery_id = b.id
-            INNER JOIN weekday w
-                ON w.id = ew.weekday_id
-            INNER JOIN establishment_addresses ea  
-                ON ea.id = b.address_id
-                AND ea.type_id = ?
-            LEFT JOIN battery_equipments be
-                ON be.battery_id = b.id
-            LEFT JOIN equipment e
-                ON e.id = be.equipment_id
-            WHERE
-                b.establishment_id = ?
-                AND b.deleted = false
-                AND b.sport_id = ?
-                AND w.day = LOWER(DATE_FORMAT(?, "%W"))
-                AND ea.country = ?
-                AND ea.state = ?
-                AND ea.city = ?
-                AND ea.neighbourhood = ?
-            GROUP BY
-                b.start_hour,
-                b.id,
-                be.id
-        `
-
-        const data = [
+        const params = [
             date,
-            SCHEDULE_STATUS.CANCELED,
-            ADDRESS.SERVICE_TYPE,
             establishmentId,
             sportId,
-            date,
             address.country,
             address.state,
             address.city,
             address.neighbourhood
         ]
 
-        req.connection.query(query, data, function (err, results, _) {
+        req.connection.query('CALL batteries_available(?,?,?,?,?,?,?)', params, function (err, results, _) {
 
             if (err)
                 return handleError(req, res, 500, "Ocorreu um erro ao obter a bateria!", err)
 
             const batteries = []
 
-            for (row of results) {
+            for (row of results[0]) {
 
                 let filtered = batteries.findIndex(value => {
                     return value.id === row.id
@@ -851,66 +798,20 @@ exports.getBatteriesByDate = async function (req, res) {
     const establishmentId = req.decoded.data.establishmentId
 
     try {
-        const query = `
-            SELECT
-                b.id,
-                TIME_FORMAT(b.start_hour, "%H:%i") AS start_hour,
-                TIME_FORMAT(b.end_hour, "%H:%i") AS end_hour,
-                b.session_value AS price,
-                ABS(
-                    (SELECT COUNT(id)
-                        FROM schedules
-                        WHERE
-                            battery_id = b.id
-                            AND date = ?
-                            AND status_id NOT IN(?)
-                    ) - b.people_allowed
-                ) AS availableVacancies,
-                sp.id AS sport_id,
-                sp.display_name AS sport,
-                b.address_id,
-                ea.zipcode AS cep,
-                ea.country,
-                ea.state,
-                ea.city,
-                ea.neighbourhood,
-                ea.street,
-                ea.number,
-                ea.complement
-            FROM
-                batteries b
-            INNER JOIN sports sp 
-                ON sp.id = b.sport_id
-            INNER JOIN establishment_addresses ea
-                ON ea.id = b.address_id
-            INNER JOIN battery_weekdays ew
-                ON ew.battery_id = b.id
-            INNER JOIN weekday w
-                ON w.id = ew.weekday_id
-            WHERE
-                b.establishment_id = ?
-                AND b.deleted = false
-                AND w.day = LOWER(DATE_FORMAT(?, "%W"))
-            GROUP BY
-                b.start_hour,
-                b.id
-        `
-
-        const data = [
+        
+        const params = [
             date,
-            SCHEDULE_STATUS.CANCELED,
-            establishmentId,
-            date
+            establishmentId
         ]
 
-        req.connection.query(query, data, function (err, results, fields) {
+        req.connection.query('CALL batteries_by_date(?,?)', params, function (err, results, _) {
 
             if (err)
                 return handleError(req, res, 500, "Ocorreu um erro ao obter a bateria!", err)
 
             const batteries = []
 
-            for (row of results) {
+            for (row of results[0]) {
                 batteries.push({
                     id: row.id,
                     startHour: row.start_hour,
@@ -956,56 +857,16 @@ exports.batteries = async function (req, res) {
 
     const establishmentId = req.decoded.data.establishmentId
 
-    const query = `
-        SELECT 
-            b.id,
-            TIME_FORMAT(b.start_hour, "%H:%i") AS start_hour,
-            TIME_FORMAT(b.end_hour, "%H:%i") AS end_hour,
-            b.session_value,
-            b.address_id,
-            ea.zipcode AS cep,
-            ea.country,
-            ea.state,
-            ea.city,
-            ea.neighbourhood,
-            ea.street,
-            ea.number,
-            ea.complement,
-            b.sport_id,
-            s.display_name,
-            w.id AS weekday_id,
-            w.day
-        FROM batteries b
-        INNER JOIN sports s 
-            ON s.id = b.sport_id
-        INNER JOIN establishment_addresses ea
-            ON ea.id = b.address_id
-        INNER JOIN battery_weekdays bw
-            ON bw.battery_id = b.id
-        INNER JOIN weekday w 
-            ON w.id = bw.weekday_id
-        WHERE 
-            b.establishment_id = ?
-            AND b.deleted = false
-        ORDER BY 
-            b.start_hour, 
-            weekday_id
-    `
-
-    const queryValues = [
-        establishmentId
-    ]
-
     try {
 
-        req.connection.query(query, queryValues, function (err, results, _) {
+        req.connection.query('CALL batteries(?)', establishmentId, function (err, results, _) {
 
             if (err)
                 return handleError(req, res, 500, "Ocorreu um erro ao obter as baterias!", err)
 
             const batteries = []
 
-            for (row of results) {
+            for (row of results[0]) {
 
                 let filtered = batteries.findIndex(value => {
                     return value.id === row.id
@@ -1094,39 +955,20 @@ exports.storeBattery = async function (req, res) {
 
     try {
 
-        const fetchQuery = `
-            SELECT *
-            FROM batteries b
-            INNER JOIN battery_weekdays bw
-                ON bw.battery_id = b.id
-            WHERE 
-                b.establishment_id = ?
-                AND b.deleted = false
-                AND b.sport_id = ?
-                AND b.address_id = ?
-                AND (
-                    (? >= b.start_hour AND ? < b.end_hour) 
-                    OR (? > b.start_hour AND ? <= b.end_hour)
-                    ) 
-                AND bw.weekday_id IN (?)
-        `
-
         const fetchParams = [
             establishmentId,
             sportId,
             addressId,
             startHour,
-            startHour,
             finishHour,
-            finishHour,
-            weekdays
+            `${weekdays}`
         ]
 
         await connection.query('START TRANSACTION');
 
-        const fetchedBattery = await connection.query(fetchQuery, fetchParams)
+        const fetchedBattery = await connection.query('CALL batteries_slots_used(?,?,?,?,?,?)', fetchParams)
 
-        if (fetchedBattery.length != 0) {
+        if (fetchedBattery[0].length != 0) {
             await connection.query('ROLLBACK')
             return res.status(400).json({
                 success: true,
@@ -1291,6 +1133,7 @@ exports.editBattery = async function (req, res) {
                     b.establishment_id = ?
                     AND b.id != ?
                     AND b.deleted = false
+                    AND b.holiday_id IS NULL
                     AND b.sport_id = ?
                     AND b.address_id = ?
                     AND (
@@ -1844,6 +1687,7 @@ exports.selfSchedule = async function (req, res) {
             WHERE 
                 b.id IN (?)
                 AND b.deleted = false
+                AND b.holiday_id IS NULL
                 AND w.day = LOWER(DATE_FORMAT(?, "%W"))
                 AND (
                     NOW() > b.end_hour 
@@ -2360,7 +2204,7 @@ exports.getExtractByDate = async function (req, res) {
 
                     pdfGenerator.generate(html, (err, buffer) => {
 
-                        if (err) 
+                        if (err)
                             return handleError(req, res, 500, "Ocorreu um erro ao obter extrato!", err)
 
                         let base64data = buffer.toString('base64');
@@ -2606,5 +2450,77 @@ exports.shareExtract = async function (req, res) {
     } catch (err) {
         return handleError(req, res, 500, "Ocorreu um erro ao enviar extrato!", err)
     }
+
+}
+
+exports.holidays = async function (req, res) {
+
+    const establishmentId = req.decoded.data.establishmentId
+
+    req.connection.query('CALL establishment_holidays(?)', establishmentId, function (err, result, _) {
+
+        if (err)
+            return handleError(req, res, 500, "Ocorreu um erro ao obter os feriados!", err)
+
+        return res.status(200).json({
+            success: true,
+            message: '',
+            verbose: null,
+            data: result[0]
+        })
+
+    })
+
+}
+
+exports.getBatteriesByHoliday = async function (req, res) {
+
+    const establishmentId = req.decoded.data.establishmentId
+    const holidayId = req.params.holiday_id
+
+    req.connection.query('CALL batteries_holiday(?, ?)', [establishmentId, holidayId], function (err, result, _) {
+
+        if (err)
+            return handleError(req, res, 500, "Ocorreu um erro ao obter as baterias do feriado!", err)
+
+            const results = result[0]
+            const batteries = []
+
+            for (row of results) {
+
+                batteries.push({
+                    id: row.id,
+                    startHour: row.start_hour,
+                    endHour: row.end_hour,
+                    price: row.session_value,
+                    address: {
+                        id: row.address_id,
+                        cep: row.cep,
+                        country: row.country,
+                        state: row.state,
+                        city: row.city,
+                        street: row.street,
+                        neighbourhood: row.neighbourhood,
+                        number: row.number,
+                        complement: row.complement
+                    },
+                    sport: {
+                        id: row.sport_id,
+                        name: row.display_name
+                    }
+                })
+
+            }
+
+        return res.status(200).json({
+            success: true,
+            message: '',
+            verbose: null,
+            data: {
+                batteries 
+            }
+        })
+
+    })
 
 }

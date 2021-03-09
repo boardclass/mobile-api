@@ -115,4 +115,14 @@ module.exports = (app) => {
         controller.shareExtract(req, res)
     })
 
+    app.get('/api/establishment/holidays', (req, res) => {
+        const controller = require(`../../${req.version}/controllers/establishmentController`)
+        controller.holidays(req, res)
+    })
+
+    app.get('/api/establishment/batteries/:holiday_id', (req, res) => {
+        const controller = require(`../../${req.version}/controllers/establishmentController`)
+        controller.getBatteriesByHoliday(req, res)
+    })
+
 }

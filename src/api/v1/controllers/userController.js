@@ -687,12 +687,26 @@ exports.agenda = async function (req, res) {
                 }
 
                 const equipmentsQuery = `
-                    SELECT s.id, b.id AS battery_id, DATE_FORMAT(s.date,'%Y-%m-%d') as date, se.equipment_id, be.price, eq.name, be.description, e.id as establishment_id FROM schedules s 
-                    INNER JOIN batteries b ON b.id = s.battery_id 
-                    INNER JOIN establishments e ON e.id = b.establishment_id 
-                    INNER JOIN schedule_equipments se ON se.schedule_id = s.id 
-                    INNER JOIN battery_equipments be ON be.id = se.equipment_id 
-                    INNER JOIN equipment eq ON eq.id = be.equipment_id 
+                    SELECT 
+                        s.id, 
+                        b.id AS battery_id, 
+                        DATE_FORMAT(s.date,'%Y-%m-%d') as date, 
+                        se.equipment_id, 
+                        be.price, 
+                        eq.name, 
+                        be.description, 
+                        e.id as establishment_id
+                    FROM schedules s 
+                    INNER JOIN batteries b 
+                        ON b.id = s.battery_id 
+                    INNER JOIN establishments e 
+                        ON e.id = b.establishment_id 
+                    INNER JOIN schedule_equipments se 
+                        ON se.schedule_id = s.id 
+                    INNER JOIN battery_equipments be 
+                        ON be.id = se.equipment_id 
+                    INNER JOIN equipment eq 
+                        ON eq.id = be.equipment_id 
                     WHERE 
                         s.user_id = ? 
                         AND s.status_id NOT IN (?)
