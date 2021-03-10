@@ -2524,3 +2524,65 @@ exports.getBatteriesByHoliday = async function (req, res) {
     })
 
 }
+
+exports.storeHolidayBattery = async function (req, res) {
+
+    const establishmentId = req.decoded.data.establishmentId
+    const holidayId = req.body.holidayId
+    const sportId = req.body.sportId
+    const addressId = req.body.addressId
+    const startHour = req.body.startHour
+    const finishHour = req.body.finishHour
+    const price = req.body.price
+    const peopleAmount = req.body.peopleAmount
+    const equipments = req.body.equipments
+
+    req.assert('sportId', 'O id do esporte deve ser informado').notEmpty()
+    req.assert('addressId', 'O id do endereço deve ser informado').notEmpty()
+    req.assert('startHour', 'A hora de início deve ser informada').notEmpty()
+    req.assert('finishHour', 'A hora de fim deve ser informada').notEmpty()
+    req.assert('price', 'O valor deve ser informado').notEmpty()
+    req.assert('peopleAmount', 'O quantidade máxima de pessoas deve ser informada').notEmpty()
+
+    if (validator.validateFields(req, res) != null)
+        return
+
+    const params = [
+        holidayId,
+        establishmentId,
+        sportId,
+        addressId,
+        startHour,
+        finishHour,
+        price,
+        peopleAmount,
+        `${equipments}`
+    ]
+
+    req.connection.query('CALL store_holiday_battery(?,?,?,?,?,?,?,?,?)', params, function (err, result, _) { 
+
+        if (err) {
+            return handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
+        }
+
+        if (result[0] != undefined) {
+         
+            return res.status(500).json({
+                success: false,
+                message: result[0][0].exception,
+                verbose: null,
+                data: null
+            })
+
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Bateria adicionado com sucesso!",
+            verbose: null,
+            data: null
+        })
+
+    })
+
+}

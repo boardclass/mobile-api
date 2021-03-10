@@ -65,6 +65,11 @@ module.exports = (app) => {
         controller.storeBattery(req, res)
     })
 
+    app.post('/api/establishment/holida/battery', (req, res) => {
+        const controller = require(`../../${req.version}/controllers/establishmentController`)
+        controller.storeHolidayBattery(req, res)
+    })
+
     app.put('/api/establishment/battery/:battery_id', (req, res) => {
         const controller = require(`../../${req.version}/controllers/establishmentController`)
         controller.editBattery(req, res)
