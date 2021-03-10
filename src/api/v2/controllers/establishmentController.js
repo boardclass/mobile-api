@@ -798,7 +798,7 @@ exports.getBatteriesByDate = async function (req, res) {
     const establishmentId = req.decoded.data.establishmentId
 
     try {
-        
+
         const params = [
             date,
             establishmentId
@@ -2483,41 +2483,41 @@ exports.getBatteriesByHoliday = async function (req, res) {
         if (err)
             return handleError(req, res, 500, "Ocorreu um erro ao obter as baterias do feriado!", err)
 
-            const results = result[0]
-            const batteries = []
+        const results = result[0]
+        const batteries = []
 
-            for (row of results) {
+        for (row of results) {
 
-                batteries.push({
-                    id: row.id,
-                    startHour: row.start_hour,
-                    endHour: row.end_hour,
-                    price: row.session_value,
-                    address: {
-                        id: row.address_id,
-                        cep: row.cep,
-                        country: row.country,
-                        state: row.state,
-                        city: row.city,
-                        street: row.street,
-                        neighbourhood: row.neighbourhood,
-                        number: row.number,
-                        complement: row.complement
-                    },
-                    sport: {
-                        id: row.sport_id,
-                        name: row.display_name
-                    }
-                })
+            batteries.push({
+                id: row.id,
+                startHour: row.start_hour,
+                endHour: row.end_hour,
+                price: row.session_value,
+                address: {
+                    id: row.address_id,
+                    cep: row.cep,
+                    country: row.country,
+                    state: row.state,
+                    city: row.city,
+                    street: row.street,
+                    neighbourhood: row.neighbourhood,
+                    number: row.number,
+                    complement: row.complement
+                },
+                sport: {
+                    id: row.sport_id,
+                    name: row.display_name
+                }
+            })
 
-            }
+        }
 
         return res.status(200).json({
             success: true,
             message: '',
             verbose: null,
             data: {
-                batteries 
+                batteries
             }
         })
 
@@ -2537,6 +2537,7 @@ exports.storeHolidayBattery = async function (req, res) {
     const peopleAmount = req.body.peopleAmount
     const equipments = req.body.equipments
 
+    req.assert('holidayId', 'O id do feriado deve ser informado').notEmpty()
     req.assert('sportId', 'O id do esporte deve ser informado').notEmpty()
     req.assert('addressId', 'O id do endereço deve ser informado').notEmpty()
     req.assert('startHour', 'A hora de início deve ser informada').notEmpty()
@@ -2559,14 +2560,14 @@ exports.storeHolidayBattery = async function (req, res) {
         `${equipments}`
     ]
 
-    req.connection.query('CALL store_holiday_battery(?,?,?,?,?,?,?,?,?)', params, function (err, result, _) { 
+    req.connection.query('CALL store_holiday_battery(?,?,?,?,?,?,?,?,?)', params, function (err, result, _) {
 
-        if (err) {
+        if (err)
             return handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
-        }
+
 
         if (result[0] != undefined) {
-         
+
             return res.status(500).json({
                 success: false,
                 message: result[0][0].exception,
@@ -2579,6 +2580,26 @@ exports.storeHolidayBattery = async function (req, res) {
         return res.status(200).json({
             success: true,
             message: "Bateria adicionado com sucesso!",
+            verbose: null,
+            data: null
+        })
+
+    })
+
+}
+
+exports.dropBattery = async function (req, res) {
+
+    const batteryId = req.params.battery_id
+
+    req.connection.query('CALL drop_battery(?)', batteryId, function (err, _, _) {
+
+        if (err)
+            return handleError(req, res, 500, "Ocorreu um erro ao deletar a bateria!", err)
+
+        return res.status(200).json({
+            success: true,
+            message: "Bateria deletada com sucesso!",
             verbose: null,
             data: null
         })

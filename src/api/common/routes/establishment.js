@@ -65,7 +65,7 @@ module.exports = (app) => {
         controller.storeBattery(req, res)
     })
 
-    app.post('/api/establishment/holida/battery', (req, res) => {
+    app.post('/api/establishment/holiday/battery', (req, res) => {
         const controller = require(`../../${req.version}/controllers/establishmentController`)
         controller.storeHolidayBattery(req, res)
     })
@@ -128,6 +128,11 @@ module.exports = (app) => {
     app.get('/api/establishment/batteries/:holiday_id', (req, res) => {
         const controller = require(`../../${req.version}/controllers/establishmentController`)
         controller.getBatteriesByHoliday(req, res)
+    })
+
+    app.delete('/api/establishment/battery/:battery_id', (req, res) => {
+        const controller = require(`../../${req.version}/controllers/establishmentController`)
+        controller.dropBattery(req, res)
     })
 
 }
