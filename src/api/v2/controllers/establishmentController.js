@@ -2548,6 +2548,11 @@ exports.storeHolidayBattery = async function (req, res) {
     if (validator.validateFields(req, res) != null)
         return
 
+    const query = `
+        CALL store_holiday_battery(?,?,?,?,?,?,?,?, @battery_id, @callback); 
+        SELECT @battery_id AS batteryId, @callback AS callback;
+    `
+
     const params = [
         holidayId,
         establishmentId,
@@ -2556,25 +2561,38 @@ exports.storeHolidayBattery = async function (req, res) {
         startHour,
         finishHour,
         price,
-        peopleAmount,
-        `${equipments}`
+        peopleAmount
     ]
 
-    req.connection.query('CALL store_holiday_battery(?,?,?,?,?,?,?,?,?)', params, function (err, result, _) {
+    req.connection.query(query, params, async function (err, result, _) {
 
         if (err)
             return handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
 
+        let callback = result[1][0].callback
+        let batteryId = result[1][0].batteryId
 
-        if (result[0] != undefined) {
-
+        if (callback != null) {
             return res.status(500).json({
                 success: false,
-                message: result[0][0].exception,
+                message: callback,
                 verbose: null,
                 data: null
             })
+        }
 
+        for (const equipment of equipments) {
+
+            console.log(equipment);
+
+            let params = [
+                batteryId,
+                equipment.id,
+                equipment.description,
+                equipment.price
+            ]
+
+            req.connection.query('CALL store_battery_equipment(?,?,?,?)', params)
         }
 
         return res.status(200).json({
