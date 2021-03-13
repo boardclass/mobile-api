@@ -818,6 +818,7 @@ exports.getBatteriesByDate = async function (req, res) {
                     endHour: row.end_hour,
                     price: row.price,
                     availableVacancies: row.availableVacancies,
+                    selectedVacancies: row.vacancies,
                     address: {
                         id: row.address_id,
                         cep: row.cep,
