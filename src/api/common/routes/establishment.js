@@ -46,12 +46,16 @@ module.exports = (app) => {
 
     app.get('/api/establishment/:establishment_id/:sport_id/:address_id/agenda', (req, res) => {
         const controller = require(`../../${req.version}/controllers/establishmentController`)
-        console.log(`AQUII ${req.version}`);
         if (req.version == 'v1') {
+            console.log(`AQUII 1 ${req.version}`);
             controller.getFilteredAgenda(req, res)
             return
+        } else if (req.version == 'v2') {
+            console.log(`AQUII 2 ${req.version}`);
+            controller.getAvailableAgenda(req, res)
+        } else {
+            console.log(`AQUII 3 ${req.version}`);
         }
-        controller.getAvailableAgenda(req, res)
     })
 
     app.post('/api/establishment/:establishment_id/available_batteries', (req, res) => {
