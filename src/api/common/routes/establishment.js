@@ -46,6 +46,7 @@ module.exports = (app) => {
 
     app.get('/api/establishment/:establishment_id/:sport_id/:address_id/agenda', (req, res) => {
         const controller = require(`../../${req.version}/controllers/establishmentController`)
+        console.log(req.version);
         if (req.version == 'v1') {
             controller.getFilteredAgenda(req, res)
             return
