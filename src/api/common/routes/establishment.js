@@ -50,6 +50,7 @@ module.exports = (app) => {
         console.log(req.version);
         if (req.version == 'v1') {
             controller.getFilteredAgenda(req, res)
+            return
         }
         controller.getAvailableBatteries(req, res)
     })
