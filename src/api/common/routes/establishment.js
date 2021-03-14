@@ -37,12 +37,12 @@ module.exports = (app) => {
 
     app.get('/api/establishment/agenda', (req, res) => {
         const controller = require(`../../${req.version}/controllers/establishmentController`)
-        controller.getAgenda(req, res)
+        controller.getAgendaStatus(req, res)
     })
 
     app.get('/api/establishment/:establishment_id/:sport_id/:address_id/agenda', (req, res) => {
         const controller = require(`../../${req.version}/controllers/establishmentController`)
-        controller.getFilteredAgenda(req, res)
+        controller.getAvailableAgenda(req, res)
     })
 
     app.post('/api/establishment/:establishment_id/available_batteries', (req, res) => {

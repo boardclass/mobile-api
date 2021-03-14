@@ -512,7 +512,7 @@ exports.serviceAddresses = async function (req, res) {
 
 }
 
-exports.getFilteredAgenda = async function (req, res) {
+exports.getAvailableAgenda = async function (req, res) {
 
     const establishmentId = req.params.establishment_id
     const sportId = req.params.sport_id
@@ -660,7 +660,7 @@ exports.getFilteredAgenda = async function (req, res) {
 
 }
 
-exports.getAgenda = async function (req, res) {
+exports.getAgendaStatus = async function (req, res) {
 
     const establishmentId = req.decoded.data.establishmentId
 

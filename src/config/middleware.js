@@ -30,12 +30,12 @@ module.exports = {
   },
 
   versioning: function (req, res, next) {
-    req.version = req.headers['accept-version'];
+    req.version = req.headers['accept-version'].replace(/\s/g,'')
     
     if (req.version === undefined) {
       req.version = "v1"
     }
-
+    
     next();
   }
 
