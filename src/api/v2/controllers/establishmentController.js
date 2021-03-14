@@ -1444,10 +1444,13 @@ exports.storeSituation = async function (req, res) {
 exports.editSituation = async function (req, res) {
 
     const id = req.body.id
+    const date = req.body.date
     const statusId = req.body.statusId
     let description = req.body.description
+    const establishmentId = req.decoded.data.establishmentId
 
     req.assert('id', 'O id do situação deve ser informado').notEmpty()
+    req.assert('date', 'A data deve ser informada').notEmpty()
     req.assert('statusId', 'O id do status deve ser informado').notEmpty()
 
     if (validator.validateFields(req, res) != null)
@@ -1459,20 +1462,20 @@ exports.editSituation = async function (req, res) {
             description = null
         }
 
-        const query = `
-            UPDATE 
-                establishments_status
-            SET 
-                status_id = ?,
-                description = ?
-            WHERE 
-                id = ?
+        let query = `
+            SELECT 1
+            FROM schedules s
+            INNER JOIN batteries b 
+                ON b.id = s.battery_id
+            WHERE b.establishment_id = ?
+            AND s.date = ?
+            AND status_id NOT IN (?)
         `
 
-        const queryValues = [
-            statusId,
-            description,
-            id
+        let queryValues = [
+            establishmentId,
+            date,
+            SCHEDULE_STATUS.CANCELED
         ]
 
         req.connection.beginTransaction(function (err) {
@@ -1491,42 +1494,80 @@ exports.editSituation = async function (req, res) {
                     })
                 }
 
-                req.connection.commit(function (err) {
-                    if (err) {
+                if (result.length != 0) {
 
+                    return res.status(400).json({
+                        success: true,
+                        message: "Não foi possível editar a situação, existem agendamentos pendentes na data selecionada!",
+                        verbose: null,
+                        data: {}
+                    })
+    
+                }
+
+                query = `
+                    UPDATE 
+                        establishments_status
+                    SET 
+                        status_id = ?,
+                        description = ?
+                    WHERE 
+                        id = ?
+                `
+
+                queryValues = [
+                    statusId,
+                    description,
+                    id
+                ]
+
+                req.connection.query(query, queryValues, function (err, result, _) {
+
+                    if (err) {
                         return req.connection.rollback(function () {
                             handleError(req, res, 500, "Ocorreu um erro ao editar a situação!", err)
                         })
+                    }
 
-                    } else {
+                    req.connection.commit(function (err) {
+                        if (err) {
 
-                        if (result.affectedRows == 0) {
+                            return req.connection.rollback(function () {
+                                handleError(req, res, 500, "Ocorreu um erro ao editar a situação!", err)
+                            })
 
-                            return res.status(400).json({
+                        } else {
+
+                            if (result.affectedRows == 0) {
+
+                                return res.status(400).json({
+                                    success: true,
+                                    message: "Não foi possível editar a situação!",
+                                    verbose: null,
+                                    data: {}
+                                })
+
+                            }
+
+                            return res.status(200).json({
                                 success: true,
-                                message: "Não foi possível editar a situação!",
+                                message: "Situação editada com sucesso!",
                                 verbose: null,
-                                data: {}
+                                data: {
+                                    id,
+                                    statusId,
+                                    description
+                                }
                             })
 
                         }
 
-                        return res.status(200).json({
-                            success: true,
-                            message: "Situação editada com sucesso!",
-                            verbose: null,
-                            data: {
-                                id,
-                                statusId,
-                                description
-                            }
-                        })
-
-                    }
+                    })
 
                 })
 
             })
+
 
         })
 
@@ -2071,7 +2112,7 @@ exports.getExtractByDate = async function (req, res) {
                 SUBSTRING(b.end_hour, 1, 5) AS endHour,
                 IF(s.is_detached = 0, 'Não', 'Sim') AS isDetached,
                 FORMAT(IFNULL(SUM(be.price),0),2) AS equipmentPrice,
-                FORMAT(IFNULL(SUM(be.price) + SUM(b.session_value),0),2) AS totalValue
+                FORMAT(IFNULL(SUM(be.price), 0) + SUM(b.session_value), 2) AS totalValue
             FROM schedules s 
             INNER JOIN users u 
                 ON u.id = s.user_id 
@@ -2267,7 +2308,7 @@ exports.shareExtract = async function (req, res) {
                 SUBSTRING(b.end_hour, 1, 5) AS endHour,
                 IF(s.is_detached = 0, 'Não', 'Sim') AS isDetached,
                 FORMAT(IFNULL(SUM(be.price),0),2) AS equipmentPrice,
-                FORMAT(IFNULL(SUM(be.price) + SUM(b.session_value),0),2) AS totalValue
+                FORMAT(IFNULL(SUM(be.price), 0) + SUM(b.session_value), 2) AS totalValue
             FROM schedules s 
             INNER JOIN users u 
                 ON u.id = s.user_id

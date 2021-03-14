@@ -30,6 +30,11 @@ module.exports = (app) => {
         userController.getByCpf(req, res)
     })
 
+    app.get('/api/user/phone/:phone', (req, res) => {
+        const userController = require(`../../${req.version}/controllers/userController`)
+        userController.getByPhone(req, res)
+    })
+
     app.get('/api/user/establishment/favorite', (req, res) => {
         const userController = require(`../../${req.version}/controllers/userController`)
         userController.favoriteEstablishments(req, res)

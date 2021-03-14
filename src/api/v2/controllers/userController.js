@@ -449,6 +449,63 @@ exports.getByCpf = async function (req, res) {
 
 }
 
+exports.getByPhone = async function (req, res) {
+    const phone = req.params.phone
+
+    try {
+
+        let query = `
+            SELECT 
+                u.id,
+                u.cpf,
+                u.name,
+                CONCAT('(', SUBSTR(u.phone, 1, 2), ') ', SUBSTR(u.phone, 3, 2), ' ', SUBSTR(u.phone, 5, 5), '-', SUBSTR(u.phone, 10, 4)) AS phone
+            FROM users u
+            WHERE 
+                u.phone LIKE '%${phone}%'
+        `
+
+        req.connection.query(query, null, async function (err, result, _) {
+
+            if (err) {
+                return handleError(req, res, 500, "Ocorreu um erro ao recuperar os dados!", err)
+            }
+
+            if (result == 0) {
+
+                return res.status(404).json({
+                    success: true,
+                    message: "Usuário não encontrado!",
+                    verbose: null,
+                    data: {}
+                })
+
+            } else {
+
+                const user = result[0]
+
+                return res.status(200).json({
+                    success: true,
+                    message: "Usuário recuperado com sucesso!",
+                    verbose: null,
+                    data: {
+                        id: user.id,
+                        cpf: user.cpf,
+                        name: user.name,
+                        phone: user.phone
+                    }
+                })
+
+            }
+
+        });
+
+    } catch (error) {
+        handleError(req, res, 500, "Ocorreu um erro ao realizar o login!", error)
+    }
+
+}
+
 exports.storeAddress = async function (req, res) {
 
     let user_id = req.params.user_id
