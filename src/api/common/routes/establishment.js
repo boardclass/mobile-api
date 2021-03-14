@@ -47,6 +47,7 @@ module.exports = (app) => {
 
     app.post('/api/establishment/:establishment_id/available_batteries', (req, res) => {
         const controller = require(`../../${req.version}/controllers/establishmentController`)
+        console.log(req.version);
         if (req.version == 'v1') {
             controller.getFilteredAgenda(req, res)
         }
