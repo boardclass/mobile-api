@@ -2093,70 +2093,20 @@ exports.getExtractByDate = async function (req, res) {
 
     try {
 
-        const query = `
-            SELECT
-                u.id,
-                u.name,
-                CONCAT('(', SUBSTR(u.phone, 3, 2), ') ', SUBSTR(u.phone, 5, 5), '-', SUBSTR(u.phone, 10, 4)) AS phone,
-                us.email AS userEmail,
-                ec.email AS establishmentEmail,
-                e.name AS establishment,
-                DATE_FORMAT(s.date, "%Y-%m-%d") AS date,
-                b.id AS batteryId,
-                FORMAT(SUM(b.session_value),2) AS value,
-                MONTH(s.date) AS month,
-                YEAR(s.date) AS year,
-                COUNT(b.id) AS reservedVacancies,
-                ss.display_name AS status,
-                SUBSTRING(b.start_hour, 1, 5) AS startHour,
-                SUBSTRING(b.end_hour, 1, 5) AS endHour,
-                IF(s.is_detached = 0, 'Não', 'Sim') AS isDetached,
-                FORMAT(IFNULL(SUM(be.price),0),2) AS equipmentPrice,
-                FORMAT(IFNULL(SUM(be.price), 0) + SUM(b.session_value), 2) AS totalValue
-            FROM schedules s 
-            INNER JOIN users u 
-                ON u.id = s.user_id 
-            LEFT JOIN user_accounts us 
-                ON us.user_id = u.id
-            INNER JOIN batteries b
-                ON b.id = s.battery_id
-            INNER JOIN establishments e
-                ON e.id = b.establishment_id
-            INNER JOIN establishment_accounts ec
-                ON ec.establishment_id = e.id
-            INNER JOIN schedule_status ss
-                ON s.status_id = ss.id
-            LEFT JOIN schedule_equipments se
-                ON se.schedule_id = s.id
-            LEFT JOIN battery_equipments be
-                ON be.id = se.equipment_id
-            LEFT JOIN equipment eq
-                on eq.id = se.equipment_id
-            WHERE 
-                b.establishment_id = ?
-                AND MONTH(s.date) = ?
-                AND YEAR(s.date) = ?
-            GROUP BY b.id, u.id, s.date
-            ORDER BY 
-                s.date, 
-                u.name, 
-                b.start_hour;
-        `
-
         const params = [
             establishmentId,
             month,
             year
         ]
 
-        req.connection.query(query, params, function (err, results, _) {
+        req.connection.query('CALL establishment_extract(?,?,?)', params, function (err, results, _) {
 
             if (err)
                 return handleError(req, res, 500, "Ocorreu um erro ao obter extrato!", err)
 
             const extract = []
 
-            for (row of results) {
+            for (row of results[0]) {
 
                 let filtered = extract.findIndex(value => {
                     return value.month === row.month
@@ -2288,71 +2238,20 @@ exports.shareExtract = async function (req, res) {
 
     try {
 
-        const query = `
-            SELECT
-                u.id,
-                u.name,
-                s.id AS scheduleId,
-                CONCAT('(', SUBSTR(u.phone, 1, 2), ') ', SUBSTR(u.phone, 3, 2), ' ', SUBSTR(u.phone, 5, 5), '-', SUBSTR(u.phone, 10, 4)) AS phone,
-                e.name AS establishment,
-                ua.email AS userEmail,
-                ec.email AS establishmentEmail,
-                DATE_FORMAT(s.date, "%Y-%m-%d") AS date,
-                b.id AS batteryId,
-                FORMAT(SUM(b.session_value),2) AS value,
-                MONTH(s.date) AS month,
-                YEAR(s.date) AS year,
-                COUNT(b.id) AS reservedVacancies,
-                ss.display_name AS status,
-                SUBSTRING(b.start_hour, 1, 5) AS startHour,
-                SUBSTRING(b.end_hour, 1, 5) AS endHour,
-                IF(s.is_detached = 0, 'Não', 'Sim') AS isDetached,
-                FORMAT(IFNULL(SUM(be.price),0),2) AS equipmentPrice,
-                FORMAT(IFNULL(SUM(be.price), 0) + SUM(b.session_value), 2) AS totalValue
-            FROM schedules s 
-            INNER JOIN users u 
-                ON u.id = s.user_id
-            LEFT JOIN user_accounts ua
-                ON ua.user_id = u.id
-            INNER JOIN batteries b
-                ON b.id = s.battery_id
-            INNER JOIN establishments e
-                ON e.id = b.establishment_id
-            INNER JOIN establishment_accounts ec
-                ON ec.establishment_id = e.id
-            INNER JOIN schedule_status ss
-                ON s.status_id = ss.id
-            LEFT JOIN schedule_equipments se
-                ON se.schedule_id = s.id
-            LEFT JOIN battery_equipments be
-                ON be.id = se.equipment_id
-            LEFT JOIN equipment eq
-                on eq.id = se.equipment_id
-            WHERE 
-                b.establishment_id = ?
-                AND MONTH(s.date) = ?
-                AND YEAR(s.date) = ?
-            GROUP BY b.id, u.id, s.date
-            ORDER BY 
-                s.date, 
-                u.name, 
-                b.start_hour;
-        `
-
         const params = [
             establishmentId,
             month,
             year
         ]
 
-        req.connection.query(query, params, function (err, results, _) {
+        req.connection.query('CALL establishment_extract(?,?,?)', params, function (err, results, _) {
 
             if (err)
                 return handleError(req, res, 500, "Ocorreu um erro ao obter extrato!", err)
 
             const extract = []
 
-            for (row of results) {
+            for (row of results[0]) {
 
                 let filtered = extract.findIndex(value => {
                     return value.month === row.month
