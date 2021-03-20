@@ -2652,10 +2652,26 @@ exports.dropBattery = async function (req, res) {
 
     const batteryId = req.params.battery_id
 
-    req.connection.query('CALL drop_battery(?)', batteryId, function (err, _, _) {
+    const query = `
+        CALL drop_battery(?, @callback); 
+        SELECT @callback AS callback;
+    `
+
+    req.connection.query(query, batteryId, function (err, result, _) {
 
         if (err)
             return handleError(req, res, 500, "Ocorreu um erro ao deletar a bateria!", err)
+
+        let callback = result[1][0].callback
+
+        if (callback != undefined)
+            return res.status(500).json({
+                success: false,
+                message: callback,
+                verbose: null,
+                data: null
+            })
+
 
         return res.status(200).json({
             success: true,
