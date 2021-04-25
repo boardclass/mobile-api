@@ -768,6 +768,8 @@ exports.getAvailableBatteries = async function (req, res) {
                         endHour: row.endHour,
                         price: row.price,
                         availableVacancies: row.availableVacancies,
+                        beginnerVacancies: row.beginnerVacancies,
+                        advancedVacancies: row.advancedVacancies,
                         equipments: equipments
                     })
 
@@ -819,6 +821,8 @@ exports.getBatteriesByDate = async function (req, res) {
                     price: row.price,
                     availableVacancies: row.availableVacancies,
                     selectedVacancies: row.vacancies,
+                    beginnerVacancies: row.beginnerVacancies,
+                    advancedVacancies: row.advancedVacancies,
                     address: {
                         id: row.address_id,
                         cep: row.cep,
@@ -887,6 +891,9 @@ exports.batteries = async function (req, res) {
                         startHour: row.start_hour,
                         endHour: row.end_hour,
                         price: row.session_value,
+                        totalVacancies: row.total_vacancies,
+                        totalBeginnerVacancies: row.beginner_vacancies,
+                        totalAdvancedVacancies: row.advanced_vacancies,
                         address: {
                             id: row.address_id,
                             cep: row.cep,
@@ -940,6 +947,8 @@ exports.storeBattery = async function (req, res) {
     const finishHour = req.body.finishHour
     const price = req.body.price
     const peopleAmount = req.body.peopleAmount
+    const beginnerAmount = req.body.beginnerAmount
+    const advancedAmount = req.body.advancedAmount
     const weekdays = req.body.weekdays
     const equipments = req.body.equipments
 
@@ -988,7 +997,9 @@ exports.storeBattery = async function (req, res) {
                 start_hour, 
                 end_hour, 
                 session_value, 
-                people_allowed, 
+                people_allowed,
+                beginner_allowed,
+                advanced_allowed,
                 created_at, 
                 updated_at
             )
@@ -1000,6 +1011,8 @@ exports.storeBattery = async function (req, res) {
                 ?, 
                 ?, 
                 ?, 
+                ?,
+                ?,
                 ?, 
                 NOW(), 
                 NOW()
@@ -1013,7 +1026,9 @@ exports.storeBattery = async function (req, res) {
             startHour,
             finishHour,
             price,
-            peopleAmount
+            peopleAmount,
+            beginnerAmount,
+            advancedAmount,
         ]
 
         const insertedBattery = await connection.query(insertQuery, insertParams)
@@ -1502,7 +1517,7 @@ exports.editSituation = async function (req, res) {
                         verbose: null,
                         data: {}
                     })
-    
+
                 }
 
                 query = `
@@ -1688,11 +1703,10 @@ exports.getSchedulesByBattery = async function (req, res) {
 
 exports.selfSchedule = async function (req, res) {
 
-    const connection = req.connection;
-
     const date = req.body.date;
     const user = req.body.user;
     const batteryId = req.body.batteryId;
+    const clientLevel = req.body.clientLevel;
 
     req.assert('date', 'A data deve ser informada').notEmpty();
     req.assert('user.cpf', 'O CPF deve ser informado').notEmpty()
@@ -1701,6 +1715,7 @@ exports.selfSchedule = async function (req, res) {
     req.assert('user.name', 'O nome do usuário deve ser informado').notEmpty();
     req.assert('user.phone', 'O telefone deve ser informado').notEmpty();
     req.assert('batteryId', 'O id da bateria deve ser informado').notEmpty();
+    req.assert('clientLevel', 'O nível do cliente deve ser informado').notEmpty();
 
     if (validator.validateFields(req, res) != null)
         return;
@@ -1717,215 +1732,46 @@ exports.selfSchedule = async function (req, res) {
         }
 
         let query = `
-            SET @@session.time_zone = '-03:00';
+            CALL establishment_schedule(?, ?, ?, ?, ?, ?, @callback);
+            SELECT @callback AS callback;
+        `
 
-            SELECT
-                *
-            FROM batteries b
-            INNER JOIN battery_weekdays bw 
-                ON bw.battery_id = b.id
-            INNER JOIN weekday w
-                ON w.id = bw.weekday_id
-            WHERE 
-                b.id IN (?)
-                AND b.deleted = false
-                AND b.holiday_id IS NULL
-                AND w.day = LOWER(DATE_FORMAT(?, "%W"))
-                AND (
-                    NOW() > b.end_hour 
-                    AND ? = DATE_FORMAT(NOW(), "%Y-%m-%d")
-                    )
-            GROUP By b.id;
-        `;
+        let params = [
+            batteryId,
+            date,
+            user.cpf,
+            user.name,
+            user.phone,
+            clientLevel
+        ];
 
-        req.connection.beginTransaction(function (err) {
+        req.connection.query(query, params, async function (err, result, _) {
 
-            let queryParams = [
-                batteryId,
-                date,
-                date
-            ];
+            if (err)
+                return handleError(req, res, 500, "Ocorreu um erro no agendamento!", err)
 
-            req.connection.query(query, queryParams, function (err, result, _) {
-                if (result[1] && result[1].length > 0) {
+            if (result[2][0] != null) {
+                return res.status(500).json({
+                    success: false,
+                    message: result[2][0].callback,
+                    verbose: null,
+                    data: null
+                })
+            }
+    
+            res.status(200).json({
+                success: true,
+                message: "Agendamento realizado com sucesso!",
+                verbose: null,
+                data: null
+            })
+    
+        })
 
-                    connection.query('COMMIT')
-
-                    return res.status(404).json({
-                        success: false,
-                        message: "Não foi possível realizar o agendamento, a bateria já encerrou.",
-                        verbose: null,
-                        data: {}
-                    })
-                }
-
-                query = `
-                    SELECT
-                        b.start_hour,
-                        b.people_allowed - COUNT(s.id) AS available_vacancies
-                    FROM
-                        batteries b
-                    LEFT JOIN schedules s ON
-                        s.battery_id = b.id
-                        AND s.date = ?
-                        AND s.status_id NOT IN (?)
-                        AND b.deleted = false
-                    WHERE
-                        b.id = ?
-                    GROUP BY 
-                        b.id
-                `;
-
-                const filters = [
-                    date,
-                    SCHEDULE_STATUS.CANCELED,
-                    batteryId
-                ];
-
-                req.connection.query(query, filters, function (err, result, _) {
-                    if (result.length !== 0 && result[0].available_vacancies !== 0) {
-
-                        let query = `
-                            SELECT DISTINCT
-                                id 
-                            FROM users
-                            WHERE cpf = ? 
-                        `;
-
-                        let filters = [
-                            user.cpf
-                        ];
-
-                        req.connection.query(query, filters, function (err, userIdResult, _) {
-                            if (userIdResult.length === 0) {
-
-                                query = `
-                                    INSERT INTO users
-                                    (
-                                        cpf,
-                                        name,
-                                        phone
-                                    )
-                                    VALUES
-                                    (
-                                        ?,
-                                        ?,
-                                        ?
-                                    )
-                                `;
-
-                                filters = [
-                                    user.cpf,
-                                    user.name,
-                                    user.phone
-                                ];
-
-                                req.connection.query(query, filters, function (err, result, _) {
-                                    query = `
-                                        INSERT INTO schedules
-                                            (battery_id, 
-                                            user_id, 
-                                            status_id, 
-                                            date,
-                                            is_detached,
-                                            created_at, 
-                                            updated_at)
-                                        VALUES
-                                            (?, 
-                                            ?, 
-                                            ?, 
-                                            ?,
-                                            1,
-                                            NOW(), 
-                                            NOW())
-                                    `;
-
-                                    filters = [
-                                        batteryId,
-                                        result.insertId,
-                                        SCHEDULE_STATUS.PENDENT_PAYMENT,
-                                        date
-                                    ];
-
-                                    connection.query(query, filters)
-                                });
-
-                            } else {
-
-                                let update_user_query = `
-                                    UPDATE users SET
-                                    phone = ? 
-                                    WHERE id = ?
-                                `;
-
-                                let update_filter = [
-                                    user.phone,
-                                    userIdResult[0].id
-                                ];
-
-                                connection.query(update_user_query, update_filter);
-
-                                query = `
-                                    INSERT INTO schedules
-                                        (battery_id, 
-                                        user_id, 
-                                        status_id, 
-                                        date,
-                                        is_detached,
-                                        created_at, 
-                                        updated_at)
-                                    VALUES
-                                        (?, 
-                                        ?, 
-                                        ?, 
-                                        ?,
-                                        1,
-                                        NOW(), 
-                                        NOW())
-                                `;
-
-                                filters = [
-                                    batteryId,
-                                    userIdResult[0].id,
-                                    SCHEDULE_STATUS.PENDENT_PAYMENT,
-                                    date
-                                ];
-
-                                connection.query(query, filters)
-
-                            }
-                        });
-
-                        connection.query('COMMIT')
-
-                        res.status(200).json({
-                            success: true,
-                            message: "Agendamento realizado com sucesso!",
-                            verbose: null,
-                            data: {}
-                        })
-
-                    } else {
-
-                        connection.query('COMMIT');
-
-                        return res.status(404).json({
-                            success: false,
-                            message: "Não foi possível realizar o agendamento, pois não há vagas disponíveis para essa bateria!",
-                            verbose: null,
-                            data: {}
-                        })
-
-                    }
-                });
-            });
-        });
+        
 
     } catch (err) {
-        await connection.query('ROLLBACK')
         return handleError(req, res, 500, "Ocorreu um erro no agendamento!", err)
-    } finally {
-        await connection.release()
     }
 
 }
@@ -2136,7 +1982,8 @@ exports.getExtractByDate = async function (req, res) {
                             status: row.status,
                             isDetached: row.isDetached,
                             equipmentsValue: row.equipmentPrice,
-                            totalValue: row.totalValue
+                            totalValue: row.totalValue,
+                            clientLevel: row.clientLevel
                         })
 
                     } else {
@@ -2155,7 +2002,8 @@ exports.getExtractByDate = async function (req, res) {
                             status: row.status,
                             isDetached: row.isDetached,
                             equipmentsValue: row.equipmentPrice,
-                            totalValue: row.totalValue
+                            totalValue: row.totalValue,
+                            clientLevel: row.clientLevel
                         })
 
                     }
@@ -2179,7 +2027,8 @@ exports.getExtractByDate = async function (req, res) {
                             status: row.status,
                             isDetached: row.isDetached,
                             equipmentsValue: row.equipmentPrice,
-                            totalValue: row.totalValue
+                            totalValue: row.totalValue,
+                            clientLevel: row.clientLevel
                         }]
                     })
 
@@ -2281,7 +2130,8 @@ exports.shareExtract = async function (req, res) {
                             status: row.status,
                             isDetached: row.isDetached,
                             equipmentsValue: row.equipmentPrice,
-                            totalValue: row.totalValue
+                            totalValue: row.totalValue,
+                            clientLevel: row.clientLevel
                         })
 
                     } else {
@@ -2300,7 +2150,8 @@ exports.shareExtract = async function (req, res) {
                             status: row.status,
                             isDetached: row.isDetached,
                             equipmentsValue: row.equipmentPrice,
-                            totalValue: row.totalValue
+                            totalValue: row.totalValue,
+                            clientLevel: row.clientLevel
                         })
 
                     }
@@ -2325,7 +2176,8 @@ exports.shareExtract = async function (req, res) {
                             status: row.status,
                             isDetached: row.isDetached,
                             equipmentsValue: row.equipmentPrice,
-                            totalValue: row.totalValue
+                            totalValue: row.totalValue,
+                            clientLevel: row.clientLevel
                         }]
                     })
 
@@ -2434,6 +2286,9 @@ exports.getBatteriesByHoliday = async function (req, res) {
                 startHour: row.start_hour,
                 endHour: row.end_hour,
                 price: row.session_value,
+                totalVacancies: row.total_vacancies,
+                totalBeginnerVacancies: row.beginner_vacancies,
+                totalAdvancedVacancies: row.advanced_vacancies,
                 address: {
                     id: row.address_id,
                     cep: row.cep,
@@ -2476,6 +2331,8 @@ exports.storeHolidayBattery = async function (req, res) {
     const finishHour = req.body.finishHour
     const price = req.body.price
     const peopleAmount = req.body.peopleAmount
+    const beginnerAmount = req.body.beginnerAmount
+    const advancedAmount = req.body.advancedAmount
     const equipments = req.body.equipments
 
     req.assert('holidayId', 'O id do feriado deve ser informado').notEmpty()
@@ -2490,7 +2347,7 @@ exports.storeHolidayBattery = async function (req, res) {
         return
 
     const query = `
-        CALL store_holiday_battery(?,?,?,?,?,?,?,?, @battery_id, @callback); 
+        CALL store_holiday_battery(?,?,?,?,?,?,?,?,?,?, @battery_id, @callback); 
         SELECT @battery_id AS batteryId, @callback AS callback;
     `
 
@@ -2502,7 +2359,9 @@ exports.storeHolidayBattery = async function (req, res) {
         startHour,
         finishHour,
         price,
-        peopleAmount
+        peopleAmount,
+        beginnerAmount,
+        advancedAmount
     ]
 
     req.connection.query(query, params, async function (err, result, _) {
@@ -2523,8 +2382,6 @@ exports.storeHolidayBattery = async function (req, res) {
         }
 
         for (const equipment of equipments) {
-
-            console.log(equipment);
 
             let params = [
                 batteryId,

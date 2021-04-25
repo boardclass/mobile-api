@@ -63,99 +63,63 @@ exports.store = async function (req, res) {
 
         for (battery of batteries) {
 
-            const vacanciesQuery = `
-                SELECT
-                    b.start_hour,
-                    b.people_allowed - COUNT(s.id) AS available_vacancies
-                FROM
-                    batteries b
-                LEFT JOIN schedules s ON
-                    s.battery_id = b.id
-                    AND s.date = ?
-                    AND s.status_id NOT IN (?)
-                    AND b.deleted = false
-                WHERE
-                    b.id = ?
-                GROUP BY 
-                    b.id
+            const insertQuery = `
+                CALL user_schedule(?, ?, ?, ?, @scheduleId, @callback); 
+                SELECT @scheduleId AS scheduleId, @callback AS callback;
             `
 
-            const vacanciesParams = [
+            const insertParams = [
+                battery.id,
                 date,
-                SCHEDULE_STATUS.CANCELED,
-                battery.id
+                userId,
+                battery.clientLevel
             ]
 
-            const vacanciesResult = await connection.query(vacanciesQuery, vacanciesParams)
-            const availablevacancies = vacanciesResult[0].available_vacancies
+            const insertResult = await connection.query(insertQuery, insertParams)
+            let callback = insertResult[1][0].callback
+            let scheduleId = insertResult[1][0].scheduleId
 
-            if (availablevacancies > 0) {
-
-                const scheduleQuery = `
-                    INSERT INTO schedules
-                        (battery_id, 
-                        user_id, 
-                        status_id, 
-                        date,
-                        created_at, 
-                        updated_at)
-                    VALUES
-                        (?, 
-                        ?, 
-                        ?, 
-                        ?,
-                        NOW(), 
-                        NOW())
-                `
-
-                const scheduleParams = [
-                    battery.id,
-                    userId,
-                    SCHEDULE_STATUS.PENDENT_PAYMENT,
-                    date
-                ]
-
-                const scheduleResult = await connection.query(scheduleQuery, scheduleParams)
-
-                let equipmentQuery = `
-                    INSERT INTO schedule_equipments
-                    (
-                        schedule_id,
-                        equipment_id
-                    )
-                    VALUES
-                    (
-                        ?,
-                        ?
-                    )   
-                `
-
-                if (battery.equipments != undefined) {
-
-                    let equipments = battery.equipments
-                    for (equipment of equipments) {
-
-                        let equipmentParams = [
-                            scheduleResult.insertId,
-                            equipment.equipmentBatteryId
-                        ]
-    
-                        await connection.query(equipmentQuery, equipmentParams)
-    
-                    }
-
-                }
-
-            } else {
+            if (callback != null) {
 
                 await connection.query('ROLLBACK')
 
                 return res.status(404).json({
                     success: false,
-                    message: "Não foi possível realizar o agendamento, pois não há vagas disponíveis para essa bateria!",
+                    message: callback,
                     verbose: null,
                     data: {}
                 })
+
+            } else {
+
+            }
+
+            let equipmentQuery = `
+                INSERT INTO schedule_equipments
+                (
+                    schedule_id,
+                    equipment_id
+                )
+                VALUES
+                (
+                    ?,
+                    ?
+                )   
+            `
+
+            if (battery.equipments != undefined) {
+
+                let equipments = battery.equipments
+                for (equipment of equipments) {
+
+                    let equipmentParams = [
+                        scheduleId,
+                        equipment.equipmentBatteryId
+                    ]
+
+                    await connection.query(equipmentQuery, equipmentParams)
+
+                }
 
             }
 

@@ -41,7 +41,7 @@
 			border-collapse: collapse;
 			margin: auto;
 			padding: 10px;
-			max-width: 1800px;
+			max-width: 2000px;
 			box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
 			animation: float 5s infinite;
 		}
@@ -159,6 +159,7 @@
 				<th class="text-center">Data</th>
 				<th class="text-center">Bateria</th>
 				<th class="text-center">Avulso</th>
+				<th class="text-center">Nível</th>
 				<th class="text-center">Início</th>
 				<th class="text-center">Fim</th>
 				<th class="text-center">Aluno</th>
@@ -167,7 +168,7 @@
 				<th class="text-center">Reservas</th>
 				<th class="text-center">Status</th>
 				<th class="text-center">Valor</th>
-				<th class="text-center">Valor Equipamentos</th>
+				<th class="text-center">Equipamentos</th>
 				<th class="text-center">Total</th>
 			</tr>
 		</thead>
@@ -178,6 +179,7 @@
 				<td class="text-center"><%= schedule.date %></th>
 				<td class="text-center"><%= schedule.batteryId %></th>
 				<td class="text-center"><%= schedule.isDetached %></th>
+				<td class="text-center"><%= schedule.clientLevel %></th>
 				<td class="text-center"><%= schedule.start %></th>
 				<td class="text-center"><%= schedule.end %></th>
 				<td class="text-left"><%= schedule.name %></th>
