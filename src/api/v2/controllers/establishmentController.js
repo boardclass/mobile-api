@@ -1750,21 +1750,22 @@ exports.selfSchedule = async function (req, res) {
             if (err)
                 return handleError(req, res, 500, "Ocorreu um erro no agendamento!", err)
 
-            console.log(result);
-            console.log('1----');
-            console.log(result[1]);
-            console.log('2-----');
-            console.log(result[1][0].callback);
+            let callback = result[1][0].callback
 
-            if (result[1] != null) {
+            if (callback != null) {
+                console.log(callback);
+                console.log('1----');
+
                 return res.status(500).json({
                     success: false,
-                    message: result[1][0].callback,
+                    message: callback,
                     verbose: null,
                     data: null
                 })
             }
     
+            console.log('2sucesso----');
+
             res.status(200).json({
                 success: true,
                 message: "Agendamento realizado com sucesso!",
@@ -1777,6 +1778,7 @@ exports.selfSchedule = async function (req, res) {
         
 
     } catch (err) {
+        console.log('3rro----');
         return handleError(req, res, 500, "Ocorreu um erro no agendamento!", err)
     }
 
