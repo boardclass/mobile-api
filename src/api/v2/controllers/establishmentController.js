@@ -1745,10 +1745,12 @@ exports.selfSchedule = async function (req, res) {
             clientLevel
         ];
 
-        req.connection.query(query, params, async function (err, result, _) {
+        req.connection.query(query, params, function (err, result, _) {
 
             if (err)
                 return handleError(req, res, 500, "Ocorreu um erro no agendamento!", err)
+
+            console.log(result);
 
             if (result[2][0] != null) {
                 return res.status(500).json({
