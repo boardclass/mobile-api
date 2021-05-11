@@ -6,7 +6,7 @@ module.exports = {
     generate: function (content, callback) {
 
         let options = {
-            format: 'A1',
+            format: 'A2',
             orientation: 'landscape'
         }
 
@@ -19,7 +19,7 @@ module.exports = {
     generateFile: function (content, callback) {
 
         let options = {
-            format: 'A1',
+            format: 'A2',
             orientation: 'landscape'
         }
 
