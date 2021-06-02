@@ -27,12 +27,12 @@ module.exports = {
         app.use(middleware.versioning)
         app.use(connectionMiddleware(pool))
 
-        app.use((req, res) => {
-            res.writeHead(200);
-            res.end("Boardclass\n");
-        })
-
         require('./routes')(app)
+
+        app.use((req, res) => {
+            res.writeHead(200)
+            res.end("Boardclass")
+        })
 
         mongodb.setup()
 
