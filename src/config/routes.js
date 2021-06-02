@@ -14,9 +14,13 @@ module.exports = function (app) {
     require('../api/common/routes/sport')(app)
     require('../api/common/routes/employee')(app)
 
+    app.get('/', (req, res) => {
+        res.writeHead(200)
+    })
+
     app.get('/apple-app-site-association', (req, res) => { 
-        var pathh = path.resolve(__dirname, '../../', 'apple-app-site-association')
-        var content = fs.readFileSync(pathh, 'utf8');
+        const pathh = path.resolve(__dirname, '../../', 'apple-app-site-association')
+        const content = fs.readFileSync(pathh, 'utf8');
         res.set('Content-Type', 'application/json')
         res.status(200)
         res.send(content)

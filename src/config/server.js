@@ -35,13 +35,13 @@ module.exports = {
 
         const sslServer = https.createServer(
             {
-                key: fs.readFileSync(path.join(__dirname, '../../cert/ssl', 'key.pem')),
-                cert: fs.readFileSync(path.join(__dirname, '../../cert/ssl', 'cert.pem')),
+                key: fs.readFileSync(path.join(__dirname, '..','..','cert','ssl','key.pem')),
+                cert: fs.readFileSync(path.join(__dirname, '..','..','cert','ssl','cert.pem')),
             },
             app
         )
 
-        app.listen(port, () => {
+        sslServer.listen(port, () => {
             console.log(`Server started on ${port}`)
         })
 
