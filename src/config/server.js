@@ -46,7 +46,7 @@ module.exports = {
             app
         )
 
-        sslServer.listen(port, () => {
+        app.listen(port, () => {
             console.log(`Server started on ${port}`)
         })
 
