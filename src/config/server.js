@@ -1,9 +1,13 @@
 require('./sequelize')
 
-const pool = require('../config/database');
+const https = require('https')
+const path = require('path')
+const fs = require('fs')
 const express = require('express')
 const validator = require('express-validator')
 const bodyParser = require('body-parser')
+
+const pool = require('../config/database');
 const middleware = require('./middleware')
 const connectionMiddleware = require('./connectionMiddleware')
 const excludedRoutes = require('./excludedRoutes')
@@ -28,7 +32,16 @@ module.exports = {
         mongodb.setup()
 
         let port = process.env.PORT || 8080
-        app.listen(port, () => {
+
+        const sslServer = https.createServer(
+            {
+                key: fs.readFileSync(path.join(__dirname, '../../cert/ssl', 'key.pem')),
+                cert: fs.readFileSync(path.join(__dirname, '../../cert/ssl', 'cert.pem')),
+            },
+            app
+        )
+
+        sslServer.listen(port, () => {
             console.log(`Server started on ${port}`)
         })
 
