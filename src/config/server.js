@@ -29,11 +29,6 @@ module.exports = {
 
         require('./routes')(app)
 
-        app.use((req, res) => {
-            res.writeHead(200)
-            res.end("Boardclass")
-        })
-
         mongodb.setup()
 
         let port = process.env.PORT || 8080
