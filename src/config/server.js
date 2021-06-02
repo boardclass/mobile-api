@@ -33,15 +33,7 @@ module.exports = {
 
         let port = process.env.PORT || 8080
 
-        const sslServer = https.createServer(
-            {
-                key: fs.readFileSync(path.join(__dirname, '..','..','cert','ssl','key.pem')),
-                cert: fs.readFileSync(path.join(__dirname, '..','..','cert','ssl','cert.pem')),
-            },
-            app
-        )
-
-        sslServer.listen(port, () => {
+        app.listen(port, () => {
             console.log(`Server started on ${port}`)
         })
 

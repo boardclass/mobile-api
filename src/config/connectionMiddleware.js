@@ -7,5 +7,7 @@ module.exports = pool => (req, res, next) => {
         next()
         res.on('finish', () => req.connection.release())
     })
+    
+    next()
 
 }
