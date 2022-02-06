@@ -31,7 +31,7 @@ module.exports = {
 
         mongodb.setup()
 
-        let port = process.env.PORT_INDEX || 21273
+        let port = process.env.PORT_INDEX || 8080
         
         console.log(`process.env.PORT ${process.env.PORT}`);
         console.log(`process.env.PORT_INDEX ${process.env.PORT_INDEX}`);
