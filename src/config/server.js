@@ -31,7 +31,12 @@ module.exports = {
 
         mongodb.setup()
 
-        let port = process.env.PORT_SERVER || 8080
+        let port = process.env.PORT_INDEX || 21273
+        
+        console.log(`process.env.PORT ${process.env.PORT}`);
+        console.log(`process.env.PORT_INDEX ${process.env.PORT_INDEX}`);
+        console.log(`process.env.PORT_SERVER ${process.env.PORT_SERVER}`);
+        console.log(`process.env.PORT_APP ${process.env.PORT_APP}`);
 
         app.listen(port, () => {
             console.log(`Server started on ${port}`)
