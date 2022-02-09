@@ -3,7 +3,7 @@ const logger = require('../../common/classes/logger')
 
 exports.findByCEP = function (cep, callback) {
 
-    let link = `http://viacep.com.br/ws/${cep}/json/`;
+    let link = `https://viacep.com.br/ws/${cep}/json/`;
 
     request(link, function (error, response, body) {
 

@@ -1,8 +1,5 @@
 require("./sequelize");
 
-const https = require("https");
-const path = require("path");
-const fs = require("fs");
 const express = require("express");
 const validator = require("express-validator");
 const bodyParser = require("body-parser");
@@ -31,21 +28,8 @@ module.exports = {
 
     let port = process.env.PORT_INDEX || 8080;
 
-    console.log(`process.env.PORT ${process.env.PORT}`);
-    console.log(`process.env.PORT_INDEX ${process.env.PORT_INDEX}`);
-    console.log(`process.env.PORT_SERVER ${process.env.PORT_SERVER}`);
-    console.log(`process.env.PORT_APP ${process.env.PORT_APP}`);
-
-    const sslServer = https.createServer(
-      {
-        key: fs.readFileSync(path.join(__dirname, 'cert', 'ssl', 'key.pem')),
-        cert: fs.readFileSync(path.join(__dirname, 'cert', 'ssl', 'cert.pem')),
-      },
-      app
-    );
-
-    sslServer.listen(port, () => {
-      console.log(`Secure server started on ${port}`);
+    app.listen(port, () => {
+      console.log(`Server started on ${port}`);
     });
   },
 };

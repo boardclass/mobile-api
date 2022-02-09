@@ -4,10 +4,9 @@ module.exports = pool => (req, res, next) => {
         if (err) return next(err)
         console.log('pool => obteve conexão')
         req.connection = connection
-        next()
+
         res.on('finish', () => req.connection.release())
+        next() 
     })
     
-    next()
-
 }
