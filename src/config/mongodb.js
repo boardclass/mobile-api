@@ -4,7 +4,7 @@ module.exports = {
 
     setup: function () {
 
-        var databaseURL = process.env.MONGODB_URI || 'mongodb://mongodb.boardclass.com.br/boardclass01'
+        var databaseURL = process.env.MONGODB_URI || 'mongodb://mongo.host/database'
 
         mongoose.connect(databaseURL, {
             useNewUrlParser: true,
