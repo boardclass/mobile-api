@@ -1,3 +1,4 @@
+const path = require('path')
 const ejs = require('ejs')
 const mysql = require('../../common/util/connection')
 
@@ -2390,7 +2391,7 @@ exports.getExtractByDate = async function (req, res) {
 
             }
 
-            ejs.renderFile("./public/template/schedules_extract.ejs",
+            ejs.renderFile(path.join(__dirname, '../../../../', 'public', 'template', 'schedules_extract.ejs'),
                 { extract: extract[0] }, (err, html) => {
 
                     if (err) {
@@ -2598,7 +2599,7 @@ exports.shareExtract = async function (req, res) {
                 })
             }
 
-            ejs.renderFile("./public/template/schedules_extract.ejs",
+            ejs.renderFile(path.join(__dirname, '../../../../', 'public', 'template', 'schedules_extract.ejs'),
                 { extract: currentExtract }, (err, html) => {
 
                     if (err)
