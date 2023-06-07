@@ -8,7 +8,6 @@ const pool = require("../config/database");
 const middleware = require("./middleware");
 const connectionMiddleware = require("./connectionMiddleware");
 const excludedRoutes = require("./excludedRoutes");
-const mongodb = require("./mongodb");
 
 const app = express();
 
@@ -23,8 +22,6 @@ module.exports = {
     app.use(connectionMiddleware(pool));
 
     require("./routes")(app);
-
-    mongodb.setup();
 
     let port = process.env.PORT_INDEX || 8080;
 
