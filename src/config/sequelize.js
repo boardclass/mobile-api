@@ -1,13 +1,5 @@
 const Sequelize = require("sequelize");
-const {
-  host,
-  define,
-  dialect,
-  username,
-  password,
-  database,
-  port
-} = require("./mysql");
+const { URI, define } = require("./mysql");
 
 const Role = require("../api/common/models/Role");
 const User = require("../api/common/models/User");
@@ -24,7 +16,7 @@ const Agendas = require("../api/common/models/Agendas");
 const AgendaStatus = require("../api/common/models/AgendaStatus");
 const AgendaDates = require("../api/common/models/AgendaDates");
 
-const connection = new Sequelize(`${dialect}://${username}:${password}@${host}:${port}/${database}`, {
+const connection = new Sequelize(URI, {
   define: define
 });
 
@@ -63,10 +55,10 @@ exports.start = () => {
     .authenticate()
     .then(() => {
       console.log(
-        `Sequelize connection has been established successfully ${host}`
+        `Sequelize connection has been established successfully on ${URI}`
       );
     })
     .catch((err) => {
-      console.error(`Unable to connect to the database: on ${host}`, err);
+      console.error(`Unable to connect to the database: on ${URI}`, err);
     });
 };

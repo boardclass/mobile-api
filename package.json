@@ -27,6 +27,8 @@
     "luxon": "^1.22.0",
     "mysql2": "^2.0.0",
     "path": "^0.12.7",
+    "pg": "^8.11.0",
+    "pg-hstore": "^2.3.4",
     "randomstring": "^1.1.5",
     "request": "^2.88.0",
     "sequelize": "^5.21.3",
