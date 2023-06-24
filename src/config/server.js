@@ -1,4 +1,4 @@
-require("./sequelize");
+const connection = require("./sequelize");
 
 const express = require("express");
 const validator = require("express-validator");
@@ -25,8 +25,10 @@ module.exports = {
 
     let port = process.env.PORT_INDEX || 8080;
 
+    connection.start();
+
     app.listen(port, () => {
-      console.log(`Server started on ${port}`);
+      console.log(`Server started on following ${port}`);
     });
   },
 };
