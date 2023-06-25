@@ -1,16 +1,14 @@
-const mysql = require('../../common/util/connection')
+import { Client } from 'pg'
 const { handleError } = require('../../common/classes/error-handler')
 const { minutesRestriction } = require('../../common/classes/time-restriction')
 const { SCHEDULE_STATUS } = require('../../common/classes/constants')
 
 exports.store = async function (req, res) {
-
+    const client = new Client()
     const date = req.body.date
     const batteries = req.body.batteries
-
     const userId = req.decoded.data.userId
-    const connection = await mysql.connection()
-
+    
     if (userId === undefined) {
         return res.status(404).json({
             success: false,
@@ -19,8 +17,9 @@ exports.store = async function (req, res) {
             data: {}
         })
     }
-
-    try {
+    
+    try { 
+        await client.connect()
 
         let batteryQuery = `
             SELECT  
@@ -174,7 +173,7 @@ exports.store = async function (req, res) {
         await connection.query('ROLLBACK')
         return handleError(req, res, 500, "Ocorreu um erro no agendamento!", err)
     } finally {
-        await connection.release()
+        await client.end()
     }
 
 }

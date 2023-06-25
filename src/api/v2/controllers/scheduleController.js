@@ -1,15 +1,14 @@
-const mysql = require('../../common/util/connection')
+import { Client } from 'pg'
 const { handleError } = require('../../common/classes/error-handler')
 const { minutesRestriction } = require('../../common/classes/time-restriction')
 const { SCHEDULE_STATUS } = require('../../common/classes/constants')
 
 exports.store = async function (req, res) {
-
+    const client = new Client()
     const date = req.body.date
     const batteries = req.body.batteries
 
     const userId = req.decoded.data.userId
-    const connection = await mysql.connection()
 
     if (userId === undefined) {
         return res.status(404).json({
@@ -21,6 +20,7 @@ exports.store = async function (req, res) {
     }
 
     try {
+        await client.connect()
 
         let batteryQuery = `
             SELECT  
@@ -48,7 +48,7 @@ exports.store = async function (req, res) {
             date
         ]
 
-        const batteriesResult = await connection.query(batteryQuery, batteryParams);
+        const batteriesResult = await client.query(batteryQuery, batteryParams);
 
         if (batteriesResult.length > 0) {
 
@@ -75,13 +75,13 @@ exports.store = async function (req, res) {
                 battery.clientLevel
             ]
 
-            const insertResult = await connection.query(insertQuery, insertParams)
+            const insertResult = await client.query(insertQuery, insertParams)
             let callback = insertResult[1][0].callback
             let scheduleId = insertResult[1][0].scheduleId
 
             if (callback != null) {
 
-                await connection.query('ROLLBACK')
+                await client.query('ROLLBACK')
 
                 return res.status(404).json({
                     success: false,
@@ -89,8 +89,6 @@ exports.store = async function (req, res) {
                     verbose: null,
                     data: {}
                 })
-
-            } else {
 
             }
 
@@ -108,7 +106,6 @@ exports.store = async function (req, res) {
             `
 
             if (battery.equipments != undefined) {
-
                 let equipments = battery.equipments
                 for (equipment of equipments) {
 
@@ -117,15 +114,13 @@ exports.store = async function (req, res) {
                         equipment.equipmentBatteryId
                     ]
 
-                    await connection.query(equipmentQuery, equipmentParams)
-
+                    await client.query(equipmentQuery, equipmentParams)
                 }
-
             }
 
         }
 
-        await connection.query('COMMIT')
+        await client.query('COMMIT')
 
         return res.status(200).json({
             success: true,
@@ -135,10 +130,10 @@ exports.store = async function (req, res) {
         })
 
     } catch (err) {
-        await connection.query('ROLLBACK')
+        await client.query('ROLLBACK')
         return handleError(req, res, 500, "Ocorreu um erro no agendamento!", err)
     } finally {
-        await connection.release()
+        await client.end()
     }
 
 }

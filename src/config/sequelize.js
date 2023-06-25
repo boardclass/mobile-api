@@ -1,5 +1,4 @@
 const Sequelize = require("sequelize");
-const { URI, define } = require("./mysql");
 
 const Role = require("../api/common/models/Role");
 const User = require("../api/common/models/User");
@@ -16,8 +15,12 @@ const Agendas = require("../api/common/models/Agendas");
 const AgendaStatus = require("../api/common/models/AgendaStatus");
 const AgendaDates = require("../api/common/models/AgendaDates");
 
+const URI = process.env.PGURI
 const connection = new Sequelize(URI, {
-  define: define
+  define: {
+    timestamps: true,
+    underscored: true,
+  }
 });
 
 Role.init(connection);

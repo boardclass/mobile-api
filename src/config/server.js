@@ -4,9 +4,7 @@ const express = require("express");
 const validator = require("express-validator");
 const bodyParser = require("body-parser");
 
-const pool = require("../config/database");
 const middleware = require("./middleware");
-const connectionMiddleware = require("./connectionMiddleware");
 const excludedRoutes = require("./excludedRoutes");
 
 const app = express();
@@ -19,7 +17,6 @@ module.exports = {
 
     app.use(unless(excludedRoutes.excluded, middleware.validateToken));
     app.use(middleware.versioning);
-    app.use(connectionMiddleware(pool));
 
     require("./routes")(app);
 

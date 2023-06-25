@@ -1,6 +1,6 @@
 const path = require('path')
 const ejs = require('ejs')
-const mysql = require('../../common/util/connection')
+import { Client } from 'pg'
 
 const randomstring = require("randomstring")
 
@@ -1108,9 +1108,7 @@ exports.batteries = async function (req, res) {
 }
 
 exports.storeBattery = async function (req, res) {
-
-    const connection = await mysql.connection()
-
+    const client = new Client()
     const establishmentId = req.decoded.data.establishmentId
     const sportId = req.body.sportId
     const addressId = req.body.addressId
@@ -1129,10 +1127,10 @@ exports.storeBattery = async function (req, res) {
     req.assert('peopleAmount', 'O quantidade máxima de pessoas deve ser informada').notEmpty()
     req.assert('weekdays', 'Os dias da semana devem ser informados').notEmpty()
 
-    if (validator.validateFields(req, res) != null)
-        return
+    if (validator.validateFields(req, res) != null) return
 
     try {
+        await client.connect()
 
         const fetchQuery = `
             SELECT *
@@ -1162,12 +1160,12 @@ exports.storeBattery = async function (req, res) {
             weekdays
         ]
 
-        await connection.query('START TRANSACTION');
+        await client.query('START TRANSACTION');
 
-        const fetchedBattery = await connection.query(fetchQuery, fetchParams)
+        const fetchedBattery = await client.query(fetchQuery, fetchParams)
 
         if (fetchedBattery.length != 0) {
-            await connection.query('ROLLBACK')
+            await client.query('ROLLBACK')
             return res.status(400).json({
                 success: true,
                 message: "Não foi possível adicionar a bateria, pois os horários já estão sendo utilizados!",
@@ -1213,7 +1211,7 @@ exports.storeBattery = async function (req, res) {
             peopleAmount
         ]
 
-        const insertedBattery = await connection.query(insertQuery, insertParams)
+        const insertedBattery = await client.query(insertQuery, insertParams)
         const insertedBatteryId = insertedBattery.insertId
 
         const weekendInsertQuery = `
@@ -1236,7 +1234,7 @@ exports.storeBattery = async function (req, res) {
                 weekdays[index]
             ]
 
-            await connection.query(weekendInsertQuery, params)
+            await client.query(weekendInsertQuery, params)
 
         }
 
@@ -1266,11 +1264,11 @@ exports.storeBattery = async function (req, res) {
                 insertedBatteryId
             ]
 
-            await connection.query(equipmentsQuery, params)
+            await client.query(equipmentsQuery, params)
 
         }
 
-        await connection.query('COMMIT')
+        await client.query('COMMIT')
 
         return res.status(200).json({
             success: true,
@@ -1280,10 +1278,10 @@ exports.storeBattery = async function (req, res) {
         })
 
     } catch (err) {
-        await connection.query('ROLLBACK')
+        await client.query('ROLLBACK')
         return handleError(req, res, 500, "Ocorreu um erro ao adicionar a bateria!", err)
     } finally {
-        await connection.release()
+        await client.end()
     }
 }
 

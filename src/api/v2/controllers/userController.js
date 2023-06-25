@@ -1,28 +1,33 @@
-const UserAddress = require('../../common/models/UserAddress')
-const UsersRoles = require('../../common/models/UsersRoles')
+const UserAddress = require("../../common/models/UserAddress");
+const UsersRoles = require("../../common/models/UsersRoles");
 
-const bcrypt = require('bcryptjs')
-const validator = require('../../common/classes/validator')
-const jwtHandler = require('../../common/classes/jwt')
-const logger = require('../../common/classes/logger')
+const bcrypt = require("bcryptjs");
+const validator = require("../../common/classes/validator");
+const jwtHandler = require("../../common/classes/jwt");
+const logger = require("../../common/classes/logger");
 
-const { handleError } = require('../../common/classes/error-handler')
-const { SCHEDULE_STATUS, USER_TYPE } = require('../../common/classes/constants')
+const { handleError } = require("../../common/classes/error-handler");
+const {
+    SCHEDULE_STATUS,
+    USER_TYPE,
+} = require("../../common/classes/constants");
+
+const { Pool } = require('pg')
 
 exports.login = async function (req, res) {
+    console.log('Starting login')
+    const pool = new Pool();
+    let email = req.body.email;
+    let password = req.body.password;
 
-    let email = req.body.email
-    let password = req.body.password
-
-    req.assert('email', 'O email deve ser informado')
-    req.assert('password', 'A senha deve ser informado')
+    req.assert("email", "O email deve ser informado");
+    req.assert("password", "A senha deve ser informado");
 
     if (validator.validateFields(req, res) != null) {
-        return
+        return;
     }
 
     try {
-
         let query = `
             SELECT 
                 u.id,
@@ -39,136 +44,129 @@ exports.login = async function (req, res) {
                 AND ur.role_id = ?
             WHERE 
                 uc.email = ?
-        `
+        `;
 
-        let params = [
-            USER_TYPE.USER,
-            email
-        ]
+        let params = [USER_TYPE.USER, email];
 
-        req.connection.query(query, params, async function (err, result, _) {
+        const result = await pool.query(query, params);
 
-            if (err) {
-                return handleError(req, res, 500, "Ocorreu um erro ao realizar o login!")
-            }
+        if (result == undefined)
+            return handleError(req, res, 500, "Ocorreu um erro ao realizar o login!");
 
-            if (result == 0) {
+        if (result == 0) {
+            return res.status(404).json({
+                success: true,
+                message: "Este email não está cadastrado em nossa base de clientes!",
+                verbose: null,
+                data: {},
+            });
+        } else {
+            const user = result.rows[0];
+            const matchPassword = await bcrypt.compare(password, user.password);
 
+            if (!matchPassword) {
                 return res.status(404).json({
                     success: true,
-                    message: "Este email não está cadastrado em nossa base de clientes!",
+                    message: "A senha está incorreta!",
                     verbose: null,
-                    data: {}
-                })
-
-            } else {
-
-                const user = result[0]
-                const matchPassword = await bcrypt.compare(password, user.password)
-
-                if (!matchPassword) {
-
-                    return res.status(404).json({
-                        success: true,
-                        message: "A senha está incorreta!",
-                        verbose: null,
-                        data: {}
-                    })
-
-                }
-
-                const token = jwtHandler.generate(user.id, null)
-
-                res.setHeader('role-id', USER_TYPE.USER)
-                res.setHeader('access-token', token)
-
-                return res.status(200).json({
-                    success: true,
-                    message: "Login realizado com sucesso!",
-                    verbose: null,
-                    data: {
-                        id: user.id,
-                        cpf: user.cpf,
-                        name: user.name,
-                        phone: user.phone
-                    }
-                })
-
+                    data: {},
+                });
             }
 
-        })
+            const token = jwtHandler.generate(user.id, null);
 
+            res.setHeader("role-id", USER_TYPE.USER);
+            res.setHeader("access-token", token);
+
+            return res.status(200).json({
+                success: true,
+                message: "Login realizado com sucesso!",
+                verbose: null,
+                data: {
+                    id: user.id,
+                    cpf: user.cpf,
+                    name: user.name,
+                    phone: user.phone,
+                },
+            });
+        }
     } catch (error) {
-        handleError(req, res, 500, "Ocorreu um erro ao realizar o login!", error)
+        handleError(req, res, 500, "Ocorreu um erro ao realizar o login!", error);
     }
-
-}
+};
 
 exports.store = async function (req, res) {
+    const user = req.body;
+    const account = req.body.account;
+    let indicationId = null;
 
-    const user = req.body
-    const account = req.body.account
-    let indicationId = null
-
-    req.assert('name', 'O nome deve ser informado').notEmpty()
-    req.assert('cpf', 'O CPF deve ser informado').notEmpty()
-    req.assert('cpf', 'O CPF está com formato inválido').len(11)
-    req.assert('cpf', 'O CPF está deve conter apenas números').isNumeric()
-    req.assert('phone', 'O telefone deve ser informado').notEmpty()
-    req.assert('phone', 'O telefone está com formato inválido').len(13)
-    req.assert('phone', 'O telefone deve conter apenas números').isNumeric()
-    req.assert('account.email', 'O email deve ser informado').notEmpty()
-    req.assert('account.email', 'O email está em formato inválido').isEmail()
-    req.assert('account.password', 'A senha deve ser informada').notEmpty()
+    req.assert("name", "O nome deve ser informado").notEmpty();
+    req.assert("cpf", "O CPF deve ser informado").notEmpty();
+    req.assert("cpf", "O CPF está com formato inválido").len(11);
+    req.assert("cpf", "O CPF está deve conter apenas números").isNumeric();
+    req.assert("phone", "O telefone deve ser informado").notEmpty();
+    req.assert("phone", "O telefone está com formato inválido").len(13);
+    req.assert("phone", "O telefone deve conter apenas números").isNumeric();
+    req.assert("account.email", "O email deve ser informado").notEmpty();
+    req.assert("account.email", "O email está em formato inválido").isEmail();
+    req.assert("account.password", "A senha deve ser informada").notEmpty();
 
     if (validator.validateFields(req, res) != null) {
-        return
+        return;
     }
 
     if (user.indication === undefined) {
-        user.indication = null
+        user.indication = null;
     }
 
     try {
-
-        account.password = await bcrypt.hash(account.password, 10)
+        account.password = await bcrypt.hash(account.password, 10);
 
         const indicationQuery = `
             SELECT id
             FROM establishments_indication
             WHERE code = ?
-        `
+        `;
 
         if (user.indication != "" && user.indication != undefined) {
+            req.connection.query(
+                indicationQuery,
+                user.indication,
+                function (err, result, _) {
+                    if (err)
+                        return handleError(
+                            req,
+                            res,
+                            500,
+                            "Ocorreu um erro ao cadastrar o usuário!",
+                            err
+                        );
 
-            req.connection.query(indicationQuery, user.indication, function (err, result, _) {
+                    if (result.length == 0) {
+                        return res.status(404).json({
+                            success: true,
+                            message: "Código de indicação inválido!",
+                            verbose: null,
+                            data: {},
+                        });
+                    }
 
-                if (err)
-                    return handleError(req, res, 500, "Ocorreu um erro ao cadastrar o usuário!", err)
-
-                if (result.length == 0) {
-
-                    return res.status(404).json({
-                        success: true,
-                        message: "Código de indicação inválido!",
-                        verbose: null,
-                        data: {}
-                    })
-
+                    indicationId = result[0].id;
                 }
-
-                indicationId = result[0].id
-
-            })
-
+            );
         }
 
         req.connection.beginTransaction(function (err) {
-
             if (err) {
                 return req.connection.rollback(function () {
-                    handleError(req, res, 500, "Ocorreu um erro ao cadastrar o usuário!", err)
-                })
+                    handleError(
+                        req,
+                        res,
+                        500,
+                        "Ocorreu um erro ao cadastrar o usuário!",
+                        err
+                    );
+                });
             }
 
             let userQuery = `
@@ -185,214 +183,223 @@ exports.store = async function (req, res) {
                     OR u.phone = ?
                     OR u.cpf = ?
                 ORDER BY ur.role_id
-            `
+            `;
 
-            let userParams = [
-                account.email,
-                user.phone,
-                user.cpf
-            ]
+            let userParams = [account.email, user.phone, user.cpf];
 
             req.connection.query(userQuery, userParams, function (err, result, _) {
-
                 if (err) {
                     return req.connection.rollback(function () {
-                        handleError(req, res, 500, "Ocorreu um erro ao cadastrar o usuário!", err)
-                    })
+                        handleError(
+                            req,
+                            res,
+                            500,
+                            "Ocorreu um erro ao cadastrar o usuário!",
+                            err
+                        );
+                    });
                 }
 
                 if (result.length == 0) {
-
                     userQuery = `
                         INSERT INTO users
                             (cpf, name, phone, indication_id)
                         VALUES
                             (?, ?, ?, ?)
-                    `
+                    `;
 
-                    userParams = [
-                        user.cpf,
-                        user.name,
-                        user.phone,
-                        indicationId
-                    ]
+                    userParams = [user.cpf, user.name, user.phone, indicationId];
 
-                    req.connection.query(userQuery, userParams, function (err, result, _) {
+                    req.connection.query(
+                        userQuery,
+                        userParams,
+                        function (err, result, _) {
+                            if (err) {
+                                return req.connection.rollback(function () {
+                                    handleError(
+                                        req,
+                                        res,
+                                        500,
+                                        "Ocorreu um erro ao cadastrar o usuário!",
+                                        err
+                                    );
+                                });
+                            }
 
-                        if (err) {
-                            return req.connection.rollback(function () {
-                                handleError(req, res, 500, "Ocorreu um erro ao cadastrar o usuário!", err)
-                            })
-                        }
+                            const insertId = result.insertId;
 
-                        const insertId = result.insertId
-
-                        const accountQuery = `
+                            const accountQuery = `
                             INSERT INTO user_accounts
                                 (user_id, email, password)
                             VALUES
                                 (?, ?, ?)
-                        `
-                        const accountParams = [
-                            insertId,
-                            account.email,
-                            account.password
-                        ]
+                        `;
+                            const accountParams = [insertId, account.email, account.password];
 
-                        req.connection.query(accountQuery, accountParams, function (err, result, _) {
+                            req.connection.query(
+                                accountQuery,
+                                accountParams,
+                                function (err, result, _) {
+                                    if (err) {
+                                        return req.connection.rollback(function () {
+                                            handleError(
+                                                req,
+                                                res,
+                                                500,
+                                                "Ocorreu um erro ao cadastrar o usuário!",
+                                                err
+                                            );
+                                        });
+                                    }
 
-                            if (err) {
-                                return req.connection.rollback(function () {
-                                    handleError(req, res, 500, "Ocorreu um erro ao cadastrar o usuário!", err)
-                                })
-                            }
-
-                            userQuery = `
+                                    userQuery = `
                                 INSERT INTO users_roles
                                     (user_id, role_id)
                                 VALUES
                                     (?, ?)
-                            `
+                            `;
 
-                            userParams = [
-                                insertId,
-                                USER_TYPE.USER
-                            ]
+                                    userParams = [insertId, USER_TYPE.USER];
 
-                            req.connection.query(userQuery, userParams, function (err, result, _) {
-
-                                if (err) {
-                                    return req.connection.rollback(function () {
-                                        handleError(req, res, 500, "Ocorreu um erro ao cadastrar o usuário!", err)
-                                    })
-                                }
-
-                                req.connection.commit(function (err) {
-
-                                    if (err) {
-
-                                        return req.connection.rollback(function () {
-                                            handleError(req, res, 500, "Ocorreu um erro ao cadastrar o estabelecimento!", err)
-                                        })
-
-                                    } else {
-
-                                        const token = jwtHandler.generate(insertId, null)
-
-                                        res.setHeader('role-id', USER_TYPE.USER)
-                                        res.setHeader('user-id', insertId)
-                                        res.setHeader('access-token', token)
-
-                                        return res.status(200).json({
-                                            success: true,
-                                            message: "Usuário cadastrado com sucesso!",
-                                            verbose: null,
-                                            data: {
-                                                roleId: USER_TYPE.USER,
-                                                id: insertId,
-                                                cpf: user.cpf,
-                                                name: user.name,
-                                                phone: user.phone,
-                                                indication: user.indication
+                                    req.connection.query(
+                                        userQuery,
+                                        userParams,
+                                        function (err, result, _) {
+                                            if (err) {
+                                                return req.connection.rollback(function () {
+                                                    handleError(
+                                                        req,
+                                                        res,
+                                                        500,
+                                                        "Ocorreu um erro ao cadastrar o usuário!",
+                                                        err
+                                                    );
+                                                });
                                             }
-                                        })
 
-                                    }
+                                            req.connection.commit(function (err) {
+                                                if (err) {
+                                                    return req.connection.rollback(function () {
+                                                        handleError(
+                                                            req,
+                                                            res,
+                                                            500,
+                                                            "Ocorreu um erro ao cadastrar o estabelecimento!",
+                                                            err
+                                                        );
+                                                    });
+                                                } else {
+                                                    const token = jwtHandler.generate(insertId, null);
 
-                                })
+                                                    res.setHeader("role-id", USER_TYPE.USER);
+                                                    res.setHeader("user-id", insertId);
+                                                    res.setHeader("access-token", token);
 
-                            })
-
-                        })
-
-                    })
-
+                                                    return res.status(200).json({
+                                                        success: true,
+                                                        message: "Usuário cadastrado com sucesso!",
+                                                        verbose: null,
+                                                        data: {
+                                                            roleId: USER_TYPE.USER,
+                                                            id: insertId,
+                                                            cpf: user.cpf,
+                                                            name: user.name,
+                                                            phone: user.phone,
+                                                            indication: user.indication,
+                                                        },
+                                                    });
+                                                }
+                                            });
+                                        }
+                                    );
+                                }
+                            );
+                        }
+                    );
                 } else if (result[0].roleId === USER_TYPE.USER) {
-
                     return res.status(400).json({
                         success: true,
                         message: "Os dados inseridos já estão sendo utilizados!",
                         verbose: null,
-                        data: {}
-                    })
-
+                        data: {},
+                    });
                 } else if (result[0].roleId === USER_TYPE.ASSISTANT) {
-
-                    const userId = result[0].id
+                    const userId = result[0].id;
 
                     userQuery = `
                         INSERT INTO users_roles
                             (user_id, role_id)
                         VALUES
                             (?, ?)
-                    `
+                    `;
 
-                    userParams = [
-                        userId,
-                        USER_TYPE.USER
-                    ]
+                    userParams = [userId, USER_TYPE.USER];
 
-                    req.connection.query(userQuery, userParams, function (err, result, _) {
-
-                        if (err) {
-                            return req.connection.rollback(function () {
-                                handleError(req, res, 500, "Ocorreu um erro ao cadastrar o usuário!", err)
-                            })
-                        }
-
-                        req.connection.commit(function (err) {
-
+                    req.connection.query(
+                        userQuery,
+                        userParams,
+                        function (err, result, _) {
                             if (err) {
-
                                 return req.connection.rollback(function () {
-                                    handleError(req, res, 500, "Ocorreu um erro ao cadastrar o estabelecimento!", err)
-                                })
-
-                            } else {
-
-                                const token = jwtHandler.generate(userId, null)
-
-                                res.setHeader('role-id', USER_TYPE.USER)
-                                res.setHeader('user-id', userId)
-                                res.setHeader('access-token', token)
-
-                                return res.status(200).json({
-                                    success: true,
-                                    message: "Usuário cadastrado com sucesso!",
-                                    verbose: null,
-                                    data: {
-                                        roleId: USER_TYPE.USER,
-                                        id: userId,
-                                        cpf: user.cpf,
-                                        name: user.name,
-                                        phone: user.phone,
-                                        indication: user.indication
-                                    }
-                                })
-
+                                    handleError(
+                                        req,
+                                        res,
+                                        500,
+                                        "Ocorreu um erro ao cadastrar o usuário!",
+                                        err
+                                    );
+                                });
                             }
 
-                        })
+                            req.connection.commit(function (err) {
+                                if (err) {
+                                    return req.connection.rollback(function () {
+                                        handleError(
+                                            req,
+                                            res,
+                                            500,
+                                            "Ocorreu um erro ao cadastrar o estabelecimento!",
+                                            err
+                                        );
+                                    });
+                                } else {
+                                    const token = jwtHandler.generate(userId, null);
 
-                    })
+                                    res.setHeader("role-id", USER_TYPE.USER);
+                                    res.setHeader("user-id", userId);
+                                    res.setHeader("access-token", token);
 
+                                    return res.status(200).json({
+                                        success: true,
+                                        message: "Usuário cadastrado com sucesso!",
+                                        verbose: null,
+                                        data: {
+                                            roleId: USER_TYPE.USER,
+                                            id: userId,
+                                            cpf: user.cpf,
+                                            name: user.name,
+                                            phone: user.phone,
+                                            indication: user.indication,
+                                        },
+                                    });
+                                }
+                            });
+                        }
+                    );
                 }
-
-            })
-
-        })
-
+            });
+        });
     } catch (err) {
-        handleError(req, res, 500, "Ocorreu um erro ao cadastrar o usuário!", err)
+        handleError(req, res, 500, "Ocorreu um erro ao cadastrar o usuário!", err);
     }
-
-}
+};
 
 exports.getByCpf = async function (req, res) {
-    const cpf = req.params.cpf
+    console.log('STARTING getByCpf')
+    const cpf = req.params.cpf;
+    const pool = new Pool()
 
     try {
-
         let query = `
             SELECT 
                 u.id,
@@ -402,58 +409,50 @@ exports.getByCpf = async function (req, res) {
             FROM users u
             WHERE 
                 u.cpf = ?
-        `
+        `;
 
-        let params = [
-            cpf
-        ]
+        let params = [cpf];
 
-        req.connection.query(query, params, async function (err, result, _) {
+        const result = await pool.query(query, params)
+        if (result == undefined)
+            return handleError(
+                req,
+                res,
+                500,
+                "Ocorreu um erro ao recuperar os dados!"
+            );
 
-            if (err) {
-                return handleError(req, res, 500, "Ocorreu um erro ao recuperar os dados!")
-            }
+        if (result.rowCount == 0) {
+            return res.status(404).json({
+                success: true,
+                message: "Usuário não encontrado!",
+                verbose: null,
+                data: {},
+            });
+        } else {
+            const user = result.rows[0];
 
-            if (result == 0) {
-
-                return res.status(404).json({
-                    success: true,
-                    message: "Usuário não encontrado!",
-                    verbose: null,
-                    data: {}
-                })
-
-            } else {
-
-                const user = result[0]
-
-                return res.status(200).json({
-                    success: true,
-                    message: "Usuário recuperado com sucesso!",
-                    verbose: null,
-                    data: {
-                        id: user.id,
-                        cpf: user.cpf,
-                        name: user.name,
-                        phone: user.phone
-                    }
-                })
-
-            }
-
-        });
-
+            return res.status(200).json({
+                success: true,
+                message: "Usuário recuperado com sucesso!",
+                verbose: null,
+                data: {
+                    id: user.id,
+                    cpf: user.cpf,
+                    name: user.name,
+                    phone: user.phone,
+                },
+            });
+        }
     } catch (error) {
-        handleError(req, res, 500, "Ocorreu um erro ao realizar o login!", error)
+        handleError(req, res, 500, "Ocorreu um erro ao realizar o login!", error);
     }
-
-}
+};
 
 exports.getByPhone = async function (req, res) {
-    const phone = req.params.phone
+    const phone = req.params.phone;
 
     try {
-
         let query = `
             SELECT 
                 u.id,
@@ -463,26 +462,28 @@ exports.getByPhone = async function (req, res) {
             FROM users u
             WHERE 
                 u.phone LIKE '%${phone}%'
-        `
+        `;
 
         req.connection.query(query, null, async function (err, result, _) {
-
             if (err) {
-                return handleError(req, res, 500, "Ocorreu um erro ao recuperar os dados!", err)
+                return handleError(
+                    req,
+                    res,
+                    500,
+                    "Ocorreu um erro ao recuperar os dados!",
+                    err
+                );
             }
 
             if (result == 0) {
-
                 return res.status(404).json({
                     success: true,
                     message: "Usuário não encontrado!",
                     verbose: null,
-                    data: {}
-                })
-
+                    data: {},
+                });
             } else {
-
-                const user = result[0]
+                const user = result[0];
 
                 return res.status(200).json({
                     success: true,
@@ -492,66 +493,45 @@ exports.getByPhone = async function (req, res) {
                         id: user.id,
                         cpf: user.cpf,
                         name: user.name,
-                        phone: user.phone
-                    }
-                })
-
+                        phone: user.phone,
+                    },
+                });
             }
-
         });
-
     } catch (error) {
-        handleError(req, res, 500, "Ocorreu um erro ao realizar o login!", error)
+        handleError(req, res, 500, "Ocorreu um erro ao realizar o login!", error);
     }
-
-}
+};
 
 exports.storeAddress = async function (req, res) {
+    let user_id = req.params.user_id;
+    let zipcode = req.body.cep;
+    let country = req.body.country;
+    let state = req.body.state;
+    let city = req.body.city;
+    let neighbourhood = req.body.neighbourhood;
+    let street = req.body.street;
+    let number = req.body.number;
+    let complement = req.body.complement;
 
-    let user_id = req.params.user_id
-    let zipcode = req.body.cep
-    let country = req.body.country
-    let state = req.body.state
-    let city = req.body.city
-    let neighbourhood = req.body.neighbourhood
-    let street = req.body.street
-    let number = req.body.number
-    let complement = req.body.complement
-
-    req.assert('cep', 'O CEP deve ser informado').notEmpty()
-    req.assert('cep', 'O CEP está inválido').len(8)
-    req.assert('country', 'O País deve ser informado').notEmpty()
-    req.assert('state', 'O Estado ser informado').notEmpty()
-    req.assert('city', 'A Cidade deve ser informado').notEmpty()
-    req.assert('neighbourhood', 'O Bairro deve ser informado').notEmpty()
-    req.assert('street', 'A Rua deve ser informado').notEmpty()
-    req.assert('number', 'O Número deve ser informado').notEmpty()
+    req.assert("cep", "O CEP deve ser informado").notEmpty();
+    req.assert("cep", "O CEP está inválido").len(8);
+    req.assert("country", "O País deve ser informado").notEmpty();
+    req.assert("state", "O Estado ser informado").notEmpty();
+    req.assert("city", "A Cidade deve ser informado").notEmpty();
+    req.assert("neighbourhood", "O Bairro deve ser informado").notEmpty();
+    req.assert("street", "A Rua deve ser informado").notEmpty();
+    req.assert("number", "O Número deve ser informado").notEmpty();
 
     if (validator.validateFields(req, res) != null) {
-        return
+        return;
     }
 
     try {
-
-        await UserAddress.findOne({ where: { user_id } })
-            .then(function (obj) {
-
-                if (obj) {
-
-                    UserAddress.update({
-                        zipcode,
-                        country,
-                        state,
-                        city,
-                        neighbourhood,
-                        street,
-                        number,
-                        complement
-                    }, { where: { 'user_id': user_id } })
-
-                } else {
-
-                    UserAddress.create({
+        await UserAddress.findOne({ where: { user_id } }).then(function (obj) {
+            if (obj) {
+                UserAddress.update(
+                    {
                         zipcode,
                         country,
                         state,
@@ -560,62 +540,78 @@ exports.storeAddress = async function (req, res) {
                         street,
                         number,
                         complement,
-                        user_id,
-                    })
+                    },
+                    { where: { user_id: user_id } }
+                );
+            } else {
+                UserAddress.create({
+                    zipcode,
+                    country,
+                    state,
+                    city,
+                    neighbourhood,
+                    street,
+                    number,
+                    complement,
+                    user_id,
+                });
+            }
 
-                }
-
-                return res.status(200).json({
-                    success: true,
-                    message: "Endereço cadastrado com sucesso!",
-                    verbose: null,
-                    data: {}
-                })
-
-            })
-
+            return res.status(200).json({
+                success: true,
+                message: "Endereço cadastrado com sucesso!",
+                verbose: null,
+                data: {},
+            });
+        });
     } catch (error) {
-        handleError(req, res, 500, "Ocorreu um erro ao cadastrar o endereço!", error)
+        handleError(
+            req,
+            res,
+            500,
+            "Ocorreu um erro ao cadastrar o endereço!",
+            error
+        );
     }
-
-}
+};
 
 exports.storeRole = async function (req, res) {
+    const user_id = req.params.user_id;
+    const role_id = req.body.role_id;
 
-    const user_id = req.params.user_id
-    const role_id = req.body.role_id
-
-    req.assert('role_id', 'A permissão deve ser informada!').notEmpty()
+    req.assert("role_id", "A permissão deve ser informada!").notEmpty();
 
     try {
-
         if (validator.validateFields(req, res) != null) {
-            return
+            return;
         }
 
         await UsersRoles.create({
             user_id: user_id,
-            role_id: role_id
-        })
+            role_id: role_id,
+        });
 
         return res.status(200).json({
             success: true,
             message: "Cadastrado realizado com sucesso!",
             verbose: null,
-            data: {}
-        })
-
+            data: {},
+        });
     } catch (error) {
-        handleError(req, res, 500, "Ocorreu um erro ao cadastrar esse usuário!", error)
+        handleError(
+            req,
+            res,
+            500,
+            "Ocorreu um erro ao cadastrar esse usuário!",
+            error
+        );
     }
-
-}
+};
 
 exports.agenda = async function (req, res) {
-    const userId = req.decoded.data.userId
+    const userId = req.decoded.data.userId;
 
     try {
-
         const query = `
                 SELECT 
                     s.id, 
@@ -651,73 +647,64 @@ exports.agenda = async function (req, res) {
                     AND s.status_id NOT IN (?)
                 GROUP BY b.id, date
                 ORDER BY date DESC, sport, establishment, start_hour
-                `
+                `;
 
-        const filters = [
-            userId,
-            SCHEDULE_STATUS.CANCELED
-        ]
+        const filters = [userId, SCHEDULE_STATUS.CANCELED];
 
-        req.connection.query(query, filters,
-            function (err, results, fields) {
+        req.connection.query(query, filters, function (err, results, fields) {
+            if (err) {
+                logger.register(err, req, (_) => {
+                    return res.status(500).json({
+                        success: false,
+                        message: "Ocorreu um erro no agendamento!",
+                        verbose: `${err}`,
+                        data: {},
+                    });
+                });
+            }
 
-                if (err) {
+            const agenda = [];
 
-                    logger.register(err, req, _ => {
-                        return res.status(500).json({
-                            success: false,
-                            message: "Ocorreu um erro no agendamento!",
-                            verbose: `${err}`,
-                            data: {}
-                        })
+            for (row of results) {
+                let filtered = agenda.findIndex((value) => {
+                    return (
+                        value.date === row.date &&
+                        value.establishment.id === row.establishment_id
+                    );
+                });
 
-                    })
-
-                }
-
-                const agenda = []
-
-                for (row of results) {
-
-                    let filtered = agenda.findIndex(value => {
-                        return value.date === row.date
-                            && value.establishment.id === row.establishment_id
-                    })
-
-                    if (filtered >= 0) {
-
-                        agenda[filtered].batteries.push({
-                            id: row.battery_id,
-                            booking: row.booking,
-                            startHour: row.start_hour,
-                            endHour: row.end_hour,
-                            price: row.price,
-                            sport: {
-                                id: row.sport_id,
-                                name: row.sport
-                            },
-                            address: {
-                                cep: row.zipcode,
-                                country: row.country,
-                                state: row.state,
-                                city: row.city,
-                                neighbourhood: row.neighbourhood,
-                                street: row.street,
-                                number: row.number,
-                                complement: row.complement
-                            }
-                        })
-
-                    } else {
-
-                        agenda.push({
-                            id: row.id,
-                            date: row.date,
-                            establishment: {
-                                id: row.establishment_id,
-                                name: row.establishment
-                            },
-                            batteries: [{
+                if (filtered >= 0) {
+                    agenda[filtered].batteries.push({
+                        id: row.battery_id,
+                        booking: row.booking,
+                        startHour: row.start_hour,
+                        endHour: row.end_hour,
+                        price: row.price,
+                        sport: {
+                            id: row.sport_id,
+                            name: row.sport,
+                        },
+                        address: {
+                            cep: row.zipcode,
+                            country: row.country,
+                            state: row.state,
+                            city: row.city,
+                            neighbourhood: row.neighbourhood,
+                            street: row.street,
+                            number: row.number,
+                            complement: row.complement,
+                        },
+                    });
+                } else {
+                    agenda.push({
+                        id: row.id,
+                        date: row.date,
+                        establishment: {
+                            id: row.establishment_id,
+                            name: row.establishment,
+                        },
+                        batteries: [
+                            {
                                 id: row.battery_id,
                                 booking: row.booking,
                                 startHour: row.start_hour,
@@ -725,7 +712,7 @@ exports.agenda = async function (req, res) {
                                 price: row.price,
                                 sport: {
                                     id: row.sport_id,
-                                    name: row.sport
+                                    name: row.sport,
                                 },
                                 address: {
                                     cep: row.zipcode,
@@ -735,15 +722,15 @@ exports.agenda = async function (req, res) {
                                     neighbourhood: row.neighbourhood,
                                     street: row.street,
                                     number: row.number,
-                                    complement: row.complement
-                                }
-                            }]
-                        })
-
-                    }
+                                    complement: row.complement,
+                                },
+                            },
+                        ],
+                    });
                 }
+            }
 
-                const equipmentsQuery = `
+            const equipmentsQuery = `
                     SELECT s.id, b.id AS battery_id, DATE_FORMAT(s.date,'%Y-%m-%d') as date, se.equipment_id, be.price, eq.name, be.description, e.id as establishment_id FROM schedules s 
                     INNER JOIN batteries b ON b.id = s.battery_id 
                     INNER JOIN establishments e ON e.id = b.establishment_id 
@@ -756,26 +743,28 @@ exports.agenda = async function (req, res) {
                         ORDER BY date
                 `;
 
-                const equipmentsFilters = [
-                    userId,
-                    SCHEDULE_STATUS.CANCELED
-                ];
+            const equipmentsFilters = [userId, SCHEDULE_STATUS.CANCELED];
 
-                req.connection.query(equipmentsQuery, equipmentsFilters, function (err, results, fields) {
-
-                    for(let item of agenda) {
-
+            req.connection.query(
+                equipmentsQuery,
+                equipmentsFilters,
+                function (err, results, fields) {
+                    for (let item of agenda) {
                         for (let battery of item.batteries) {
-                            battery['equipments'] = [];
+                            battery["equipments"] = [];
                             for (let row of results) {
-                                if (item.establishment.id === row.establishment_id && item.date === row.date && battery.id === row.battery_id) {
+                                if (
+                                    item.establishment.id === row.establishment_id &&
+                                    item.date === row.date &&
+                                    battery.id === row.battery_id
+                                ) {
                                     battery.equipments.push({
                                         id: row.equipment_id,
                                         equipmentBatteryId: row.battery_id,
                                         name: row.name,
                                         description: row.description,
-                                        price: row.price
-                                    })
+                                        price: row.price,
+                                    });
                                 }
                             }
                         }
@@ -786,25 +775,21 @@ exports.agenda = async function (req, res) {
                         message: "Agenda obtida com sucesso!",
                         verbose: null,
                         data: {
-                            schedules: agenda
-                        }
-                    })
-
-                });
-            })
-
+                            schedules: agenda,
+                        },
+                    });
+                }
+            );
+        });
     } catch (error) {
-        handleError(req, res, 500, "Ocorreu um erro ao obter a agenda!", error)
+        handleError(req, res, 500, "Ocorreu um erro ao obter a agenda!", error);
     }
-
-}
+};
 
 exports.favoriteEstablishments = async function (req, res) {
-
-    const userId = req.decoded.data.userId
+    const userId = req.decoded.data.userId;
 
     try {
-
         const query = `
             (
             
@@ -896,31 +881,32 @@ exports.favoriteEstablishments = async function (req, res) {
                     ea.city,
                     ea.neighbourhood
             )
-        `
+        `;
 
-        const queryParams = [
-            userId,
-            userId
-        ]
+        const queryParams = [userId, userId];
 
         req.connection.query(query, queryParams, function (err, results, _) {
-
             if (err) {
-                return handleError(req, res, 500, "Ocorreu um erro ao obter os estabelecimentos!", err)
+                return handleError(
+                    req,
+                    res,
+                    500,
+                    "Ocorreu um erro ao obter os estabelecimentos!",
+                    err
+                );
             }
 
-            const establishments = []
+            const establishments = [];
 
             for (row of results) {
-
-                let filtered = establishments.findIndex(value => value.id === row.id)
+                let filtered = establishments.findIndex((value) => value.id === row.id);
 
                 if (filtered >= 0) {
-
-                    let addressFiltered = establishments[filtered].addresses.findIndex(value => value.id === row.addressId)
+                    let addressFiltered = establishments[filtered].addresses.findIndex(
+                        (value) => value.id === row.addressId
+                    );
 
                     if (addressFiltered < 0) {
-
                         establishments[filtered].addresses.push({
                             id: row.addressId,
                             typeId: row.typeId,
@@ -931,76 +917,79 @@ exports.favoriteEstablishments = async function (req, res) {
                             neighbourhood: row.neighbourhood,
                             street: row.street,
                             number: row.number,
-                            complement: row.complement
-                        })
-
+                            complement: row.complement,
+                        });
                     }
 
-                    let sportsFiltered = establishments[filtered].sports.findIndex(value => value.id === row.sportId)
+                    let sportsFiltered = establishments[filtered].sports.findIndex(
+                        (value) => value.id === row.sportId
+                    );
 
                     if (sportsFiltered < 0) {
                         establishments[filtered].sports.push({
                             id: row.sportId,
-                            name: row.sport
-                        })
+                            name: row.sport,
+                        });
                     }
-
                 } else {
-
                     establishments.push({
                         id: row.id,
                         name: row.name,
                         professor: row.professor,
                         isIndicated: row.isIndicated,
                         isFavorite: row.isFavorite,
-                        addresses: [{
-                            id: row.addressId,
-                            typeId: row.typeId,
-                            cep: row.cep,
-                            country: row.country,
-                            state: row.state,
-                            city: row.city,
-                            neighbourhood: row.neighbourhood,
-                            street: row.street,
-                            number: row.number,
-                            complement: row.complement
-                        }],
-                        sports: [{
-                            id: row.sportId,
-                            name: row.sport
-                        }]
-                    })
-
+                        addresses: [
+                            {
+                                id: row.addressId,
+                                typeId: row.typeId,
+                                cep: row.cep,
+                                country: row.country,
+                                state: row.state,
+                                city: row.city,
+                                neighbourhood: row.neighbourhood,
+                                street: row.street,
+                                number: row.number,
+                                complement: row.complement,
+                            },
+                        ],
+                        sports: [
+                            {
+                                id: row.sportId,
+                                name: row.sport,
+                            },
+                        ],
+                    });
                 }
-
             }
 
             return res.status(200).json({
                 success: true,
                 message: "Estabelecimentos favoritos listado com successo!",
                 verbose: null,
-                data: establishments
-            })
-
-        })
-
+                data: establishments,
+            });
+        });
     } catch (err) {
-        handleError(req, res, 500, "Ocorreu um erro ao obter os estabelecimentos!", err)
+        handleError(
+            req,
+            res,
+            500,
+            "Ocorreu um erro ao obter os estabelecimentos!",
+            err
+        );
     }
-
-}
+};
 
 exports.saveFavoriteEstablishment = async function (req, res) {
+    const userId = req.decoded.data.userId;
+    const establishmentId = req.body.establishmentId;
 
-    const userId = req.decoded.data.userId
-    const establishmentId = req.body.establishmentId
-
-    req.assert('establishmentId', 'O id do estabelecimento deve ser informado!').notEmpty()
+    req
+        .assert("establishmentId", "O id do estabelecimento deve ser informado!")
+        .notEmpty();
 
     try {
-
-        if (validator.validateFields(req, res) != null)
-            return
+        if (validator.validateFields(req, res) != null) return;
 
         let query = `
             SELECT 1
@@ -1009,17 +998,13 @@ exports.saveFavoriteEstablishment = async function (req, res) {
             WHERE 
                 ef.user_id = ?
                 AND ef.establishment_id = ?
-        `
+        `;
 
-        let queryParams = [
-            userId,
-            establishmentId
-        ]
+        let queryParams = [userId, establishmentId];
 
         req.connection.query(query, queryParams, function (err, results, _) {
-
             if (err) {
-                return handleError(req, res, 500, "Ocorreu um erro ao salvar!", err)
+                return handleError(req, res, 500, "Ocorreu um erro ao salvar!", err);
             }
 
             query = `
@@ -1033,51 +1018,45 @@ exports.saveFavoriteEstablishment = async function (req, res) {
                     ?, 
                     ?
                 )
-            `
+            `;
 
             if (results.length != 0) {
                 return res.status(200).json({
                     success: true,
                     message: "Estabelecimento salvo com sucesso!",
                     verbose: null,
-                    data: null
-                })
+                    data: null,
+                });
             }
 
             req.connection.query(query, queryParams, function (err, results, _) {
-
                 if (err) {
-                    return handleError(req, res, 500, "Ocorreu um erro ao salvar!", err)
+                    return handleError(req, res, 500, "Ocorreu um erro ao salvar!", err);
                 }
 
                 return res.status(200).json({
                     success: true,
                     message: "Estabelecimento salvo com sucesso!",
                     verbose: null,
-                    data: null
-                })
-
-            })
-
-        })
-
+                    data: null,
+                });
+            });
+        });
     } catch (err) {
-        handleError(req, res, 500, "Ocorreu um erro ao salvar!", err)
+        handleError(req, res, 500, "Ocorreu um erro ao salvar!", err);
     }
-
-}
+};
 
 exports.deleteFavoriteEstablishment = async function (req, res) {
+    const userId = req.decoded.data.userId;
+    const establishmentId = req.body.establishmentId;
 
-    const userId = req.decoded.data.userId
-    const establishmentId = req.body.establishmentId
-
-    req.assert('establishmentId', 'O id do estabelecimento deve ser informado!').notEmpty()
+    req
+        .assert("establishmentId", "O id do estabelecimento deve ser informado!")
+        .notEmpty();
 
     try {
-
-        if (validator.validateFields(req, res) != null)
-            return
+        if (validator.validateFields(req, res) != null) return;
 
         let query = `
             DELETE FROM 
@@ -1085,30 +1064,35 @@ exports.deleteFavoriteEstablishment = async function (req, res) {
             WHERE 
                 user_id = ?
                 AND establishment_id = ?
-        `
+        `;
 
-        let queryParams = [
-            userId,
-            establishmentId
-        ]
+        let queryParams = [userId, establishmentId];
 
         req.connection.query(query, queryParams, function (err, results, _) {
-
             if (err) {
-                return handleError(req, res, 500, "Ocorreu um erro ao deletar dos favoritos!", err)
+                return handleError(
+                    req,
+                    res,
+                    500,
+                    "Ocorreu um erro ao deletar dos favoritos!",
+                    err
+                );
             }
 
             return res.status(200).json({
                 success: true,
                 message: "Estabelecimento deletado dos favoritos com sucesso!",
                 verbose: null,
-                data: null
-            })
-
-        })
-
+                data: null,
+            });
+        });
     } catch (err) {
-        handleError(req, res, 500, "Ocorreu um erro ao deletar dos favoritos!", err)
+        handleError(
+            req,
+            res,
+            500,
+            "Ocorreu um erro ao deletar dos favoritos!",
+            err
+        );
     }
-
-}
+};
