@@ -16,7 +16,12 @@ const AgendaStatus = require("../api/common/models/AgendaStatus");
 const AgendaDates = require("../api/common/models/AgendaDates");
 
 const URI = process.env.PGURI
-const connection = new Sequelize(URI, {
+const connection = new Sequelize(process.env.PGDATABASE, process.env.PGUSER, process.env.PGPASSWORD, {
+  host: process.env.PGHOST,
+  dialect: 'postgres',
+  dialectOptions: {
+    
+  },
   define: {
     timestamps: true,
     underscored: true,

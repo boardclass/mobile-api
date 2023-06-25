@@ -15,7 +15,6 @@ const {
 const { Pool } = require('pg')
 
 exports.login = async function (req, res) {
-    console.log('Starting login')
     const pool = new Pool();
     let email = req.body.email;
     let password = req.body.password;
@@ -41,9 +40,9 @@ exports.login = async function (req, res) {
                 ON uc.user_id = u.id
             INNER JOIN users_roles ur
                 ON ur.user_id = u.id
-                AND ur.role_id = ?
+                AND ur.role_id = $1
             WHERE 
-                uc.email = ?
+                uc.email = $2
         `;
 
         let params = [USER_TYPE.USER, email];
